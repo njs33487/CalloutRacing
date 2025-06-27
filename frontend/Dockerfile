@@ -1,3 +1,4 @@
+# Force rebuild: 2024-06-27 - Clear all Docker cache layers
 # Use Node.js 18 as base image
 FROM node:18
 
