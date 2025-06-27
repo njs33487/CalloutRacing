@@ -22,7 +22,8 @@ ALLOWED_HOSTS = [host.strip() for host in config('ALLOWED_HOSTS', default='local
 if 'RAILWAY_STATIC_URL' in os.environ:
     try:
         railway_domain = os.environ['RAILWAY_STATIC_URL'].replace('https://', '').replace('http://', '')
-        if railway_domain and railway_domain not in ALLOWED_HOSTS:
+        # Only add if it's not a backend domain and not already in the list
+        if railway_domain and not railway_domain.endswith('-backend.up.railway.app') and railway_domain not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(railway_domain)
     except Exception:
         pass  # Silently fail if there's an issue with the domain
@@ -170,7 +171,11 @@ CORS_ALLOWED_ORIGINS = [origin.strip() for origin in config('CORS_ALLOWED_ORIGIN
 if 'RAILWAY_STATIC_URL' in os.environ:
     try:
         railway_frontend = os.environ['RAILWAY_STATIC_URL']
-        if railway_frontend and railway_frontend not in CORS_ALLOWED_ORIGINS:
+        # Only add if it's a valid URL with scheme and not a backend domain
+        if (railway_frontend and 
+            railway_frontend.startswith(('http://', 'https://')) and
+            not railway_frontend.endswith('-backend.up.railway.app') and
+            railway_frontend not in CORS_ALLOWED_ORIGINS):
             CORS_ALLOWED_ORIGINS.append(railway_frontend)
     except Exception:
         pass
