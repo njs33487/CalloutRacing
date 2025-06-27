@@ -35,9 +35,8 @@ export default function About() {
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
             The Ultimate
-            <span className="text-primary-600"> Racing</span>
+            <span className="text-primary-600"> Drag Racing Social Network</span>
             <br />
-            Drag Racing Social Network
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Connect with racers, challenge opponents, and dominate the track. 
