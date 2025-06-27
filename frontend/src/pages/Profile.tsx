@@ -366,215 +366,217 @@ const Profile = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Profile Picture Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Picture
-                </label>
+              <div className="space-y-6">
+                {/* Profile Picture Upload */}
                 <div>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-600 to-yellow-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
-                      {profileImage ? (
-                        <img
-                          src={profileImage.preview}
-                          alt="Profile Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : profile.profile_picture ? (
-                        <img
-                          src={profile.profile_picture}
-                          alt="Current Profile"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        profile.user.first_name?.[0] || profile.user.username[0]
-                      )}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Profile Picture
+                  </label>
+                  <div>
+                    <div className="flex items-center space-x-4">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-600 to-yellow-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+                        {profileImage ? (
+                          <img
+                            src={profileImage.preview}
+                            alt="Profile Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : profile.profile_picture ? (
+                          <img
+                            src={profile.profile_picture}
+                            alt="Current Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          profile.user.first_name?.[0] || profile.user.username[0]
+                        )}
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="profile-image-upload"
+                          className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                        >
+                          <div className="flex items-center">
+                            <PhotoIcon className="h-4 w-4 mr-2" />
+                            <span>Upload Photo</span>
+                          </div>
+                          <input
+                            id="profile-image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, 'profile')}
+                            className="sr-only"
+                          />
+                        </label>
+                      </div>
                     </div>
-                    <div>
+                  </div>
+                </div>
+
+                {/* Cover Photo Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Cover Photo
+                  </label>
+                  <div className="relative">
+                    <div className="h-32 bg-gradient-to-r from-red-600 to-yellow-500 rounded-lg overflow-hidden">
+                      {coverImage ? (
+                        <img
+                          src={coverImage.preview}
+                          alt="Cover Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : profile.cover_photo ? (
+                        <img
+                          src={profile.cover_photo}
+                          alt="Current Cover"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="absolute top-2 right-2">
                       <label
-                        htmlFor="profile-image-upload"
+                        htmlFor="cover-image-upload"
                         className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                       >
                         <div className="flex items-center">
                           <PhotoIcon className="h-4 w-4 mr-2" />
-                          <span>Upload Photo</span>
+                          <span>Upload Cover</span>
                         </div>
                         <input
-                          id="profile-image-upload"
+                          id="cover-image-upload"
                           type="file"
                           accept="image/*"
-                          onChange={(e) => handleImageUpload(e, 'profile')}
+                          onChange={(e) => handleImageUpload(e, 'cover')}
                           className="sr-only"
                         />
                       </label>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Cover Photo Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cover Photo
-                </label>
-                <div className="relative">
-                  <div className="h-32 bg-gradient-to-r from-red-600 to-yellow-500 rounded-lg overflow-hidden">
-                    {coverImage ? (
-                      <img
-                        src={coverImage.preview}
-                        alt="Cover Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : profile.cover_photo ? (
-                      <img
-                        src={profile.cover_photo}
-                        alt="Current Cover"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : null}
-                  </div>
-                  <div className="absolute top-2 right-2">
-                    <label
-                      htmlFor="cover-image-upload"
-                      className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                    >
-                      <div className="flex items-center">
-                        <PhotoIcon className="h-4 w-4 mr-2" />
-                        <span>Upload Cover</span>
-                      </div>
-                      <input
-                        id="cover-image-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, 'cover')}
-                        className="sr-only"
-                      />
+                {/* Bio */}
+                <div>
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    name="bio"
+                    value={editForm.bio}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="Tell us about yourself..."
+                  />
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={editForm.location}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="City, State"
+                  />
+                </div>
+
+                {/* Car Information */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="car_make" className="block text-sm font-medium text-gray-700 mb-2">
+                      Car Make
                     </label>
+                    <input
+                      type="text"
+                      id="car_make"
+                      name="car_make"
+                      value={editForm.car_make}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., Ford"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="car_model" className="block text-sm font-medium text-gray-700 mb-2">
+                      Car Model
+                    </label>
+                    <input
+                      type="text"
+                      id="car_model"
+                      name="car_model"
+                      value={editForm.car_model}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., Mustang"
+                    />
                   </div>
                 </div>
-              </div>
 
-              {/* Bio */}
-              <div>
-                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={editForm.bio}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Tell us about yourself..."
-                />
-              </div>
-
-              {/* Location */}
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  id="location"
-                  name="location"
-                  value={editForm.location}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="City, State"
-                />
-              </div>
-
-              {/* Car Information */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="car_make" className="block text-sm font-medium text-gray-700 mb-2">
-                    Car Make
-                  </label>
-                  <input
-                    type="text"
-                    id="car_make"
-                    name="car_make"
-                    value={editForm.car_make}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="e.g., Ford"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="car_year" className="block text-sm font-medium text-gray-700 mb-2">
+                      Car Year
+                    </label>
+                    <input
+                      type="number"
+                      id="car_year"
+                      name="car_year"
+                      value={editForm.car_year}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., 2020"
+                      min="1900"
+                      max="2030"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="car_mods" className="block text-sm font-medium text-gray-700 mb-2">
+                      Modifications
+                    </label>
+                    <input
+                      type="text"
+                      id="car_mods"
+                      name="car_mods"
+                      value={editForm.car_mods}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., Turbo, Exhaust"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="car_model" className="block text-sm font-medium text-gray-700 mb-2">
-                    Car Model
-                  </label>
-                  <input
-                    type="text"
-                    id="car_model"
-                    name="car_model"
-                    value={editForm.car_model}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="e.g., Mustang"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="car_year" className="block text-sm font-medium text-gray-700 mb-2">
-                    Car Year
-                  </label>
-                  <input
-                    type="number"
-                    id="car_year"
-                    name="car_year"
-                    value={editForm.car_year}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="e.g., 2020"
-                    min="1900"
-                    max="2030"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="car_mods" className="block text-sm font-medium text-gray-700 mb-2">
-                    Modifications
-                  </label>
-                  <input
-                    type="text"
-                    id="car_mods"
-                    name="car_mods"
-                    value={editForm.car_mods}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="e.g., Turbo, Exhaust"
-                  />
-                </div>
-              </div>
+                {updateProfile.error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-red-800">
+                      {(updateProfile.error as any)?.response?.data?.error || 'Failed to update profile. Please try again.'}
+                    </p>
+                  </div>
+                )}
 
-              {updateProfile.error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                  <p className="text-red-800">
-                    {(updateProfile.error as any)?.response?.data?.error || 'Failed to update profile. Please try again.'}
-                  </p>
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="btn-secondary flex-1"
+                    disabled={updateProfile.isPending}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary flex-1"
+                    disabled={updateProfile.isPending}
+                  >
+                    {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                  </button>
                 </div>
-              )}
-
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="btn-secondary flex-1"
-                  disabled={updateProfile.isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary flex-1"
-                  disabled={updateProfile.isPending}
-                >
-                  {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-                </button>
               </div>
             </form>
           </div>

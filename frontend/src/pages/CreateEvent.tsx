@@ -88,13 +88,6 @@ export default function CreateEvent() {
     })
   }
 
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.checked
-    })
-  }
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     
@@ -126,245 +119,232 @@ export default function CreateEvent() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Event Title
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Enter event title"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="event_type" className="block text-sm font-medium text-gray-700 mb-2">
-            Event Type
-          </label>
-          <select
-            id="event_type"
-            name="event_type"
-            value={formData.event_type}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="race">Race Event</option>
-            <option value="test">Test & Tune</option>
-            <option value="meet">Car Meet</option>
-            <option value="show">Car Show</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="track" className="block text-sm font-medium text-gray-700 mb-2">
-            Track/Facility
-          </label>
-          <select
-            id="track"
-            name="track"
-            value={formData.track}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            required
-          >
-            <option value="">Select a track</option>
-            {tracks.map((track: Track) => (
-              <option key={track.id} value={track.id}>
-                {`${track.name} - ${track.location}`}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-6">
           <div>
-            <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-2">
-              Start Date
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              Event Title
             </label>
             <input
-              type="date"
-              id="start_date"
-              name="start_date"
-              value={formData.start_date}
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Enter event title"
               required
             />
           </div>
+
           <div>
-            <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-2">
-              End Date
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              Description
             </label>
-            <input
-              type="date"
-              id="end_date"
-              name="end_date"
-              value={formData.end_date}
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
               onChange={handleChange}
+              rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Describe your event..."
               required
             />
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="max_participants" className="block text-sm font-medium text-gray-700 mb-2">
-              Max Participants
+            <label htmlFor="event_type" className="block text-sm font-medium text-gray-700 mb-2">
+              Event Type
             </label>
-            <input
-              type="number"
-              id="max_participants"
-              name="max_participants"
-              value={formData.max_participants}
+            <select
+              id="event_type"
+              name="event_type"
+              value={formData.event_type}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter max participants"
-              min="1"
-            />
+              required
+            >
+              <option value="">Select event type</option>
+              <option value="race">Race Event</option>
+              <option value="meet">Car Meet</option>
+              <option value="show">Car Show</option>
+              <option value="test">Test & Tune</option>
+            </select>
           </div>
+
           <div>
-            <label htmlFor="entry_fee" className="block text-sm font-medium text-gray-700 mb-2">
-              Entry Fee ($)
+            <label htmlFor="track" className="block text-sm font-medium text-gray-700 mb-2">
+              Track
             </label>
-            <input
-              type="number"
-              id="entry_fee"
-              name="entry_fee"
-              value={formData.entry_fee}
+            <select
+              id="track"
+              name="track"
+              value={formData.track}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter entry fee"
-              min="0"
-              step="0.01"
-            />
+              required
+            >
+              <option value="">Select a track</option>
+              {tracks.map((track: Track) => (
+                <option key={track.id} value={track.id.toString()}>{track.name}</option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Describe your event..."
-            required
-          />
-        </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date & Time
+              </label>
+              <input
+                type="datetime-local"
+                id="start_date"
+                name="start_date"
+                value={formData.start_date}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-2">
+                End Date & Time
+              </label>
+              <input
+                type="datetime-local"
+                id="end_date"
+                name="end_date"
+                value={formData.end_date}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+              />
+            </div>
+          </div>
 
-        {/* Image Upload Section */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Event Images
-          </label>
-          <div className="space-y-4">
-            {/* Image Upload Input */}
-            <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
-              <div className="space-y-1 text-center">
-                <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <label
-                      htmlFor="image-upload"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
-                    >
-                      <span>Upload images</span>
-                      <input
-                        id="image-upload"
-                        name="image-upload"
-                        type="file"
-                        className="sr-only"
-                        multiple
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="max_participants" className="block text-sm font-medium text-gray-700 mb-2">
+                Max Participants (Optional)
+              </label>
+              <input
+                type="number"
+                id="max_participants"
+                name="max_participants"
+                value={formData.max_participants}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Enter max participants"
+                min="1"
+              />
+            </div>
+            <div>
+              <label htmlFor="entry_fee" className="block text-sm font-medium text-gray-700 mb-2">
+                Entry Fee (Optional)
+              </label>
+              <input
+                type="number"
+                id="entry_fee"
+                name="entry_fee"
+                value={formData.entry_fee}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Enter entry fee"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
+              Images (Optional)
+            </label>
+            <div className="space-y-4">
+              {/* Image Upload Input */}
+              <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
+                <div className="space-y-1 text-center">
+                  <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="flex text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <label
+                        htmlFor="image-upload"
+                        className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                      >
+                        <span>Upload images</span>
+                        <input
+                          id="image-upload"
+                          name="image-upload"
+                          type="file"
+                          className="sr-only"
+                          multiple
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                        />
+                      </label>
+                      <p className="pl-1">or drag and drop</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+                </div>
+              </div>
+
+              {/* Image Previews */}
+              {images.length > 0 && (
+                <div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {images.map((image, index) => (
+                      <div key={image.id} className="relative group">
+                        <img
+                          src={image.preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(image.id)}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                        {index === 0 && (
+                          <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
+                            Primary
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
-              </div>
+              )}
             </div>
-
-            {/* Image Previews */}
-            {images.length > 0 && (
-              <div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {images.map((image, index) => (
-                    <div key={image.id} className="relative group">
-                      <img
-                        src={image.preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(image.id)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                      {index === 0 && (
-                        <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
-                          Primary
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-        </div>
 
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="is_public"
-            name="is_public"
-            checked={formData.is_public}
-            onChange={handleCheckboxChange}
-            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-          />
-          <label htmlFor="is_public" className="ml-2 block text-sm text-gray-900">
-            Make this event public
-          </label>
-        </div>
+          {createEvent.error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800">
+                {(createEvent.error as any)?.response?.data?.error || 'Failed to create event. Please try again.'}
+              </p>
+            </div>
+          )}
 
-        {createEvent.error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-800">
-              {(createEvent.error as any)?.response?.data?.error || 'Failed to create event. Please try again.'}
-            </p>
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate('/app/events')}
+              className="btn-secondary flex-1"
+              disabled={createEvent.isPending}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+              disabled={createEvent.isPending}
+            >
+              {createEvent.isPending ? 'Creating...' : 'Create Event'}
+            </button>
           </div>
-        )}
-
-        <div className="flex space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate('/app/events')}
-            className="btn-secondary flex-1"
-            disabled={createEvent.isPending}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn-primary flex-1"
-            disabled={createEvent.isPending}
-          >
-            {createEvent.isPending ? 'Creating...' : 'Create Event'}
-          </button>
         </div>
       </form>
     </div>
