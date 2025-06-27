@@ -22,8 +22,11 @@ RUN npm install -g serve
 # Remove dev dependencies to reduce image size
 RUN npm prune --production
 
-# Expose port
-EXPOSE 3000
+# Make start script executable
+RUN chmod +x start.sh
 
-# Start the application
-CMD ["serve", "-s", "dist", "-l", "3000"] 
+# Expose port (Railway will set the actual port via $PORT)
+EXPOSE $PORT
+
+# Start the application using the start script
+CMD ["./start.sh"] 
