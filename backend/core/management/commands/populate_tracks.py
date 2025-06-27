@@ -447,17 +447,14 @@ class Command(BaseCommand):
             }
         ]
 
-        with transaction.atomic():
+        with transaction.atomic():  # type: ignore
             # Clear existing tracks
-            Track.objects.all().delete()
+            Track.objects.all().delete()  # type: ignore
             
             # Create new tracks
             created_tracks = []
             for track_data in tracks_data:
-                track, created = Track.objects.get_or_create(
-                    name=track_data['name'],
-                    defaults=track_data
-                )
+                track = Track.objects.create(**track_data)  # type: ignore
                 created_tracks.append(track)
                 
             self.stdout.write(
@@ -473,4 +470,4 @@ class Command(BaseCommand):
             self.stdout.write(f'Drag Strips: {drag_tracks}')
             self.stdout.write(f'Road Courses: {road_tracks}')
             self.stdout.write(f'Oval Tracks: {oval_tracks}')
-            self.stdout.write(f'Total Tracks: {Track.objects.count()}') 
+            self.stdout.write(f'Total Tracks: {len(created_tracks)}')
