@@ -3,35 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ShoppingBagIcon, PlusIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
-
-interface MarketplaceItem {
-  id: number;
-  title: string;
-  description: string;
-  category: string;
-  condition: string;
-  price: number;
-  is_negotiable: boolean;
-  trade_offered: boolean;
-  trade_description?: string;
-  location: string;
-  contact_phone?: string;
-  contact_email?: string;
-  is_active: boolean;
-  views: number;
-  created_at: string;
-  seller: {
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
-  };
-  images?: {
-    id: number;
-    image: string;
-    is_primary: boolean;
-  }[];
-}
+import { MarketplaceItem } from '../types'
 
 export default function Marketplace() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -44,7 +16,7 @@ export default function Marketplace() {
       if (categoryFilter !== 'all') {
         params.append('category', categoryFilter);
       }
-      return api.get(`/api/marketplace/?${params.toString()}`).then(res => res.data);
+      return api.get(`/marketplace/?${params.toString()}`).then(res => res.data);
     }
   });
 

@@ -3,34 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { BoltIcon, PlusIcon, MapPinIcon, CalendarIcon } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
-
-interface Callout {
-  id: number;
-  challenger: {
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
-  };
-  challenged: {
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
-  };
-  race_type: string;
-  location_type: string;
-  street_location?: string;
-  track?: {
-    id: number;
-    name: string;
-  };
-  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
-  wager_amount: number;
-  message: string;
-  scheduled_date?: string;
-  created_at: string;
-}
+import { Callout } from '../types'
 
 export default function Callouts() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -43,7 +16,7 @@ export default function Callouts() {
       if (statusFilter !== 'all') {
         params.append('status', statusFilter);
       }
-      return api.get(`/api/callouts/?${params.toString()}`).then(res => res.data);
+      return api.get(`/callouts/?${params.toString()}`).then(res => res.data);
     }
   });
 

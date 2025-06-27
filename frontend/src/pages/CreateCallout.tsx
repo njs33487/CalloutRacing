@@ -3,13 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { BoltIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
-
-interface User {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-}
+import { User } from '../types'
 
 export default function CreateCallout() {
   const navigate = useNavigate()
@@ -28,7 +22,7 @@ export default function CreateCallout() {
   // Search users
   const { data: usersData } = useQuery({
     queryKey: ['users', searchQuery],
-    queryFn: () => api.get(`/api/users/?search=${searchQuery}`).then(res => res.data),
+    queryFn: () => api.get(`/users/?search=${searchQuery}`).then(res => res.data),
     enabled: searchQuery.length > 2
   })
 
@@ -36,7 +30,7 @@ export default function CreateCallout() {
 
   // Create callout mutation
   const createCallout = useMutation({
-    mutationFn: (data: any) => api.post('/api/callouts/', data),
+    mutationFn: (data: any) => api.post('/callouts/', data),
     onSuccess: () => {
       navigate('/app/callouts')
     }
@@ -102,11 +96,13 @@ export default function CreateCallout() {
               name="challenged"
               value={searchQuery}
               onChange={handleSearchChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="Search for a user to challenge"
               required
             />
-            <MagnifyingGlassIcon className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+            <div className="absolute right-3 top-2.5">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            </div>
             
             {/* User search dropdown */}
             {showUserSearch && users.length > 0 && (

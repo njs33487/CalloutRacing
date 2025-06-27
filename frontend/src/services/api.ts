@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Get API URL from environment variable or use default
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend.up.railway.app/api'
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend.up.railway.app'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -85,6 +85,24 @@ export const trackAPI = {
   get: (id: number) => api.get(`/tracks/${id}/`),
   update: (id: number, data: any) => api.patch(`/tracks/${id}/`, data),
   delete: (id: number) => api.delete(`/tracks/${id}/`),
+}
+
+export const carAPI = {
+  list: () => api.get('/cars/'),
+  create: (data: any) => api.post('/cars/', data),
+  get: (id: number) => api.get(`/cars/${id}/`),
+  update: (id: number, data: any) => api.patch(`/cars/${id}/`, data),
+  delete: (id: number) => api.delete(`/cars/${id}/`),
+  myCars: () => api.get('/cars/my_cars/'),
+}
+
+export const postAPI = {
+  list: () => api.get('/posts/'),
+  create: (data: any) => api.post('/posts/', data),
+  get: (id: number) => api.get(`/posts/${id}/`),
+  update: (id: number, data: any) => api.patch(`/posts/${id}/`, data),
+  delete: (id: number) => api.delete(`/posts/${id}/`),
+  likePost: (id: number) => api.post(`/posts/${id}/like_post/`),
 }
 
 export { api } 

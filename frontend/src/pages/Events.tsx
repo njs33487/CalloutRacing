@@ -3,32 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarIcon, PlusIcon, MapPinIcon, UserGroupIcon } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
-
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  event_type: string;
-  track: {
-    id: number;
-    name: string;
-    location: string;
-  };
-  organizer: {
-    id: number;
-    username: string;
-    first_name: string;
-    last_name: string;
-  };
-  start_date: string;
-  end_date: string;
-  max_participants?: number;
-  entry_fee: number;
-  is_public: boolean;
-  is_active: boolean;
-  created_at: string;
-  participants_count?: number;
-}
+import { Event } from '../types'
 
 export default function Events() {
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
@@ -41,7 +16,7 @@ export default function Events() {
       if (eventTypeFilter !== 'all') {
         params.append('event_type', eventTypeFilter);
       }
-      return api.get(`/api/events/?${params.toString()}`).then(res => res.data);
+      return api.get(`/events/?${params.toString()}`).then(res => res.data);
     }
   });
 

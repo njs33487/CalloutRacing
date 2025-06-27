@@ -18,41 +18,41 @@ export default function Home() {
   // User-specific data
   const { data: userProfile } = useQuery({
     queryKey: ['user-profile'],
-    queryFn: () => api.get('/api/user-profile/'),
+    queryFn: () => api.get('/auth/profile/'),
     enabled: !!user
   })
 
   const { data: userCallouts } = useQuery({
     queryKey: ['user-callouts'],
-    queryFn: () => api.get('/api/callouts/?challenger=me&challenged=me'),
+    queryFn: () => api.get('/callouts/?challenger=me&challenged=me'),
     enabled: !!user
   })
 
   const { data: userEvents } = useQuery({
     queryKey: ['user-events'],
-    queryFn: () => api.get('/api/events/?participant=me'),
+    queryFn: () => api.get('/events/?participant=me'),
     enabled: !!user
   })
 
   // General data
   const { data: recentCallouts } = useQuery({
     queryKey: ['recent-callouts'],
-    queryFn: () => api.get('/api/callouts/?limit=5')
+    queryFn: () => api.get('/callouts/?limit=5')
   })
 
   const { data: upcomingEvents } = useQuery({
     queryKey: ['upcoming-events'],
-    queryFn: () => api.get('/api/events/?is_upcoming=true&limit=5')
+    queryFn: () => api.get('/events/?is_upcoming=true&limit=5')
   })
 
   const { data: marketplaceItems } = useQuery({
     queryKey: ['marketplace-items'],
-    queryFn: () => api.get('/api/marketplace/?limit=5')
+    queryFn: () => api.get('/marketplace/?limit=5')
   })
 
   const { data: stats } = useQuery({
     queryKey: ['stats'],
-    queryFn: () => api.get('/api/stats/')
+    queryFn: () => api.get('/stats/')
   })
 
   // User stats

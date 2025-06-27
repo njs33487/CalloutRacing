@@ -1,71 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { CarProfile, UserPost } from '../types';
 
-interface CarProfile {
-  id: number;
-  name: string;
-  make: string;
-  model: string;
-  year: number;
-  trim: string;
-  color: string;
-  engine_size: number;
-  engine_type: string;
-  horsepower: number;
-  torque: number;
-  weight: number;
-  transmission: string;
-  drivetrain: string;
-  best_quarter_mile: number;
-  best_eighth_mile: number;
-  best_trap_speed: number;
-  description: string;
-  is_primary: boolean;
-  modifications: CarModification[];
-  images: CarImage[];
-}
-
-interface CarModification {
-  id: number;
-  category: string;
-  name: string;
-  brand: string;
-  description: string;
-  cost: number;
-  installed_date: string;
-  is_installed: boolean;
-}
-
-interface CarImage {
-  id: number;
-  image: string;
-  caption: string;
-  is_primary: boolean;
-}
-
-interface UserPost {
-  id: number;
-  content: string;
-  image: string;
-  like_count: number;
-  is_liked: boolean;
-  created_at: string;
-  comments: PostComment[];
-}
-
-interface PostComment {
-  id: number;
-  content: string;
-  user: {
-    id: number;
-    username: string;
-  };
-  created_at: string;
-}
-
-const Profile: React.FC = () => {
+const Profile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'overview' | 'cars' | 'posts' | 'friends'>('overview');
@@ -73,27 +12,27 @@ const Profile: React.FC = () => {
   // Fetch current user's profile
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['user-profile'],
-    queryFn: () => api.get('/api/user-profile/').then(res => res.data),
+    queryFn: () => api.get('/auth/profile/').then(res => res.data),
     enabled: !!user
   });
 
   // Fetch user's cars
   const { data: cars } = useQuery({
     queryKey: ['user-cars'],
-    queryFn: () => api.get('/api/car-profiles/my_cars/').then(res => res.data),
+    queryFn: () => api.get('/cars/my_cars/').then(res => res.data),
     enabled: !!user
   });
 
   // Fetch user's posts
   const { data: posts } = useQuery({
     queryKey: ['user-posts'],
-    queryFn: () => api.get('/api/posts/?user=me').then(res => res.data),
+    queryFn: () => api.get('/posts/?user=me').then(res => res.data),
     enabled: !!user
   });
 
   // Like post mutation
   const likePost = useMutation({
-    mutationFn: (postId: number) => api.post(`/api/posts/${postId}/like_post/`),
+    mutationFn: (postId: number) => api.post(`/posts/${postId}/like_post/`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-posts'] });
     }
