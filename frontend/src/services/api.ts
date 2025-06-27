@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Get API URL from environment variable or use default
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing.up.railway.app/api'
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend.up.railway.app/api'
 
 const api = axios.create({
   baseURL: API_URL,

@@ -5,7 +5,7 @@ This guide will help you deploy your React frontend to Railway alongside your Dj
 ## Prerequisites
 
 - Railway account connected to your GitHub repository
-- Backend already deployed and running at https://calloutracing.up.railway.app/
+- Backend already deployed and running at https://calloutracing-backend.up.railway.app/
 
 ## Deployment Steps
 
@@ -28,7 +28,7 @@ This guide will help you deploy your React frontend to Railway alongside your Dj
 In the Railway dashboard for your frontend service, add these environment variables:
 
 ```
-VITE_API_URL=https://calloutracing.up.railway.app/api
+VITE_API_URL=https://calloutracing-backend.up.railway.app/api
 NODE_ENV=production
 ```
 
@@ -88,7 +88,7 @@ After deployment, your frontend will be available at:
 - Railway URL: `https://your-frontend-service-name.up.railway.app/`
 - Custom domain (if configured): `https://your-domain.com/`
 
-The frontend will automatically connect to your backend API at `https://calloutracing.up.railway.app/api/`.
+The frontend will automatically connect to your backend API at `https://calloutracing-backend.up.railway.app/api/`.
 
 ## Monitoring
 
