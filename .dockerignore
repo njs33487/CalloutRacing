@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+docs/
+README.md
+
+# Frontend (not needed for backend)
+frontend/
+public/
+
+# Scripts
+scripts/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Node modules (if any)
+node_modules/
+
+# Railway
+.railway/
+railway.json 
