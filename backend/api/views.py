@@ -25,7 +25,8 @@ from core.models import (
     UserProfile, Track, Event, Callout, RaceResult, 
     Marketplace, MarketplaceImage, EventParticipant,
     Friendship, Message, CarProfile, CarModification, 
-    CarImage, UserPost, PostComment
+    CarImage, UserPost, PostComment, Subscription, Payment, UserWallet,
+    MarketplaceOrder, MarketplaceReview, Bet, BettingPool, Notification
 )
 from .serializers import (
     UserSerializer, UserProfileSerializer, TrackSerializer, EventSerializer,
@@ -33,8 +34,12 @@ from .serializers import (
     MarketplaceSerializer, MarketplaceDetailSerializer, EventParticipantSerializer,
     EventDetailSerializer, FriendshipSerializer, MessageSerializer,
     CarProfileSerializer, CarModificationSerializer, CarImageSerializer,
-    UserPostSerializer, PostCommentSerializer, UserProfileDetailSerializer
+    UserPostSerializer, PostCommentSerializer, UserProfileDetailSerializer,
+    SubscriptionSerializer, PaymentSerializer, UserWalletSerializer,
+    MarketplaceOrderSerializer, MarketplaceReviewSerializer, BetSerializer,
+    BettingPoolSerializer, NotificationSerializer, SubscriptionPlanSerializer
 )
+from django.utils import timezone
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -933,4 +938,500 @@ class UserProfileDetailViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['user__username', 'bio', 'location']
 
     def get_queryset(self):
-        return UserProfile.objects.select_related('user').prefetch_related('cars', 'posts') 
+        """
+        Optimize queryset for detail view by using select_related and prefetch_related.
+        """
+        return UserProfile.objects.select_related('user').prefetch_related(
+            'cars', 'cars__modifications', 'cars__images', 'posts', 'posts__comments'
+        )
+
+
+# ============================================================================
+# PAYMENT & SUBSCRIPTION VIEWSETS
+# ============================================================================
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Subscription model.
+    
+    Handles CRUD operations for user subscriptions with custom actions
+    for managing subscription status and billing.
+    """
+    serializer_class = SubscriptionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['subscription_type', 'status']
+    ordering_fields = ['created_at', 'next_billing_date']
+
+    def get_queryset(self):
+        """Only show user's own subscriptions."""
+        return Subscription.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically set the current user."""
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def cancel_subscription(self, request, pk=None):
+        """Cancel a subscription."""
+        subscription = self.get_object()
+        subscription.status = 'cancelled'
+        subscription.save()
+        return Response({'message': 'Subscription cancelled successfully'})
+
+    @action(detail=True, methods=['post'])
+    def reactivate_subscription(self, request, pk=None):
+        """Reactivate a cancelled subscription."""
+        subscription = self.get_object()
+        subscription.status = 'active'
+        subscription.save()
+        return Response({'message': 'Subscription reactivated successfully'})
+
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Payment model.
+    
+    Handles CRUD operations for payment transactions with custom actions
+    for payment processing and refunds.
+    """
+    serializer_class = PaymentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['payment_type', 'status', 'payment_provider']
+    ordering_fields = ['created_at', 'amount']
+
+    def get_queryset(self):
+        """Only show user's own payments."""
+        return Payment.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically set the current user."""
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def process_payment(self, request, pk=None):
+        """Process a pending payment."""
+        payment = self.get_object()
+        # TODO: Integrate with payment provider (Stripe, PayPal, etc.)
+        payment.status = 'completed'
+        payment.save()
+        return Response({'message': 'Payment processed successfully'})
+
+    @action(detail=True, methods=['post'])
+    def refund_payment(self, request, pk=None):
+        """Refund a completed payment."""
+        payment = self.get_object()
+        # TODO: Process refund through payment provider
+        payment.status = 'refunded'
+        payment.save()
+        return Response({'message': 'Payment refunded successfully'})
+
+
+class UserWalletViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for UserWallet model.
+    
+    Handles wallet operations including deposits, withdrawals,
+    and balance management.
+    """
+    serializer_class = UserWalletSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """Only show user's own wallet."""
+        return UserWallet.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically set the current user."""
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def add_funds(self, request, pk=None):
+        """Add funds to wallet."""
+        wallet = self.get_object()
+        amount = request.data.get('amount')
+        description = request.data.get('description', 'Deposit')
+        
+        if not amount or float(amount) <= 0:
+            return Response({'error': 'Invalid amount'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        wallet.add_funds(float(amount), description)
+        return Response({'message': f'${amount} added to wallet', 'new_balance': wallet.balance})
+
+    @action(detail=True, methods=['post'])
+    def withdraw_funds(self, request, pk=None):
+        """Withdraw funds from wallet."""
+        wallet = self.get_object()
+        amount = request.data.get('amount')
+        description = request.data.get('description', 'Withdrawal')
+        
+        if not amount or float(amount) <= 0:
+            return Response({'error': 'Invalid amount'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if wallet.deduct_funds(float(amount), description):
+            return Response({'message': f'${amount} withdrawn from wallet', 'new_balance': wallet.balance})
+        else:
+            return Response({'error': 'Insufficient funds'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def transaction_history(self, request, pk=None):
+        """Get wallet transaction history."""
+        wallet = self.get_object()
+        transactions = Payment.objects.filter(user=wallet.user).order_by('-created_at')
+        serializer = WalletTransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
+
+
+# ============================================================================
+# ENHANCED MARKETPLACE VIEWSETS
+# ============================================================================
+
+class MarketplaceOrderViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for MarketplaceOrder model.
+    
+    Handles CRUD operations for marketplace orders with custom actions
+    for order management and tracking.
+    """
+    serializer_class = MarketplaceOrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'seller', 'buyer']
+    ordering_fields = ['created_at', 'total_amount']
+
+    def get_queryset(self):
+        """Show orders where user is buyer or seller."""
+        return MarketplaceOrder.objects.filter(
+            models.Q(buyer=self.request.user) | models.Q(seller=self.request.user)
+        )
+
+    def perform_create(self, serializer):
+        """Automatically set the current user as buyer."""
+        serializer.save(buyer=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def mark_as_paid(self, request, pk=None):
+        """Mark order as paid."""
+        order = self.get_object()
+        if order.seller != self.request.user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        order.status = 'paid'
+        order.paid_at = timezone.now()
+        order.save()
+        return Response({'message': 'Order marked as paid'})
+
+    @action(detail=True, methods=['post'])
+    def ship_order(self, request, pk=None):
+        """Mark order as shipped."""
+        order = self.get_object()
+        if order.seller != self.request.user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        tracking_number = request.data.get('tracking_number')
+        order.status = 'shipped'
+        order.tracking_number = tracking_number
+        order.shipped_at = timezone.now()
+        order.save()
+        return Response({'message': 'Order marked as shipped'})
+
+    @action(detail=True, methods=['post'])
+    def mark_as_delivered(self, request, pk=None):
+        """Mark order as delivered."""
+        order = self.get_object()
+        if order.buyer != self.request.user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        order.status = 'delivered'
+        order.delivered_at = timezone.now()
+        order.save()
+        return Response({'message': 'Order marked as delivered'})
+
+    @action(detail=False, methods=['get'])
+    def my_purchases(self, request):
+        """Get user's purchase history."""
+        purchases = MarketplaceOrder.objects.filter(buyer=request.user).order_by('-created_at')
+        serializer = self.get_serializer(purchases, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def my_sales(self, request):
+        """Get user's sales history."""
+        sales = MarketplaceOrder.objects.filter(seller=request.user).order_by('-created_at')
+        serializer = self.get_serializer(sales, many=True)
+        return Response(serializer.data)
+
+
+class MarketplaceReviewViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for MarketplaceReview model.
+    
+    Handles CRUD operations for marketplace reviews with custom actions
+    for review management.
+    """
+    serializer_class = MarketplaceReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['rating', 'is_verified_purchase']
+    ordering_fields = ['created_at', 'rating', 'helpful_votes']
+
+    def get_queryset(self):
+        """Show reviews where user is reviewer or seller."""
+        return MarketplaceReview.objects.filter(
+            models.Q(reviewer=self.request.user) | 
+            models.Q(order__seller=self.request.user)
+        )
+
+    def perform_create(self, serializer):
+        """Automatically set the current user as reviewer."""
+        serializer.save(reviewer=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def mark_helpful(self, request, pk=None):
+        """Mark review as helpful."""
+        review = self.get_object()
+        review.helpful_votes += 1
+        review.save()
+        return Response({'message': 'Review marked as helpful'})
+
+
+# ============================================================================
+# BETTING VIEWSETS
+# ============================================================================
+
+class BetViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Bet model.
+    
+    Handles CRUD operations for bets with custom actions
+    for bet management and settlement.
+    """
+    serializer_class = BetSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['bet_type', 'status', 'callout', 'event']
+    ordering_fields = ['created_at', 'bet_amount', 'potential_payout']
+
+    def get_queryset(self):
+        """Only show user's own bets."""
+        return Bet.objects.filter(bettor=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically set the current user as bettor."""
+        serializer.save(bettor=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def place_bet(self, request, pk=None):
+        """Place a bet on a race."""
+        bet = self.get_object()
+        
+        # Check if user has sufficient funds
+        wallet = UserWallet.objects.get_or_create(user=request.user)[0]
+        if not wallet.can_afford(bet.bet_amount):
+            return Response({'error': 'Insufficient funds'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Deduct funds and activate bet
+        wallet.deduct_funds(bet.bet_amount, f"Bet on {bet.selected_winner.username}")
+        bet.status = 'active'
+        bet.save()
+        
+        return Response({'message': 'Bet placed successfully'})
+
+    @action(detail=True, methods=['post'])
+    def cancel_bet(self, request, pk=None):
+        """Cancel a pending bet."""
+        bet = self.get_object()
+        if bet.status != 'pending':
+            return Response({'error': 'Cannot cancel active bet'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        bet.status = 'cancelled'
+        bet.save()
+        return Response({'message': 'Bet cancelled successfully'})
+
+    @action(detail=False, methods=['get'])
+    def betting_history(self, request):
+        """Get user's betting history."""
+        bets = Bet.objects.filter(bettor=request.user).order_by('-created_at')
+        serializer = BettingHistorySerializer(bets, many=True)
+        return Response(serializer.data)
+
+
+class BettingPoolViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for BettingPool model.
+    
+    Handles CRUD operations for betting pools with custom actions
+    for pool management and odds calculation.
+    """
+    serializer_class = BettingPoolSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['is_active', 'is_settled', 'callout', 'event']
+    ordering_fields = ['created_at', 'total_pool']
+
+    def get_queryset(self):
+        """Show active betting pools."""
+        return BettingPool.objects.filter(is_active=True)
+
+    @action(detail=True, methods=['get'])
+    def odds(self, request, pk=None):
+        """Get current odds for all participants."""
+        pool = self.get_object()
+        odds_data = {}
+        
+        # Calculate odds for each participant
+        if pool.callout:
+            participants = [pool.callout.challenger, pool.callout.challenged]
+        elif pool.event:
+            participants = [participant.user for participant in pool.event.participants.all()]
+        else:
+            return Response({'error': 'No participants found'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        for participant in participants:
+            odds_data[participant.username] = pool.calculate_odds(participant)
+        
+        return Response(odds_data)
+
+    @action(detail=True, methods=['post'])
+    def close_pool(self, request, pk=None):
+        """Close betting pool before race starts."""
+        pool = self.get_object()
+        pool.close_pool()
+        return Response({'message': 'Betting pool closed'})
+
+    @action(detail=True, methods=['post'])
+    def settle_pool(self, request, pk=None):
+        """Settle betting pool after race completion."""
+        pool = self.get_object()
+        winner_id = request.data.get('winner_id')
+        
+        if not winner_id:
+            return Response({'error': 'Winner ID required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            winner = User.objects.get(id=winner_id)
+            pool.settle_pool(winner)
+            return Response({'message': 'Betting pool settled'})
+        except User.DoesNotExist:
+            return Response({'error': 'Winner not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ============================================================================
+# NOTIFICATION VIEWSET
+# ============================================================================
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Notification model.
+    
+    Handles CRUD operations for user notifications with custom actions
+    for notification management.
+    """
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['notification_type', 'is_read']
+    ordering_fields = ['created_at']
+
+    def get_queryset(self):
+        """Only show user's own notifications."""
+        return Notification.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Automatically set the current user."""
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def mark_as_read(self, request, pk=None):
+        """Mark notification as read."""
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({'message': 'Notification marked as read'})
+
+    @action(detail=False, methods=['post'])
+    def mark_all_as_read(self, request):
+        """Mark all notifications as read."""
+        Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({'message': 'All notifications marked as read'})
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """Get count of unread notifications."""
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
+        return Response({'unread_count': count})
+
+
+# ============================================================================
+# SUBSCRIPTION PLANS API
+# ============================================================================
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def subscription_plans(request):
+    """
+    Get available subscription plans.
+    
+    Returns a list of available subscription plans with pricing and features.
+    """
+    plans = [
+        {
+            'plan_type': 'basic',
+            'name': 'Basic Plan',
+            'price': 9.99,
+            'currency': 'USD',
+            'features': [
+                'Basic race tracking',
+                'Limited marketplace access',
+                'Standard support'
+            ],
+            'is_popular': False,
+            'is_current': False
+        },
+        {
+            'plan_type': 'premium',
+            'name': 'Premium Plan',
+            'price': 19.99,
+            'currency': 'USD',
+            'features': [
+                'Advanced race analytics',
+                'Full marketplace access',
+                'Priority support',
+                'Custom car profiles',
+                'Betting features'
+            ],
+            'is_popular': True,
+            'is_current': False
+        },
+        {
+            'plan_type': 'pro',
+            'name': 'Pro Plan',
+            'price': 39.99,
+            'currency': 'USD',
+            'features': [
+                'All Premium features',
+                'Event organization',
+                'Advanced betting pools',
+                'API access',
+                'Dedicated support'
+            ],
+            'is_popular': False,
+            'is_current': False
+        }
+    ]
+    
+    # Check user's current subscription
+    current_subscription = Subscription.objects.filter(
+        user=request.user, 
+        status='active'
+    ).first()
+    
+    if current_subscription:
+        for plan in plans:
+            if plan['plan_type'] == current_subscription.subscription_type:
+                plan['is_current'] = True
+                break
+    
+    serializer = SubscriptionPlanSerializer(plans, many=True)
+    return Response(serializer.data) 

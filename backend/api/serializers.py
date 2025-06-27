@@ -18,7 +18,9 @@ from core.models import (
     UserProfile, Track, Event, Callout, RaceResult, 
     Marketplace, MarketplaceImage, EventParticipant,
     Friendship, Message, CarProfile, CarModification, 
-    CarImage, UserPost, PostComment
+    CarImage, UserPost, PostComment, Subscription, Payment,
+    UserWallet, MarketplaceOrder, MarketplaceReview, Bet, BettingPool,
+    Notification
 )
 from django.db import models
 
@@ -408,7 +410,7 @@ class UserProfileDetailSerializer(UserProfileSerializer):
 
     def get_friendship_status(self, obj):
         """
-        Get the friendship status between current user and profile user.
+        Get the friendship status between the current user and profile user.
         
         Args:
             obj: UserProfile instance
@@ -417,12 +419,233 @@ class UserProfileDetailSerializer(UserProfileSerializer):
             str: Friendship status or None
         """
         request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return None
+        if request and request.user.is_authenticated:
+            if request.user == obj.user:
+                return 'self'
+            
+            friendship = Friendship.objects.filter(
+                models.Q(sender=request.user, receiver=obj.user) |
+                models.Q(sender=obj.user, receiver=request.user)
+            ).first()
+            
+            if friendship:
+                return friendship.status
+        return None
+
+
+# ============================================================================
+# PAYMENT & SUBSCRIPTION SERIALIZERS
+# ============================================================================
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Subscription model.
+    
+    Includes nested user data and computed is_active field.
+    Protects user and timestamp fields from modification.
+    """
+    user = UserSerializer(read_only=True)
+    is_active = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Subscription
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at', 'updated_at']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Payment model.
+    
+    Includes nested user data and related object information.
+    Protects user and timestamp fields from modification.
+    """
+    user = UserSerializer(read_only=True)
+    subscription = SubscriptionSerializer(read_only=True)
+    marketplace_item = MarketplaceSerializer(read_only=True)
+    callout = CalloutSerializer(read_only=True)
+    event = EventSerializer(read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at', 'updated_at']
+
+
+class UserWalletSerializer(serializers.ModelSerializer):
+    """
+    Serializer for UserWallet model.
+    
+    Includes nested user data and computed can_afford method.
+    Protects user and timestamp fields from modification.
+    """
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = UserWallet
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at', 'updated_at']
+
+
+# ============================================================================
+# ENHANCED MARKETPLACE SERIALIZERS
+# ============================================================================
+
+class MarketplaceOrderSerializer(serializers.ModelSerializer):
+    """
+    Serializer for MarketplaceOrder model.
+    
+    Includes nested buyer, seller, item, and payment data.
+    Protects buyer and timestamp fields from modification.
+    """
+    buyer = UserSerializer(read_only=True)
+    seller = UserSerializer(read_only=True)
+    item = MarketplaceSerializer(read_only=True)
+    payment = PaymentSerializer(read_only=True)
+
+    class Meta:
+        model = MarketplaceOrder
+        fields = '__all__'
+        read_only_fields = ['buyer', 'created_at', 'updated_at']
+
+
+class MarketplaceReviewSerializer(serializers.ModelSerializer):
+    """
+    Serializer for MarketplaceReview model.
+    
+    Includes nested order and reviewer data.
+    Protects reviewer and timestamp fields from modification.
+    """
+    order = MarketplaceOrderSerializer(read_only=True)
+    reviewer = UserSerializer(read_only=True)
+
+    class Meta:
+        model = MarketplaceReview
+        fields = '__all__'
+        read_only_fields = ['reviewer', 'created_at', 'updated_at']
+
+
+# ============================================================================
+# BETTING SERIALIZERS
+# ============================================================================
+
+class BetSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Bet model.
+    
+    Includes nested bettor, callout, event, and payment data.
+    Protects bettor and timestamp fields from modification.
+    """
+    bettor = UserSerializer(read_only=True)
+    callout = CalloutSerializer(read_only=True)
+    event = EventSerializer(read_only=True)
+    selected_winner = UserSerializer(read_only=True)
+    actual_winner = UserSerializer(read_only=True)
+    payment = PaymentSerializer(read_only=True)
+
+    class Meta:
+        model = Bet
+        fields = '__all__'
+        read_only_fields = ['bettor', 'created_at', 'updated_at']
+
+
+class BettingPoolSerializer(serializers.ModelSerializer):
+    """
+    Serializer for BettingPool model.
+    
+    Includes nested callout and event data, plus computed bet count.
+    """
+    callout = CalloutSerializer(read_only=True)
+    event = EventSerializer(read_only=True)
+    bet_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BettingPool
+        fields = '__all__'
+
+    def get_bet_count(self, obj):
+        """
+        Get the number of bets in the pool.
         
-        friendship = Friendship.objects.filter(
-            models.Q(sender=request.user, receiver=obj.user) |
-            models.Q(sender=obj.user, receiver=request.user)
-        ).first()
-        
-        return friendship.status if friendship else None 
+        Args:
+            obj: BettingPool instance
+            
+        Returns:
+            int: Number of bets
+        """
+        return obj.bets.count()
+
+
+# ============================================================================
+# NOTIFICATION SERIALIZERS
+# ============================================================================
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Notification model.
+    
+    Includes nested user and related object data.
+    Protects user and timestamp fields from modification.
+    """
+    user = UserSerializer(read_only=True)
+    payment = PaymentSerializer(read_only=True)
+    bet = BetSerializer(read_only=True)
+    marketplace_order = MarketplaceOrderSerializer(read_only=True)
+    callout = CalloutSerializer(read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at']
+
+
+# ============================================================================
+# SPECIALIZED SERIALIZERS FOR FRONTEND
+# ============================================================================
+
+class WalletTransactionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for wallet transactions (deposits/withdrawals).
+    
+    Simplified serializer for wallet transaction history.
+    """
+    payment_type_display = serializers.CharField(source='get_payment_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = ['id', 'payment_type', 'payment_type_display', 'amount', 'currency', 
+                 'status', 'status_display', 'description', 'created_at']
+
+
+class BettingHistorySerializer(serializers.ModelSerializer):
+    """
+    Serializer for user betting history.
+    
+    Simplified serializer for displaying user's betting history.
+    """
+    bet_type_display = serializers.CharField(source='get_bet_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    selected_winner_name = serializers.CharField(source='selected_winner.username', read_only=True)
+    actual_winner_name = serializers.CharField(source='actual_winner.username', read_only=True)
+
+    class Meta:
+        model = Bet
+        fields = ['id', 'bet_type', 'bet_type_display', 'bet_amount', 'odds', 
+                 'potential_payout', 'selected_winner_name', 'status', 'status_display',
+                 'actual_winner_name', 'payout_amount', 'created_at', 'settled_at']
+
+
+class SubscriptionPlanSerializer(serializers.Serializer):
+    """
+    Serializer for subscription plan information.
+    
+    Used for displaying available subscription plans and their features.
+    """
+    plan_type = serializers.CharField()
+    name = serializers.CharField()
+    price = serializers.DecimalField(max_digits=8, decimal_places=2)
+    currency = serializers.CharField()
+    features = serializers.ListField(child=serializers.CharField())
+    is_popular = serializers.BooleanField(default=False)
+    is_current = serializers.BooleanField(default=False) 

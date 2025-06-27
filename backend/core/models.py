@@ -10,12 +10,10 @@ This module contains all the database models for the CalloutRacing application, 
 
 All models use Django's ORM and include proper relationships, validations, and metadata.
 """
-
-from django.db import models
-from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils import timezone
-
+from django.db import models  # type: ignore
+from django.contrib.auth.models import User  # type: ignore
+from django.core.validators import MinValueValidator, MaxValueValidator  # type: ignore
+from django.utils import timezone  # type: ignore
 
 class UserProfile(models.Model):
     """
@@ -519,4 +517,455 @@ class PostComment(models.Model):
         ordering = ['created_at']
 
     def __str__(self):
-        return f"{self.user.username} on {self.post}: {self.content[:30]}" 
+        return f"Comment by {self.user.username} on {self.post.id}"
+
+
+# ============================================================================
+# PAYMENT & SUBSCRIPTION MODELS
+# ============================================================================
+
+class Subscription(models.Model):
+    """
+    User subscription plans for premium features.
+    
+    This model manages subscription plans and user subscriptions,
+    including different tiers and payment processing.
+    """
+    SUBSCRIPTION_TYPES = [
+        ('basic', 'Basic'),
+        ('premium', 'Premium'),
+        ('pro', 'Pro'),
+        ('enterprise', 'Enterprise'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),
+        ('pending', 'Pending'),
+        ('failed', 'Failed'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
+    subscription_type = models.CharField(max_length=20, choices=SUBSCRIPTION_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Pricing
+    amount = models.DecimalField(max_digits=8, decimal_places=2, help_text="Monthly subscription amount")
+    currency = models.CharField(max_length=3, default='USD', help_text="Currency code")
+    
+    # Billing cycle
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(blank=True, null=True)
+    next_billing_date = models.DateTimeField(blank=True, null=True)
+    
+    # Payment provider info
+    payment_provider = models.CharField(max_length=50, default='stripe', help_text="Payment provider (stripe, paypal, etc.)")
+    provider_subscription_id = models.CharField(max_length=255, blank=True, help_text="External subscription ID")
+    
+    # Features included
+    features = models.JSONField(default=dict, help_text="Features included in this subscription")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.subscription_type} ({self.status})"
+
+    @property
+    def is_active(self):
+        """Check if subscription is currently active."""
+        return self.status == 'active' and (self.end_date is None or self.end_date > timezone.now())
+
+
+class Payment(models.Model):
+    """
+    Payment transactions for subscriptions, marketplace purchases, and betting.
+    
+    This model tracks all payment transactions including subscriptions,
+    marketplace purchases, race wagers, and other financial transactions.
+    """
+    PAYMENT_TYPES = [
+        ('subscription', 'Subscription'),
+        ('marketplace', 'Marketplace Purchase'),
+        ('wager', 'Race Wager'),
+        ('event_fee', 'Event Entry Fee'),
+        ('refund', 'Refund'),
+        ('withdrawal', 'Withdrawal'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Amount and currency
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='USD')
+    
+    # Payment provider info
+    payment_provider = models.CharField(max_length=50, default='stripe')
+    provider_payment_id = models.CharField(max_length=255, blank=True)
+    provider_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    
+    # Related objects
+    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
+    marketplace_item = models.ForeignKey(Marketplace, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
+    callout = models.ForeignKey(Callout, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
+    
+    # Description and metadata
+    description = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, help_text="Additional payment metadata")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.payment_type} - ${self.amount} ({self.status})"
+
+
+class UserWallet(models.Model):
+    """
+    User wallet for managing account balance and transactions.
+    
+    This model tracks user account balances and provides a foundation
+    for betting, marketplace transactions, and other financial features.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=3, default='USD')
+    
+    # Wallet settings
+    is_active = models.BooleanField(default=True)
+    daily_limit = models.DecimalField(max_digits=10, decimal_places=2, default=1000)
+    monthly_limit = models.DecimalField(max_digits=10, decimal_places=2, default=10000)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet - ${self.balance}"
+
+    def can_afford(self, amount):
+        """Check if user can afford a transaction."""
+        return self.balance >= amount
+
+    def add_funds(self, amount, description="Deposit"):
+        """Add funds to wallet."""
+        self.balance += amount
+        self.save()
+        
+        # Create payment record
+        Payment.objects.create(
+            user=self.user,
+            payment_type='deposit',
+            status='completed',
+            amount=amount,
+            description=description
+        )
+
+    def deduct_funds(self, amount, description="Withdrawal"):
+        """Deduct funds from wallet."""
+        if self.can_afford(amount):
+            self.balance -= amount
+            self.save()
+            
+            # Create payment record
+            Payment.objects.create(
+                user=self.user,
+                payment_type='withdrawal',
+                status='completed',
+                amount=amount,
+                description=description
+            )
+            return True
+        return False
+
+
+# ============================================================================
+# ENHANCED MARKETPLACE MODELS
+# ============================================================================
+
+class MarketplaceOrder(models.Model):
+    """
+    Orders for marketplace purchases.
+    
+    This model tracks marketplace orders including buyer/seller info,
+    payment status, shipping details, and order history.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sales')
+    item = models.ForeignKey(Marketplace, on_delete=models.CASCADE, related_name='orders')
+    
+    # Order details
+    quantity = models.IntegerField(default=1)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Shipping information
+    shipping_address = models.TextField(blank=True)
+    shipping_method = models.CharField(max_length=50, blank=True)
+    tracking_number = models.CharField(max_length=100, blank=True)
+    
+    # Payment
+    payment = models.OneToOneField(Payment, on_delete=models.SET_NULL, blank=True, null=True, related_name='marketplace_order')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(blank=True, null=True)
+    shipped_at = models.DateTimeField(blank=True, null=True)
+    delivered_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.buyer.username} -> {self.seller.username}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class MarketplaceReview(models.Model):
+    """
+    Reviews for marketplace transactions.
+    
+    This model allows users to leave reviews for marketplace purchases,
+    helping build trust and reputation in the marketplace.
+    """
+    order = models.OneToOneField(MarketplaceOrder, on_delete=models.CASCADE, related_name='review')
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_reviews')
+    
+    # Review details
+    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    title = models.CharField(max_length=200)
+    comment = models.TextField()
+    
+    # Review metadata
+    is_verified_purchase = models.BooleanField(default=True)
+    helpful_votes = models.IntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Review by {self.reviewer.username} - {self.rating} stars"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+# ============================================================================
+# BETTING & WAGERING MODELS
+# ============================================================================
+
+class Bet(models.Model):
+    """
+    Betting system for races and events.
+    
+    This model manages betting on races, including odds, payouts,
+    and bet tracking for both callouts and events.
+    """
+    BET_TYPES = [
+        ('callout', 'Callout Race'),
+        ('event', 'Event Race'),
+        ('tournament', 'Tournament'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('active', 'Active'),
+        ('won', 'Won'),
+        ('lost', 'Lost'),
+        ('cancelled', 'Cancelled'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    bettor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bets')
+    bet_type = models.CharField(max_length=20, choices=BET_TYPES)
+    
+    # Related objects
+    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, blank=True, null=True, related_name='bets')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True, related_name='bets')
+    
+    # Betting details
+    bet_amount = models.DecimalField(max_digits=8, decimal_places=2)
+    odds = models.DecimalField(max_digits=5, decimal_places=2, help_text="Odds ratio (e.g., 2.5 means 2.5x payout)")
+    potential_payout = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Selection
+    selected_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bets_for_winner')
+    
+    # Status and results
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    actual_winner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='bets_won')
+    payout_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    
+    # Payment
+    payment = models.OneToOneField(Payment, on_delete=models.SET_NULL, blank=True, null=True, related_name='bet')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    settled_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Bet by {self.bettor.username} - ${self.bet_amount} on {self.selected_winner.username}"
+
+    def calculate_payout(self):
+        """Calculate potential payout based on odds."""
+        self.potential_payout = self.bet_amount * self.odds
+        self.save()
+
+    def settle_bet(self, winner):
+        """Settle the bet when race is completed."""
+        self.actual_winner = winner
+        self.settled_at = timezone.now()
+        
+        if winner == self.selected_winner:
+            self.status = 'won'
+            self.payout_amount = self.potential_payout
+        else:
+            self.status = 'lost'
+            self.payout_amount = 0
+        
+        self.save()
+
+
+class BettingPool(models.Model):
+    """
+    Betting pools for events and tournaments.
+    
+    This model manages betting pools where multiple users can bet
+    on the same race or event, with odds calculated based on total bets.
+    """
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    
+    # Related objects
+    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, blank=True, null=True, related_name='betting_pools')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True, related_name='betting_pools')
+    
+    # Pool details
+    total_pool = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    house_fee_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=5.0, help_text="House fee as percentage")
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    is_settled = models.BooleanField(default=False)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(blank=True, null=True)
+    settled_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Betting Pool: {self.name} - ${self.total_pool}"
+
+    def calculate_odds(self, participant):
+        """Calculate odds for a participant based on total bets."""
+        participant_bets = self.bets.filter(selected_winner=participant).aggregate(
+            total=models.Sum('bet_amount')
+        )['total'] or 0
+        
+        if participant_bets == 0:
+            return 2.0  # Default odds if no bets
+        
+        return (self.total_pool * (1 - self.house_fee_percentage / 100)) / participant_bets
+
+    def close_pool(self):
+        """Close the betting pool before race starts."""
+        self.is_active = False
+        self.closed_at = timezone.now()
+        self.save()
+
+    def settle_pool(self, winner):
+        """Settle the betting pool after race completion."""
+        self.is_settled = True
+        self.settled_at = timezone.now()
+        
+        # Calculate payouts for winning bets
+        winning_bets = self.bets.filter(selected_winner=winner)
+        total_winning_amount = winning_bets.aggregate(
+            total=models.Sum('bet_amount')
+        )['total'] or 0
+        
+        if total_winning_amount > 0:
+            payout_per_dollar = (self.total_pool * (1 - self.house_fee_percentage / 100)) / total_winning_amount
+            
+            for bet in winning_bets:
+                bet.payout_amount = bet.bet_amount * payout_per_dollar
+                bet.status = 'won'
+                bet.actual_winner = winner
+                bet.settled_at = timezone.now()
+                bet.save()
+        
+        # Mark losing bets
+        losing_bets = self.bets.exclude(selected_winner=winner)
+        for bet in losing_bets:
+            bet.status = 'lost'
+            bet.payout_amount = 0
+            bet.actual_winner = winner
+            bet.settled_at = timezone.now()
+            bet.save()
+        
+        self.save()
+
+
+# ============================================================================
+# NOTIFICATION MODELS
+# ============================================================================
+
+class Notification(models.Model):
+    """
+    User notifications for various events.
+    
+    This model manages notifications for users including payment confirmations,
+    bet settlements, marketplace updates, and other important events.
+    """
+    NOTIFICATION_TYPES = [
+        ('payment', 'Payment'),
+        ('bet', 'Bet'),
+        ('marketplace', 'Marketplace'),
+        ('race', 'Race'),
+        ('subscription', 'Subscription'),
+        ('system', 'System'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    
+    # Content
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    
+    # Related objects (optional)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
+    bet = models.ForeignKey(Bet, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
+    marketplace_order = models.ForeignKey(MarketplaceOrder, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
+    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
+    
+    # Status
+    is_read = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username}: {self.title}"
+
+    class Meta:
+        ordering = ['-created_at'] 
