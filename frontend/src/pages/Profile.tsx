@@ -395,16 +395,18 @@ const Profile = () => {
                         htmlFor="profile-image-upload"
                         className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                       >
-                        <PhotoIcon className="h-4 w-4 mr-2" />
-                        <span>Upload Photo</span>
+                        <div className="flex items-center">
+                          <PhotoIcon className="h-4 w-4 mr-2" />
+                          <span>Upload Photo</span>
+                        </div>
+                        <input
+                          id="profile-image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageUpload(e, 'profile')}
+                          className="sr-only"
+                        />
                       </label>
-                      <input
-                        id="profile-image-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload(e, 'profile')}
-                        className="sr-only"
-                      />
                     </div>
                   </div>
                 </div>
@@ -436,16 +438,18 @@ const Profile = () => {
                       htmlFor="cover-image-upload"
                       className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                     >
-                      <PhotoIcon className="h-4 w-4 mr-2" />
-                      <span>Upload Cover</span>
+                      <div className="flex items-center">
+                        <PhotoIcon className="h-4 w-4 mr-2" />
+                        <span>Upload Cover</span>
+                      </div>
+                      <input
+                        id="cover-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'cover')}
+                        className="sr-only"
+                      />
                     </label>
-                    <input
-                      id="cover-image-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'cover')}
-                      className="sr-only"
-                    />
                   </div>
                 </div>
               </div>
