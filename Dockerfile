@@ -5,8 +5,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
-WORKDIR /app
+# Set work directory to backend
+WORKDIR /app/backend
 
 # Install system dependencies
 RUN apt-get update \
