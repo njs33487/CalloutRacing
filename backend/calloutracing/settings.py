@@ -227,7 +227,6 @@ LOGGING = {
         'level': 'INFO',
     },
 }
-
 # Email Configuration
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')

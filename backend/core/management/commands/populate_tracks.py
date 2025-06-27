@@ -461,15 +461,14 @@ class Command(BaseCommand):
                 created_tracks.append(track)
                 
             self.stdout.write(
-                self.style.SUCCESS(
+                self.style.SUCCESS(  # type: ignore
                     f'Successfully created {len(created_tracks)} tracks from the United States racing circuit!'
                 )
             )
-            
             # Print summary by type
-            drag_tracks = Track.objects.filter(track_type='drag').count()
-            road_tracks = Track.objects.filter(track_type='road').count()
-            oval_tracks = Track.objects.filter(track_type='oval').count()
+            drag_tracks = len([t for t in created_tracks if t.track_type == 'drag'])
+            road_tracks = len([t for t in created_tracks if t.track_type == 'road'])
+            oval_tracks = len([t for t in created_tracks if t.track_type == 'oval'])
             
             self.stdout.write(f'Drag Strips: {drag_tracks}')
             self.stdout.write(f'Road Courses: {road_tracks}')
