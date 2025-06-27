@@ -113,7 +113,7 @@ export default function CreateEvent() {
             <option value="">Select a track</option>
             {tracks.map((track: Track) => (
               <option key={track.id} value={track.id}>
-                {track.name} - {track.location}
+                {`${track.name} - ${track.location}`}
               </option>
             ))}
           </select>

@@ -114,9 +114,11 @@ export default function CreateCallout() {
                     onClick={() => handleUserSelect(user)}
                     className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100"
                   >
-                    <div className="font-medium">{user.username}</div>
-                    <div className="text-sm text-gray-600">
-                      {user.first_name} {user.last_name}
+                    <div>
+                      <div className="font-medium">{user.username}</div>
+                      <div className="text-sm text-gray-600">
+                        {user.first_name} {user.last_name}
+                      </div>
                     </div>
                   </button>
                 ))}
