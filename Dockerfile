@@ -5,8 +5,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory to backend
-WORKDIR /app/backend
+# Set work directory
+WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update \
@@ -16,18 +16,22 @@ RUN apt-get update \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy start script first
+COPY start.sh .
+RUN chmod +x start.sh
+
 # Install Python dependencies
-COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Copy project
-COPY backend/ .
+COPY backend/ backend/
 
 # Collect static files
-RUN python manage.py collectstatic --noinput
+RUN cd backend && python manage.py collectstatic --noinput
 
 # Expose port
 EXPOSE 8000
 
 # Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"] 
+CMD ["./start.sh"] 
