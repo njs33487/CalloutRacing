@@ -1,352 +1,140 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { CalendarIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { api } from '../services/api'
-import { Track } from '../types'
-
-interface ImageFile {
-  file: File;
-  preview: string;
-  id: string;
-}
+import { useState } from 'react';
 
 export default function CreateEvent() {
-  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     event_type: 'race',
     track: '',
     start_date: '',
     end_date: '',
     max_participants: '',
-    entry_fee: '',
-    description: '',
-    is_public: true,
-    rules: ''
-  })
-  const [images, setImages] = useState<ImageFile[]>([])
-
-  // Fetch tracks for dropdown
-  const { data: tracksData } = useQuery({
-    queryKey: ['tracks'],
-    queryFn: () => api.get('/tracks/').then(res => res.data)
-  })
-
-  const tracks = tracksData?.results || []
-
-  // Create event mutation
-  const createEvent = useMutation({
-    mutationFn: async (data: any) => {
-      const formDataToSend = new FormData()
-      
-      // Add form fields
-      Object.keys(data).forEach(key => {
-        if (key !== 'images') {
-          formDataToSend.append(key, data[key])
-        }
-      })
-      
-      // Add images
-      images.forEach((imageFile, index) => {
-        formDataToSend.append('images', imageFile.file)
-        if (index === 0) {
-          formDataToSend.append('primary_image', 'true')
-        }
-      })
-      
-      return api.post('/events/', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
-    },
-    onSuccess: () => {
-      navigate('/app/events')
-    }
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    const submitData = {
-      ...formData,
-      track: parseInt(formData.track) || null,
-      max_participants: parseInt(formData.max_participants) || null,
-      entry_fee: parseFloat(formData.entry_fee) || 0,
-      is_public: formData.is_public,
-      images
-    }
-
-    createEvent.mutate(submitData)
-  }
+    entry_fee: ''
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    
-    files.forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const imageFile: ImageFile = {
-            file,
-            preview: e.target?.result as string,
-            id: Math.random().toString(36).substr(2, 9)
-          }
-          setImages(prev => [...prev, imageFile])
-        }
-        reader.readAsDataURL(file)
-      }
-    })
-  }
-
-  const removeImage = (id: string) => {
-    setImages(prev => prev.filter(img => img.id !== id))
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Submit logic here
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center mb-6">
-        <CalendarIcon className="h-8 w-8 text-primary-600 mr-3" />
-        <h1 className="text-3xl font-bold text-gray-900">Create Event</h1>
-      </div>
-
+      <h1 className="text-3xl font-bold mb-6">Create Event</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Event Title
-            </label>
+            <label htmlFor="title" className="block mb-2">Event Title</label>
             <input
               type="text"
               id="title"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter event title"
+              className="w-full border px-3 py-2 rounded"
               required
             />
           </div>
-
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
+            <label htmlFor="description" className="block mb-2">Description</label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Describe your event..."
+              className="w-full border px-3 py-2 rounded"
               required
             />
           </div>
-
           <div>
-            <label htmlFor="event_type" className="block text-sm font-medium text-gray-700 mb-2">
-              Event Type
-            </label>
+            <label htmlFor="event_type" className="block mb-2">Event Type</label>
             <select
               id="event_type"
               name="event_type"
               value={formData.event_type}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full border px-3 py-2 rounded"
               required
             >
-              <option value="">Select event type</option>
               <option value="race">Race Event</option>
               <option value="meet">Car Meet</option>
               <option value="show">Car Show</option>
               <option value="test">Test & Tune</option>
             </select>
           </div>
-
           <div>
-            <label htmlFor="track" className="block text-sm font-medium text-gray-700 mb-2">
-              Track
-            </label>
-            <select
+            <label htmlFor="track" className="block mb-2">Track</label>
+            <input
+              type="text"
               id="track"
               name="track"
               value={formData.track}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              required
-            >
-              <option value="">Select a track</option>
-              {tracks.map((track: Track) => (
-                <option key={track.id} value={track.id.toString()}>{track.name}</option>
-              ))}
-            </select>
+              className="w-full border px-3 py-2 rounded"
+            />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date & Time
-              </label>
+              <label htmlFor="start_date" className="block mb-2">Start Date & Time</label>
               <input
                 type="datetime-local"
                 id="start_date"
                 name="start_date"
                 value={formData.start_date}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border px-3 py-2 rounded"
                 required
               />
             </div>
             <div>
-              <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-2">
-                End Date & Time
-              </label>
+              <label htmlFor="end_date" className="block mb-2">End Date & Time</label>
               <input
                 type="datetime-local"
                 id="end_date"
                 name="end_date"
                 value={formData.end_date}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border px-3 py-2 rounded"
                 required
               />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="max_participants" className="block text-sm font-medium text-gray-700 mb-2">
-                Max Participants (Optional)
-              </label>
+              <label htmlFor="max_participants" className="block mb-2">Max Participants (Optional)</label>
               <input
                 type="number"
                 id="max_participants"
                 name="max_participants"
                 value={formData.max_participants}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Enter max participants"
+                className="w-full border px-3 py-2 rounded"
                 min="1"
               />
             </div>
             <div>
-              <label htmlFor="entry_fee" className="block text-sm font-medium text-gray-700 mb-2">
-                Entry Fee (Optional)
-              </label>
+              <label htmlFor="entry_fee" className="block mb-2">Entry Fee (Optional)</label>
               <input
                 type="number"
                 id="entry_fee"
                 name="entry_fee"
                 value={formData.entry_fee}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Enter entry fee"
+                className="w-full border px-3 py-2 rounded"
                 min="0"
                 step="0.01"
               />
             </div>
           </div>
-
-          <div>
-            <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
-              Images (Optional)
-            </label>
-            <div className="space-y-4">
-              {/* Image Upload Input */}
-              <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
-                <div className="space-y-1 text-center">
-                  <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <label
-                        htmlFor="image-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
-                      >
-                        <span>Upload images</span>
-                        <input
-                          id="image-upload"
-                          name="image-upload"
-                          type="file"
-                          className="sr-only"
-                          multiple
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
-                </div>
-              </div>
-
-              {/* Image Previews */}
-              {images.length > 0 && (
-                <div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {images.map((image, index) => (
-                      <div key={image.id} className="relative group">
-                        <img
-                          src={image.preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(image.id)}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                        {index === 0 && (
-                          <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
-                            Primary
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {createEvent.error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800">
-                {(createEvent.error as any)?.response?.data?.error || 'Failed to create event. Please try again.'}
-              </p>
-            </div>
-          )}
-
           <div className="flex space-x-4">
-            <button
-              type="button"
-              onClick={() => navigate('/app/events')}
-              className="btn-secondary flex-1"
-              disabled={createEvent.isPending}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-              disabled={createEvent.isPending}
-            >
-              {createEvent.isPending ? 'Creating...' : 'Create Event'}
-            </button>
+            <button type="button" className="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+            <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded">Create Event</button>
           </div>
         </div>
       </form>
     </div>
-  )
+  );
 } 

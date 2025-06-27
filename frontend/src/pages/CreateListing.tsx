@@ -1,169 +1,72 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
-import { ShoppingBagIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { api } from '../services/api'
-
-interface ImageFile {
-  file: File;
-  preview: string;
-  id: string;
-}
+import { useState } from 'react';
 
 export default function CreateListing() {
-  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     title: '',
+    description: '',
     category: 'parts',
     price: '',
     condition: 'good',
     location: '',
-    description: '',
     contact_phone: '',
     contact_email: '',
     is_negotiable: false,
     trade_offered: false,
     trade_description: ''
-  })
-  const [images, setImages] = useState<ImageFile[]>([])
-
-  // Create listing mutation
-  const createListing = useMutation({
-    mutationFn: async (data: any) => {
-      const formDataToSend = new FormData()
-      
-      // Add form fields
-      Object.keys(data).forEach(key => {
-        if (key !== 'images') {
-          formDataToSend.append(key, data[key])
-        }
-      })
-      
-      // Add images
-      images.forEach((imageFile, index) => {
-        formDataToSend.append('images', imageFile.file)
-        if (index === 0) {
-          formDataToSend.append('primary_image', 'true')
-        }
-      })
-      
-      return api.post('/marketplace/', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
-    },
-    onSuccess: () => {
-      navigate('/app/marketplace')
-    }
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    const submitData = {
-      ...formData,
-      price: parseFloat(formData.price) || 0,
-      is_negotiable: formData.is_negotiable,
-      trade_offered: formData.trade_offered,
-      images
-    }
-
-    createListing.mutate(submitData)
-  }
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.checked
-    })
-  }
+    setFormData({ ...formData, [e.target.name]: e.target.checked });
+  };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    
-    files.forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const imageFile: ImageFile = {
-            file,
-            preview: e.target?.result as string,
-            id: Math.random().toString(36).substr(2, 9)
-          }
-          setImages(prev => [...prev, imageFile])
-        }
-        reader.readAsDataURL(file)
-      }
-    })
-  }
-
-  const removeImage = (id: string) => {
-    setImages(prev => prev.filter(img => img.id !== id))
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Submit logic here
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center mb-6">
-        <ShoppingBagIcon className="h-8 w-8 text-primary-600 mr-3" />
-        <h1 className="text-3xl font-bold text-gray-900">Create Listing</h1>
-      </div>
-
+      <h1 className="text-3xl font-bold mb-6">Create Listing</h1>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Item Title
-            </label>
+            <label htmlFor="title" className="block mb-2">Item Title</label>
             <input
               type="text"
               id="title"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter item title"
+              className="w-full border px-3 py-2 rounded"
               required
             />
           </div>
-
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
+            <label htmlFor="description" className="block mb-2">Description</label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Describe your item..."
+              className="w-full border px-3 py-2 rounded"
               required
             />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
+              <label htmlFor="category" className="block mb-2">Category</label>
               <select
                 id="category"
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border px-3 py-2 rounded"
                 required
               >
-                <option value="">Select category</option>
                 <option value="car">Car</option>
                 <option value="parts">Parts</option>
                 <option value="wheels">Wheels & Tires</option>
@@ -173,18 +76,15 @@ export default function CreateListing() {
               </select>
             </div>
             <div>
-              <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-2">
-                Condition
-              </label>
+              <label htmlFor="condition" className="block mb-2">Condition</label>
               <select
                 id="condition"
                 name="condition"
                 value={formData.condition}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border px-3 py-2 rounded"
                 required
               >
-                <option value="">Select condition</option>
                 <option value="new">New</option>
                 <option value="like_new">Like New</option>
                 <option value="good">Good</option>
@@ -193,73 +93,58 @@ export default function CreateListing() {
               </select>
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                Price ($)
-              </label>
+              <label htmlFor="price" className="block mb-2">Price ($)</label>
               <input
                 type="number"
                 id="price"
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Enter price"
+                className="w-full border px-3 py-2 rounded"
                 min="0"
                 step="0.01"
                 required
               />
             </div>
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location
-              </label>
+              <label htmlFor="location" className="block mb-2">Location</label>
               <input
                 type="text"
                 id="location"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="City, State"
+                className="w-full border px-3 py-2 rounded"
                 required
               />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="contact_phone" className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Phone (Optional)
-              </label>
+              <label htmlFor="contact_phone" className="block mb-2">Contact Phone (Optional)</label>
               <input
                 type="tel"
                 id="contact_phone"
                 name="contact_phone"
                 value={formData.contact_phone}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Enter phone number"
+                className="w-full border px-3 py-2 rounded"
               />
             </div>
             <div>
-              <label htmlFor="contact_email" className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Email (Optional)
-              </label>
+              <label htmlFor="contact_email" className="block mb-2">Contact Email (Optional)</label>
               <input
                 type="email"
                 id="contact_email"
                 name="contact_email"
                 value={formData.contact_email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Enter email address"
+                className="w-full border px-3 py-2 rounded"
               />
             </div>
           </div>
-
           <div className="space-y-4">
             <div className="flex items-center">
               <input
@@ -274,7 +159,6 @@ export default function CreateListing() {
                 Price is negotiable
               </label>
             </div>
-
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -289,115 +173,24 @@ export default function CreateListing() {
               </label>
             </div>
           </div>
-
           {formData.trade_offered && (
             <div>
-              <label htmlFor="trade_description" className="block text-sm font-medium text-gray-700 mb-2">
-                Trade Description
-              </label>
+              <label htmlFor="trade_description" className="block mb-2">Trade Description</label>
               <textarea
                 id="trade_description"
                 name="trade_description"
                 value={formData.trade_description}
                 onChange={handleChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Describe what trades you're looking for..."
+                className="w-full border px-3 py-2 rounded"
               />
             </div>
           )}
-
-          <div>
-            <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
-              Images (Optional)
-            </label>
-            <div className="space-y-4">
-              {/* Image Upload Input */}
-              <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
-                <div className="space-y-1 text-center">
-                  <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <label
-                        htmlFor="image-upload"
-                        className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
-                      >
-                        <span>Upload images</span>
-                        <input
-                          id="image-upload"
-                          name="image-upload"
-                          type="file"
-                          className="sr-only"
-                          multiple
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
-                </div>
-              </div>
-
-              {/* Image Previews */}
-              {images.length > 0 && (
-                <div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {images.map((image, index) => (
-                      <div key={image.id} className="relative group">
-                        <img
-                          src={image.preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(image.id)}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                        {index === 0 && (
-                          <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
-                            Primary
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {createListing.error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800">
-                {(createListing.error as any)?.response?.data?.error || 'Failed to create listing. Please try again.'}
-              </p>
-            </div>
-          )}
-
           <div className="flex space-x-4">
-            <button
-              type="button"
-              onClick={() => navigate('/app/marketplace')}
-              className="btn-secondary flex-1"
-              disabled={createListing.isPending}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary flex-1"
-              disabled={createListing.isPending}
-            >
-              {createListing.isPending ? 'Creating...' : 'Create Listing'}
-            </button>
+            <button type="button" className="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+            <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded">Create Listing</button>
           </div>
         </div>
       </form>
     </div>
-  )
+  );
 } 
