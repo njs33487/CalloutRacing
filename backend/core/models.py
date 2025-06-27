@@ -968,4 +968,36 @@ class Notification(models.Model):
         return f"Notification for {self.user.username}: {self.title}"
 
     class Meta:
+        ordering = ['-created_at']
+
+
+# ============================================================================
+# CONTACT FORM MODEL
+# ============================================================================
+
+class ContactSubmission(models.Model):
+    """
+    Contact form submissions for admin review.
+    
+    This model stores contact form submissions when email is not configured
+    or fails to send, allowing admins to review and respond to inquiries.
+    """
+    name = models.CharField(max_length=100, help_text="Contact person's name")
+    email = models.EmailField(help_text="Contact person's email")
+    subject = models.CharField(max_length=200, help_text="Subject of the inquiry")
+    message = models.TextField(help_text="Contact message content")
+    
+    # Status tracking
+    is_reviewed = models.BooleanField(default=False, help_text="Whether admin has reviewed this submission")
+    is_responded = models.BooleanField(default=False, help_text="Whether admin has responded to this submission")
+    admin_notes = models.TextField(blank=True, help_text="Admin notes about this submission")
+    
+    created_at = models.DateTimeField(auto_now_add=True, help_text="When the submission was received")
+    reviewed_at = models.DateTimeField(blank=True, null=True, help_text="When admin reviewed this submission")
+    responded_at = models.DateTimeField(blank=True, null=True, help_text="When admin responded to this submission")
+
+    def __str__(self):
+        return f"Contact from {self.name} - {self.subject}"
+
+    class Meta:
         ordering = ['-created_at'] 

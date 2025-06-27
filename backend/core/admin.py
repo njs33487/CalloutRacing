@@ -3,8 +3,11 @@ from .models import (
     UserProfile, Track, Event, Callout, RaceResult, 
     Marketplace, MarketplaceImage, EventParticipant,
     Friendship, Message, CarProfile, CarModification, 
-    CarImage, UserPost, PostComment
+    CarImage, UserPost, PostComment,
+    Subscription, Payment, UserWallet, MarketplaceOrder, 
+    MarketplaceReview, Bet, BettingPool, Notification, ContactSubmission
 )
+from django.utils import timezone
 
 
 @admin.register(UserProfile)
@@ -115,4 +118,89 @@ class PostCommentAdmin(admin.ModelAdmin):
     list_display = ['post', 'user', 'created_at']
     list_filter = ['created_at']
     search_fields = ['post__content', 'user__username', 'content']
-    date_hierarchy = 'created_at' 
+    date_hierarchy = 'created_at'
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'subscription_type', 'status', 'start_date', 'end_date']
+    list_filter = ['subscription_type', 'status']
+    search_fields = ['user__username']
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ['user', 'payment_type', 'amount', 'status', 'created_at']
+    list_filter = ['payment_type', 'status', 'created_at']
+    search_fields = ['user__username']
+
+
+@admin.register(UserWallet)
+class UserWalletAdmin(admin.ModelAdmin):
+    list_display = ['user', 'balance', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['user__username']
+
+
+@admin.register(MarketplaceOrder)
+class MarketplaceOrderAdmin(admin.ModelAdmin):
+    list_display = ['buyer', 'seller', 'item', 'quantity', 'total_amount', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['buyer__username', 'seller__username', 'item__title']
+
+
+@admin.register(MarketplaceReview)
+class MarketplaceReviewAdmin(admin.ModelAdmin):
+    list_display = ['reviewer', 'order', 'rating', 'title', 'created_at']
+    list_filter = ['rating', 'is_verified_purchase', 'created_at']
+    search_fields = ['reviewer__username', 'title']
+
+
+@admin.register(Bet)
+class BetAdmin(admin.ModelAdmin):
+    list_display = ['bettor', 'bet_type', 'bet_amount', 'odds', 'status', 'created_at']
+    list_filter = ['bet_type', 'status', 'created_at']
+    search_fields = ['bettor__username']
+
+
+@admin.register(BettingPool)
+class BettingPoolAdmin(admin.ModelAdmin):
+    list_display = ['name', 'total_pool', 'is_active', 'is_settled', 'created_at']
+    list_filter = ['is_active', 'is_settled', 'created_at']
+    search_fields = ['name']
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ['user', 'notification_type', 'title', 'is_read', 'created_at']
+    list_filter = ['notification_type', 'is_read', 'created_at']
+    search_fields = ['user__username', 'title']
+
+
+@admin.register(ContactSubmission)
+class ContactSubmissionAdmin(admin.ModelAdmin):
+    """Admin interface for contact form submissions."""
+    list_display = ['name', 'email', 'subject', 'is_reviewed', 'is_responded', 'created_at']
+    list_filter = ['is_reviewed', 'is_responded', 'created_at']
+    search_fields = ['name', 'email', 'subject', 'message']
+    readonly_fields = ['created_at']
+    
+    fieldsets = (
+        ('Contact Information', {
+            'fields': ('name', 'email', 'subject', 'message')
+        }),
+        ('Status', {
+            'fields': ('is_reviewed', 'is_responded', 'admin_notes')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'reviewed_at', 'responded_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if change and 'is_reviewed' in form.changed_data and obj.is_reviewed:
+            obj.reviewed_at = timezone.now()
+        if change and 'is_responded' in form.changed_data and obj.is_responded:
+            obj.responded_at = timezone.now()
+        super().save_model(request, obj, form, change) 
