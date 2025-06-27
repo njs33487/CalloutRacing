@@ -140,267 +140,269 @@ export default function CreateCallout() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label htmlFor="challenged" className="block text-sm font-medium text-gray-700 mb-2">
-            Challenge User
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              id="challenged"
-              name="challenged"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Search for a user to challenge"
-              required
-            />
-            <div className="absolute right-3 top-2.5">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-            </div>
-            
-            {/* User search dropdown */}
-            {showUserSearch && users.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                {users.map((user: User) => (
-                  <button
-                    key={user.id}
-                    type="button"
-                    onClick={() => handleUserSelect(user)}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100"
-                  >
-                    <div>
-                      <div className="font-medium">{user.username}</div>
-                      <div className="text-sm text-gray-600">{user.first_name} {user.last_name}</div>
-                    </div>
-                  </button>
-                ))}
+        <div className="space-y-6">
+          <div>
+            <label htmlFor="challenged" className="block text-sm font-medium text-gray-700 mb-2">
+              Challenge User
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                id="challenged"
+                name="challenged"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Search for a user to challenge"
+                required
+              />
+              <div className="absolute right-3 top-2.5">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
               </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="race_type" className="block text-sm font-medium text-gray-700 mb-2">
-            Race Type
-          </label>
-          <select
-            id="race_type"
-            name="race_type"
-            value={formData.race_type}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="quarter_mile">Quarter Mile</option>
-            <option value="eighth_mile">Eighth Mile</option>
-            <option value="roll_race">Roll Race</option>
-            <option value="dig_race">Dig Race</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="location_type" className="block text-sm font-medium text-gray-700 mb-2">
-            Location Type
-          </label>
-          <select
-            id="location_type"
-            name="location_type"
-            value={formData.location_type}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="track">Track</option>
-            <option value="street">Street</option>
-          </select>
-        </div>
-
-        {formData.location_type === 'track' ? (
-          <div>
-            <label htmlFor="track" className="block text-sm font-medium text-gray-700 mb-2">
-              Track
-            </label>
-            <select
-              id="track"
-              name="track"
-              value={formData.track}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              required
-            >
-              <option value="">Select a track</option>
-              {tracks.map((track: Track) => (
-                <option key={track.id} value={track.id.toString()}>{track.name}</option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <div>
-            <label htmlFor="street_location" className="block text-sm font-medium text-gray-700 mb-2">
-              Street Location
-            </label>
-            <input
-              type="text"
-              id="street_location"
-              name="street_location"
-              value={formData.street_location}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Enter street location"
-              required
-            />
-          </div>
-        )}
-
-        <div>
-          <label htmlFor="wager_amount" className="block text-sm font-medium text-gray-700 mb-2">
-            Wager (Optional)
-          </label>
-          <input
-            type="number"
-            id="wager_amount"
-            name="wager_amount"
-            value={formData.wager_amount}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Enter amount in dollars"
-            min="0"
-            step="0.01"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="scheduled_date" className="block text-sm font-medium text-gray-700 mb-2">
-            Scheduled Date (Optional)
-          </label>
-          <input
-            type="datetime-local"
-            id="scheduled_date"
-            name="scheduled_date"
-            value={formData.scheduled_date}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="car_details" className="block text-sm font-medium text-gray-700 mb-2">
-            Car Details (Optional)
-          </label>
-          <textarea
-            id="car_details"
-            name="car_details"
-            value={formData.car_details}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Enter car details"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-            Message
-          </label>
-          <textarea
-            id="message"
-            name="message"
-            value={formData.message}
-            onChange={handleChange}
-            rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Add a message to your challenge..."
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
-            Images (Optional)
-          </label>
-          <div className="space-y-4">
-            {/* Image Upload Input */}
-            <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
-              <div className="space-y-1 text-center">
-                <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <div className="flex text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <label
-                      htmlFor="image-upload"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+              
+              {/* User search dropdown */}
+              {showUserSearch && users.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {users.map((user: User) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => handleUserSelect(user)}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100"
                     >
-                      <span>Upload images</span>
-                      <input
-                        id="image-upload"
-                        name="image-upload"
-                        type="file"
-                        className="sr-only"
-                        multiple
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
-              </div>
-            </div>
-
-            {/* Image Previews */}
-            {images.length > 0 && (
-              <div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {images.map((image, index) => (
-                    <div key={image.id} className="relative group">
-                      <img
-                        src={image.preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(image.id)}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                      {index === 0 && (
-                        <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
-                          Primary
-                        </div>
-                      )}
-                    </div>
+                      <div>
+                        <div className="font-medium">{user.username}</div>
+                        <div className="text-sm text-gray-600">{user.first_name} {user.last_name}</div>
+                      </div>
+                    </button>
                   ))}
                 </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="race_type" className="block text-sm font-medium text-gray-700 mb-2">
+              Race Type
+            </label>
+            <select
+              id="race_type"
+              name="race_type"
+              value={formData.race_type}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="quarter_mile">Quarter Mile</option>
+              <option value="eighth_mile">Eighth Mile</option>
+              <option value="roll_race">Roll Race</option>
+              <option value="dig_race">Dig Race</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="location_type" className="block text-sm font-medium text-gray-700 mb-2">
+              Location Type
+            </label>
+            <select
+              id="location_type"
+              name="location_type"
+              value={formData.location_type}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="track">Track</option>
+              <option value="street">Street</option>
+            </select>
+          </div>
+
+          {formData.location_type === 'track' ? (
+            <div>
+              <label htmlFor="track" className="block text-sm font-medium text-gray-700 mb-2">
+                Track
+              </label>
+              <select
+                id="track"
+                name="track"
+                value={formData.track}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+              >
+                <option value="">Select a track</option>
+                {tracks.map((track: Track) => (
+                  <option key={track.id} value={track.id.toString()}>{track.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="street_location" className="block text-sm font-medium text-gray-700 mb-2">
+                Street Location
+              </label>
+              <input
+                type="text"
+                id="street_location"
+                name="street_location"
+                value={formData.street_location}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Enter street location"
+                required
+              />
+            </div>
+          )}
+
+          <div>
+            <label htmlFor="wager_amount" className="block text-sm font-medium text-gray-700 mb-2">
+              Wager (Optional)
+            </label>
+            <input
+              type="number"
+              id="wager_amount"
+              name="wager_amount"
+              value={formData.wager_amount}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Enter amount in dollars"
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="scheduled_date" className="block text-sm font-medium text-gray-700 mb-2">
+              Scheduled Date (Optional)
+            </label>
+            <input
+              type="datetime-local"
+              id="scheduled_date"
+              name="scheduled_date"
+              value={formData.scheduled_date}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="car_details" className="block text-sm font-medium text-gray-700 mb-2">
+              Car Details (Optional)
+            </label>
+            <textarea
+              id="car_details"
+              name="car_details"
+              value={formData.car_details}
+              onChange={handleChange}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Enter car details"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+              Message
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Add a message to your challenge..."
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
+              Images (Optional)
+            </label>
+            <div className="space-y-4">
+              {/* Image Upload Input */}
+              <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
+                <div className="space-y-1 text-center">
+                  <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="flex text-sm text-gray-600">
+                    <div className="flex items-center">
+                      <label
+                        htmlFor="image-upload"
+                        className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                      >
+                        <span>Upload images</span>
+                        <input
+                          id="image-upload"
+                          name="image-upload"
+                          type="file"
+                          className="sr-only"
+                          multiple
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                        />
+                      </label>
+                      <p className="pl-1">or drag and drop</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        {createCallout.error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-800">
-              {(createCallout.error as any)?.response?.data?.error || 'Failed to create callout. Please try again.'}
-            </p>
+              {/* Image Previews */}
+              {images.length > 0 && (
+                <div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {images.map((image, index) => (
+                      <div key={image.id} className="relative group">
+                        <img
+                          src={image.preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(image.id)}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                        {index === 0 && (
+                          <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
+                            Primary
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        )}
 
-        <div className="flex space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate('/app/callouts')}
-            className="btn-secondary flex-1"
-            disabled={createCallout.isPending}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn-primary flex-1"
-            disabled={createCallout.isPending}
-          >
-            {createCallout.isPending ? 'Creating...' : 'Create Callout'}
-          </button>
+          {createCallout.error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800">
+                {(createCallout.error as any)?.response?.data?.error || 'Failed to create callout. Please try again.'}
+              </p>
+            </div>
+          )}
+
+          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate('/app/callouts')}
+              className="btn-secondary flex-1"
+              disabled={createCallout.isPending}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary flex-1"
+              disabled={createCallout.isPending}
+            >
+              {createCallout.isPending ? 'Creating...' : 'Create Callout'}
+            </button>
+          </div>
         </div>
       </form>
     </div>
