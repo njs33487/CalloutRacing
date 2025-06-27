@@ -16,11 +16,16 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-producti
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Parse ALLOWED_HOSTS from environment variable, stripping whitespace
-ALLOWED_HOSTS = [host.strip() for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',') if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',') if host.strip()]  # type: ignore
 
 # Add Railway domain to allowed hosts
 if 'RAILWAY_STATIC_URL' in os.environ:
-    ALLOWED_HOSTS.append(os.environ['RAILWAY_STATIC_URL'].replace('https://', '').replace('http://', ''))
+    try:
+        railway_domain = os.environ['RAILWAY_STATIC_URL'].replace('https://', '').replace('http://', '')
+        if railway_domain and railway_domain not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(railway_domain)
+    except Exception:
+        pass  # Silently fail if there's an issue with the domain
 
 # Add common Railway domains
 ALLOWED_HOSTS.extend([
@@ -159,8 +164,37 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173').split(',')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173').split(',') if origin.strip()]  # type: ignore
+
+# Add Railway frontend domain to CORS if available
+if 'RAILWAY_STATIC_URL' in os.environ:
+    try:
+        railway_frontend = os.environ['RAILWAY_STATIC_URL']
+        if railway_frontend and railway_frontend not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(railway_frontend)
+    except Exception:
+        pass
+
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Security settings for production
 if not DEBUG:
