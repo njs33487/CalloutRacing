@@ -1,4 +1,4 @@
-import { useQuery } from 'react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { 
   BoltIcon, 
@@ -10,17 +10,20 @@ import {
 import { api } from '../services/api'
 
 export default function Home() {
-  const { data: recentCallouts } = useQuery('recent-callouts', () =>
-    api.get('/api/callouts/?limit=5')
-  )
+  const { data: recentCallouts } = useQuery({
+    queryKey: ['recent-callouts'],
+    queryFn: () => api.get('/api/callouts/?limit=5')
+  })
 
-  const { data: upcomingEvents } = useQuery('upcoming-events', () =>
-    api.get('/api/events/?is_upcoming=true&limit=5')
-  )
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ['upcoming-events'],
+    queryFn: () => api.get('/api/events/?is_upcoming=true&limit=5')
+  })
 
-  const { data: marketplaceItems } = useQuery('marketplace-items', () =>
-    api.get('/api/marketplace/?limit=5')
-  )
+  const { data: marketplaceItems } = useQuery({
+    queryKey: ['marketplace-items'],
+    queryFn: () => api.get('/api/marketplace/?limit=5')
+  })
 
   const stats = [
     { name: 'Active Callouts', value: '12', icon: BoltIcon, color: 'text-red-600' },
