@@ -116,9 +116,7 @@ export default function CreateCallout() {
                   >
                     <div>
                       <div className="font-medium">{user.username}</div>
-                      <div className="text-sm text-gray-600">
-                        {user.first_name} {user.last_name}
-                      </div>
+                      <div className="text-sm text-gray-600">{user.first_name} {user.last_name}</div>
                     </div>
                   </button>
                 ))}
