@@ -10,13 +10,17 @@ from django.db import models
 from rest_framework.authtoken.models import Token
 from core.models import (
     UserProfile, Track, Event, Callout, RaceResult, 
-    Marketplace, MarketplaceImage, EventParticipant
+    Marketplace, MarketplaceImage, EventParticipant,
+    Friendship, Message, CarProfile, CarModification, 
+    CarImage, UserPost, PostComment
 )
 from .serializers import (
     UserSerializer, UserProfileSerializer, TrackSerializer, EventSerializer,
     CalloutSerializer, CalloutDetailSerializer, RaceResultSerializer,
     MarketplaceSerializer, MarketplaceDetailSerializer, EventParticipantSerializer,
-    EventDetailSerializer
+    EventDetailSerializer, FriendshipSerializer, MessageSerializer,
+    CarProfileSerializer, CarModificationSerializer, CarImageSerializer,
+    UserPostSerializer, PostCommentSerializer, UserProfileDetailSerializer
 )
 
 
@@ -461,34 +465,281 @@ def user_profile(request):
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
 def stats_view(request):
-    """
-    Get platform statistics
-    """
-    from django.db.models import Count, Q
-    from django.utils import timezone
-    
-    try:
-        # Get counts
-        active_callouts = Callout.objects.filter(
-            Q(status='pending') | Q(status='accepted')
-        ).count()
+    """Get basic stats for the platform"""
+    stats = {
+        'total_users': User.objects.count(),
+        'total_tracks': Track.objects.filter(is_active=True).count(),
+        'total_events': Event.objects.filter(is_active=True).count(),
+        'total_callouts': Callout.objects.count(),
+        'total_marketplace_items': Marketplace.objects.filter(is_active=True).count(),
+    }
+    return Response(stats)
+
+
+# New social feature viewsets
+class FriendshipViewSet(viewsets.ModelViewSet):
+    queryset = Friendship.objects.all()
+    serializer_class = FriendshipSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status']
+    ordering_fields = ['created_at']
+
+    def get_queryset(self):
+        user = self.request.user
+        return Friendship.objects.filter(
+            models.Q(sender=user) | models.Q(receiver=user)
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def accept_friend_request(self, request, pk=None):
+        friendship = self.get_object()
+        if friendship.receiver != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
-        upcoming_events = Event.objects.filter(
-            start_date__gt=timezone.now(),
-            is_active=True
-        ).count()
+        friendship.status = 'accepted'
+        friendship.save()
+        return Response({'message': 'Friend request accepted'})
+
+    @action(detail=True, methods=['post'])
+    def decline_friend_request(self, request, pk=None):
+        friendship = self.get_object()
+        if friendship.receiver != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
-        marketplace_items = Marketplace.objects.filter(is_active=True).count()
+        friendship.status = 'declined'
+        friendship.save()
+        return Response({'message': 'Friend request declined'})
+
+    @action(detail=True, methods=['post'])
+    def block_user(self, request, pk=None):
+        friendship = self.get_object()
+        if friendship.receiver != request.user and friendship.sender != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
-        total_racers = User.objects.count()
+        friendship.status = 'blocked'
+        friendship.save()
+        return Response({'message': 'User blocked'})
+
+    @action(detail=False, methods=['get'])
+    def my_friends(self, request):
+        """Get list of accepted friends"""
+        user = request.user
+        friends = Friendship.objects.filter(
+            (models.Q(sender=user) | models.Q(receiver=user)),
+            status='accepted'
+        )
+        serializer = self.get_serializer(friends, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def pending_requests(self, request):
+        """Get pending friend requests received"""
+        user = request.user
+        pending = Friendship.objects.filter(receiver=user, status='pending')
+        serializer = self.get_serializer(pending, many=True)
+        return Response(serializer.data)
+
+
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['receiver', 'is_read']
+    ordering_fields = ['created_at']
+
+    def get_queryset(self):
+        user = self.request.user
+        return Message.objects.filter(
+            models.Q(sender=user) | models.Q(receiver=user)
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def mark_as_read(self, request, pk=None):
+        message = self.get_object()
+        if message.receiver != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
-        return Response({
-            'active_callouts': active_callouts,
-            'upcoming_events': upcoming_events,
-            'marketplace_items': marketplace_items,
-            'total_racers': total_racers,
-        })
-    except Exception as e:
-        return Response({
-            'error': 'Failed to fetch statistics'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+        message.is_read = True
+        message.save()
+        return Response({'message': 'Message marked as read'})
+
+    @action(detail=False, methods=['get'])
+    def conversation(self, request):
+        """Get conversation with a specific user"""
+        other_user_id = request.query_params.get('user_id')
+        if not other_user_id:
+            return Response({'error': 'user_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            other_user = User.objects.get(id=other_user_id)
+            messages = Message.objects.filter(
+                (models.Q(sender=request.user, receiver=other_user) |
+                 models.Q(sender=other_user, receiver=request.user))
+            ).order_by('created_at')
+            serializer = self.get_serializer(messages, many=True)
+            return Response(serializer.data)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """Get count of unread messages"""
+        count = Message.objects.filter(receiver=request.user, is_read=False).count()
+        return Response({'unread_count': count})
+
+
+class CarProfileViewSet(viewsets.ModelViewSet):
+    queryset = CarProfile.objects.filter(is_active=True)
+    serializer_class = CarProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['make', 'model', 'year', 'fuel_type', 'drivetrain']
+    search_fields = ['name', 'make', 'model', 'description']
+    ordering_fields = ['created_at', 'horsepower', 'best_quarter_mile']
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return CarProfile.objects.filter(is_active=True).select_related('user')
+        return CarProfile.objects.filter(is_active=True)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def my_cars(self, request):
+        """Get current user's cars"""
+        cars = CarProfile.objects.filter(user=request.user, is_active=True)
+        serializer = self.get_serializer(cars, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def set_primary(self, request, pk=None):
+        """Set a car as primary"""
+        car = self.get_object()
+        if car.user != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Remove primary from other cars
+        CarProfile.objects.filter(user=request.user).update(is_primary=False)
+        # Set this car as primary
+        car.is_primary = True
+        car.save()
+        return Response({'message': 'Car set as primary'})
+
+
+class CarModificationViewSet(viewsets.ModelViewSet):
+    queryset = CarModification.objects.all()
+    serializer_class = CarModificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['category', 'car', 'is_installed']
+    search_fields = ['name', 'brand', 'description']
+
+    def perform_create(self, serializer):
+        car_id = self.request.data.get('car_id')
+        if car_id:
+            try:
+                car = CarProfile.objects.get(id=car_id, user=self.request.user)
+                serializer.save(car=car)
+            except CarProfile.DoesNotExist:
+                return Response({'error': 'Car not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CarImageViewSet(viewsets.ModelViewSet):
+    queryset = CarImage.objects.all()
+    serializer_class = CarImageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['car', 'is_primary']
+
+    def perform_create(self, serializer):
+        car_id = self.request.data.get('car_id')
+        if car_id:
+            try:
+                car = CarProfile.objects.get(id=car_id, user=self.request.user)
+                serializer.save(car=car)
+            except CarProfile.DoesNotExist:
+                return Response({'error': 'Car not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UserPostViewSet(viewsets.ModelViewSet):
+    queryset = UserPost.objects.all()
+    serializer_class = UserPostSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['user', 'car']
+    ordering_fields = ['created_at', 'like_count']
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return UserPost.objects.select_related('user', 'car').prefetch_related('likes')
+        return UserPost.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def like_post(self, request, pk=None):
+        post = self.get_object()
+        if request.user in post.likes.all():
+            post.likes.remove(request.user)
+            return Response({'message': 'Post unliked'})
+        else:
+            post.likes.add(request.user)
+            return Response({'message': 'Post liked'})
+
+    @action(detail=False, methods=['get'])
+    def feed(self, request):
+        """Get posts from friends and followed users"""
+        user = request.user
+        
+        # Get friends
+        friends = Friendship.objects.filter(
+            (models.Q(sender=user) | models.Q(receiver=user)),
+            status='accepted'
+        )
+        friend_ids = []
+        for friendship in friends:
+            if friendship.sender == user:
+                friend_ids.append(friendship.receiver.id)
+            else:
+                friend_ids.append(friendship.sender.id)
+        
+        # Get posts from friends and self
+        friend_ids.append(user.id)
+        posts = UserPost.objects.filter(user__id__in=friend_ids).select_related('user', 'car').prefetch_related('likes')
+        serializer = self.get_serializer(posts, many=True)
+        return Response(serializer.data)
+
+
+class PostCommentViewSet(viewsets.ModelViewSet):
+    queryset = PostComment.objects.all()
+    serializer_class = PostCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['post', 'user']
+    ordering_fields = ['created_at']
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+# Enhanced user profile viewset
+class UserProfileDetailViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['location', 'car_make', 'car_model']
+    search_fields = ['user__username', 'bio', 'location']
+
+    def get_queryset(self):
+        return UserProfile.objects.select_related('user').prefetch_related('cars', 'posts') 

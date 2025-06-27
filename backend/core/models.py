@@ -198,11 +198,184 @@ class EventParticipant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_participations')
     car_info = models.TextField(blank=True)
     registration_date = models.DateTimeField(auto_now_add=True)
-    is_confirmed = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
     class Meta:
         unique_together = ['event', 'user']
 
     def __str__(self):
-        return f"{self.user.username} - {self.event.title}" 
+        return f"{self.user.username} - {self.event.title}"
+
+
+class Friendship(models.Model):
+    """Friendship between users"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+        ('blocked', 'Blocked'),
+    ]
+    
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_friend_requests')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_friend_requests')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['sender', 'receiver']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.receiver.username} ({self.status})"
+
+
+class Message(models.Model):
+    """Direct messages between users"""
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.receiver.username}: {self.content[:50]}"
+
+
+class CarProfile(models.Model):
+    """Detailed car profiles for users"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cars')
+    name = models.CharField(max_length=100)  # e.g., "My Daily Driver", "Race Car"
+    make = models.CharField(max_length=50)
+    model = models.CharField(max_length=50)
+    year = models.IntegerField()
+    trim = models.CharField(max_length=100, blank=True)
+    color = models.CharField(max_length=50, blank=True)
+    vin = models.CharField(max_length=17, blank=True)
+    
+    # Engine specs
+    engine_size = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)  # in liters
+    engine_type = models.CharField(max_length=50, blank=True)  # e.g., "V8", "Inline-4", "V6"
+    fuel_type = models.CharField(max_length=20, choices=[
+        ('gasoline', 'Gasoline'),
+        ('diesel', 'Diesel'),
+        ('electric', 'Electric'),
+        ('hybrid', 'Hybrid'),
+    ], default='gasoline')
+    
+    # Performance specs
+    horsepower = models.IntegerField(blank=True, null=True)
+    torque = models.IntegerField(blank=True, null=True)  # lb-ft
+    weight = models.IntegerField(blank=True, null=True)  # lbs
+    transmission = models.CharField(max_length=50, blank=True)
+    drivetrain = models.CharField(max_length=20, choices=[
+        ('fwd', 'Front-Wheel Drive'),
+        ('rwd', 'Rear-Wheel Drive'),
+        ('awd', 'All-Wheel Drive'),
+        ('4wd', 'Four-Wheel Drive'),
+    ], blank=True)
+    
+    # Racing stats
+    best_quarter_mile = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True)
+    best_eighth_mile = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True)
+    best_trap_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    
+    # Description and photos
+    description = models.TextField(blank=True)
+    is_primary = models.BooleanField(default=False)  # User's main car
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_primary', '-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}'s {self.year} {self.make} {self.model}"
+
+
+class CarModification(models.Model):
+    """Modifications for car profiles"""
+    CATEGORY_CHOICES = [
+        ('engine', 'Engine'),
+        ('exhaust', 'Exhaust'),
+        ('intake', 'Intake'),
+        ('turbo', 'Turbo/Supercharger'),
+        ('suspension', 'Suspension'),
+        ('wheels', 'Wheels & Tires'),
+        ('brakes', 'Brakes'),
+        ('interior', 'Interior'),
+        ('exterior', 'Exterior'),
+        ('electronics', 'Electronics'),
+        ('other', 'Other'),
+    ]
+    
+    car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, related_name='modifications')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    name = models.CharField(max_length=200)
+    brand = models.CharField(max_length=100, blank=True)
+    part_number = models.CharField(max_length=100, blank=True)
+    description = models.TextField(blank=True)
+    cost = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    installed_date = models.DateField(blank=True, null=True)
+    is_installed = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-installed_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.car} - {self.name}"
+
+
+class CarImage(models.Model):
+    """Images for car profiles"""
+    car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='car_images/')
+    caption = models.CharField(max_length=200, blank=True)
+    is_primary = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-is_primary', '-created_at']
+
+    def __str__(self):
+        return f"Image for {self.car}"
+
+
+class UserPost(models.Model):
+    """User posts/status updates"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    content = models.TextField()
+    image = models.ImageField(upload_to='post_images/', blank=True, null=True)
+    car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, blank=True, null=True, related_name='posts')
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.content[:50]}"
+
+    @property
+    def like_count(self):
+        return self.likes.count()
+
+
+class PostComment(models.Model):
+    """Comments on user posts"""
+    post = models.ForeignKey(UserPost, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.user.username} on {self.post}: {self.content[:30]}" 

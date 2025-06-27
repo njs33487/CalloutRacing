@@ -1,7 +1,9 @@
 from django.contrib import admin
 from .models import (
     UserProfile, Track, Event, Callout, RaceResult, 
-    Marketplace, MarketplaceImage, EventParticipant
+    Marketplace, MarketplaceImage, EventParticipant,
+    Friendship, Message, CarProfile, CarModification, 
+    CarImage, UserPost, PostComment
 )
 
 
@@ -58,6 +60,59 @@ class MarketplaceImageAdmin(admin.ModelAdmin):
 
 @admin.register(EventParticipant)
 class EventParticipantAdmin(admin.ModelAdmin):
-    list_display = ['event', 'user', 'is_confirmed', 'registration_date']
-    list_filter = ['is_confirmed', 'registration_date']
-    search_fields = ['event__title', 'user__username'] 
+    list_display = ['event', 'user', 'registration_date']
+    list_filter = ['registration_date']
+    search_fields = ['event__title', 'user__username']
+
+
+@admin.register(Friendship)
+class FriendshipAdmin(admin.ModelAdmin):
+    list_display = ['sender', 'receiver', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['sender__username', 'receiver__username']
+    date_hierarchy = 'created_at'
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['sender', 'receiver', 'is_read', 'created_at']
+    list_filter = ['is_read', 'created_at']
+    search_fields = ['sender__username', 'receiver__username', 'content']
+    date_hierarchy = 'created_at'
+
+
+@admin.register(CarProfile)
+class CarProfileAdmin(admin.ModelAdmin):
+    list_display = ['user', 'name', 'make', 'model', 'year', 'is_primary', 'is_active']
+    list_filter = ['make', 'model', 'year', 'fuel_type', 'drivetrain', 'is_primary', 'is_active']
+    search_fields = ['user__username', 'name', 'make', 'model', 'description']
+    date_hierarchy = 'created_at'
+
+
+@admin.register(CarModification)
+class CarModificationAdmin(admin.ModelAdmin):
+    list_display = ['car', 'category', 'name', 'brand', 'is_installed', 'installed_date']
+    list_filter = ['category', 'brand', 'is_installed', 'installed_date']
+    search_fields = ['car__name', 'name', 'brand', 'description']
+
+
+@admin.register(CarImage)
+class CarImageAdmin(admin.ModelAdmin):
+    list_display = ['car', 'is_primary', 'created_at']
+    list_filter = ['is_primary', 'created_at']
+
+
+@admin.register(UserPost)
+class UserPostAdmin(admin.ModelAdmin):
+    list_display = ['user', 'content', 'like_count', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__username', 'content']
+    date_hierarchy = 'created_at'
+
+
+@admin.register(PostComment)
+class PostCommentAdmin(admin.ModelAdmin):
+    list_display = ['post', 'user', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['post__content', 'user__username', 'content']
+    date_hierarchy = 'created_at' 
