@@ -230,22 +230,24 @@ export default function CreateListing() {
               <div className="space-y-1 text-center">
                 <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
                 <div className="flex text-sm text-gray-600">
-                  <label
-                    htmlFor="image-upload"
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
-                  >
-                    <span>Upload images</span>
-                    <input
-                      id="image-upload"
-                      name="image-upload"
-                      type="file"
-                      className="sr-only"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                  <p className="pl-1">or drag and drop</p>
+                  <div className="flex items-center">
+                    <label
+                      htmlFor="image-upload"
+                      className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                    >
+                      <span>Upload images</span>
+                      <input
+                        id="image-upload"
+                        name="image-upload"
+                        type="file"
+                        className="sr-only"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                      />
+                    </label>
+                    <p className="pl-1">or drag and drop</p>
+                  </div>
                 </div>
                 <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
               </div>
