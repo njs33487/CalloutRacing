@@ -371,41 +371,43 @@ const Profile = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Profile Picture
                 </label>
-                <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-600 to-yellow-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
-                    {profileImage ? (
-                      <img
-                        src={profileImage.preview}
-                        alt="Profile Preview"
-                        className="w-full h-full object-cover"
+                <>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-600 to-yellow-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+                      {profileImage ? (
+                        <img
+                          src={profileImage.preview}
+                          alt="Profile Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : profile.profile_picture ? (
+                        <img
+                          src={profile.profile_picture}
+                          alt="Current Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        profile.user.first_name?.[0] || profile.user.username[0]
+                      )}
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="profile-image-upload"
+                        className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        <PhotoIcon className="h-4 w-4 mr-2" />
+                        <span>Upload Photo</span>
+                      </label>
+                      <input
+                        id="profile-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, 'profile')}
+                        className="sr-only"
                       />
-                    ) : profile.profile_picture ? (
-                      <img
-                        src={profile.profile_picture}
-                        alt="Current Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      profile.user.first_name?.[0] || profile.user.username[0]
-                    )}
+                    </div>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="profile-image-upload"
-                      className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                    >
-                      <PhotoIcon className="h-4 w-4 mr-2" />
-                      <span>Upload Photo</span>
-                    </label>
-                    <input
-                      id="profile-image-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'profile')}
-                      className="sr-only"
-                    />
-                  </div>
-                </div>
+                </>
               </div>
 
               {/* Cover Photo Upload */}

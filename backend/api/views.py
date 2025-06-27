@@ -1,3 +1,16 @@
+"""
+Django REST Framework API Views for CalloutRacing Application
+
+This module contains all the API views for the CalloutRacing application, including:
+- User management and authentication
+- Racing events and callouts
+- Marketplace functionality
+- Social features (friends, messages, posts)
+- Car profiles and modifications
+
+All views use Django REST Framework ViewSets for consistent API patterns.
+"""
+
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -25,6 +38,12 @@ from .serializers import (
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only ViewSet for User model.
+    
+    Provides search functionality for users by username, first_name, and last_name.
+    Only authenticated users can access this endpoint.
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -33,6 +52,12 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for UserProfile model.
+    
+    Handles CRUD operations for user profiles with filtering, searching, and ordering.
+    Includes custom actions for updating race statistics.
+    """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -42,18 +67,37 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     ordering_fields = ['wins', 'losses', 'total_races', 'created_at']
 
     def get_queryset(self):
+        """
+        Optimize queryset for list view by using select_related to reduce database queries.
+        """
         if self.action == 'list':
             return UserProfile.objects.select_related('user')
         return UserProfile.objects.all()
 
     @action(detail=True, methods=['post'])
     def update_stats(self, request, pk=None):
+        """
+        Custom action to update race statistics for a user profile.
+        
+        Args:
+            request: HTTP request object
+            pk: Primary key of the user profile
+            
+        Returns:
+            Response with success message
+        """
         profile = self.get_object()
-        # Logic to update race statistics
+        # TODO: Implement race statistics update logic
         return Response({'message': 'Stats updated'})
 
 
 class TrackViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Track model.
+    
+    Handles CRUD operations for racing tracks with filtering and search capabilities.
+    Only active tracks are returned by default.
+    """
     queryset = Track.objects.filter(is_active=True)
     serializer_class = TrackSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -63,6 +107,12 @@ class TrackViewSet(viewsets.ModelViewSet):
 
 
 class EventViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Event model.
+    
+    Handles CRUD operations for racing events with custom actions for joining/leaving events.
+    Only active events are returned by default.
+    """
     queryset = Event.objects.filter(is_active=True)
     serializer_class = EventSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -72,26 +122,54 @@ class EventViewSet(viewsets.ModelViewSet):
     ordering_fields = ['start_date', 'end_date', 'created_at']
 
     def get_serializer_class(self):
+        """
+        Use detailed serializer for retrieve actions to include related data.
+        """
         if self.action == 'retrieve':
             return EventDetailSerializer
         return EventSerializer
 
     def perform_create(self, serializer):
+        """
+        Automatically set the current user as the event organizer.
+        """
         serializer.save(organizer=self.request.user)
 
     @action(detail=True, methods=['post'])
     def join_event(self, request, pk=None):
+        """
+        Custom action to allow users to join an event.
+        
+        Args:
+            request: HTTP request object
+            pk: Primary key of the event
+            
+        Returns:
+            Response with success/error message
+        """
         event = self.get_object()
         user = request.user
         
+        # Check if user is already registered
         if EventParticipant.objects.filter(event=event, user=user).exists():
             return Response({'error': 'Already registered'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Create new participant record
         EventParticipant.objects.create(event=event, user=user)
         return Response({'message': 'Successfully joined event'})
 
     @action(detail=True, methods=['post'])
     def leave_event(self, request, pk=None):
+        """
+        Custom action to allow users to leave an event.
+        
+        Args:
+            request: HTTP request object
+            pk: Primary key of the event
+            
+        Returns:
+            Response with success/error message
+        """
         event = self.get_object()
         user = request.user
         
@@ -104,6 +182,12 @@ class EventViewSet(viewsets.ModelViewSet):
 
 
 class CalloutViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Callout model.
+    
+    Handles CRUD operations for race callouts with custom actions for accepting/declining
+    and completing races. Users can only see callouts they're involved in.
+    """
     queryset = Callout.objects.all()
     serializer_class = CalloutSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -113,22 +197,43 @@ class CalloutViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'scheduled_date']
 
     def get_serializer_class(self):
+        """
+        Use detailed serializer for retrieve actions to include related data.
+        """
         if self.action == 'retrieve':
             return CalloutDetailSerializer
         return CalloutSerializer
 
     def get_queryset(self):
+        """
+        Filter queryset to only show callouts where the current user is involved
+        (either as challenger or challenged).
+        """
         user = self.request.user
         return Callout.objects.filter(
             models.Q(challenger=user) | models.Q(challenged=user)
         )
 
     def perform_create(self, serializer):
+        """
+        Automatically set the current user as the challenger.
+        """
         serializer.save(challenger=self.request.user)
 
     @action(detail=True, methods=['post'])
     def accept_callout(self, request, pk=None):
+        """
+        Custom action to accept a callout.
+        
+        Args:
+            request: HTTP request object
+            pk: Primary key of the callout
+            
+        Returns:
+            Response with success/error message
+        """
         callout = self.get_object()
+        # Verify the current user is the challenged party
         if callout.challenged != request.user:
             return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
@@ -138,7 +243,18 @@ class CalloutViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def decline_callout(self, request, pk=None):
+        """
+        Custom action to decline a callout.
+        
+        Args:
+            request: HTTP request object
+            pk: Primary key of the callout
+            
+        Returns:
+            Response with success/error message
+        """
         callout = self.get_object()
+        # Verify the current user is the challenged party
         if callout.challenged != request.user:
             return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
@@ -148,7 +264,18 @@ class CalloutViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def complete_race(self, request, pk=None):
+        """
+        Custom action to complete a race and update user statistics.
+        
+        Args:
+            request: HTTP request object containing winner_id
+            pk: Primary key of the callout
+            
+        Returns:
+            Response with success/error message
+        """
         callout = self.get_object()
+        # Verify callout is accepted before completing
         if callout.status != 'accepted':
             return Response({'error': 'Callout must be accepted first'}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -158,21 +285,25 @@ class CalloutViewSet(viewsets.ModelViewSet):
         
         try:
             winner = User.objects.get(id=winner_id)
+            # Verify winner is one of the participants
             if winner not in [callout.challenger, callout.challenged]:
                 return Response({'error': 'Invalid winner'}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Update callout status and set winner
             callout.status = 'completed'
             callout.winner = winner
             callout.save()
             
-            # Update user profiles
+            # Determine loser and update both user profiles
             loser = callout.challenged if winner == callout.challenger else callout.challenger
             
+            # Update winner's profile
             winner_profile = winner.profile
             winner_profile.wins += 1
             winner_profile.total_races += 1
             winner_profile.save()
             
+            # Update loser's profile
             loser_profile = loser.profile
             loser_profile.losses += 1
             loser_profile.total_races += 1
@@ -184,6 +315,11 @@ class CalloutViewSet(viewsets.ModelViewSet):
 
 
 class RaceResultViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for RaceResult model.
+    
+    Handles CRUD operations for race results with filtering and ordering capabilities.
+    """
     queryset = RaceResult.objects.all()
     serializer_class = RaceResultSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -193,6 +329,12 @@ class RaceResultViewSet(viewsets.ModelViewSet):
 
 
 class MarketplaceViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Marketplace model.
+    
+    Handles CRUD operations for marketplace listings with filtering, searching,
+    and ordering. Includes view tracking and custom actions for user's own listings.
+    """
     queryset = Marketplace.objects.filter(is_active=True)
     serializer_class = MarketplaceSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -202,14 +344,23 @@ class MarketplaceViewSet(viewsets.ModelViewSet):
     ordering_fields = ['price', 'created_at', 'views']
 
     def get_serializer_class(self):
+        """
+        Use detailed serializer for retrieve actions to include related data.
+        """
         if self.action == 'retrieve':
             return MarketplaceDetailSerializer
         return MarketplaceSerializer
 
     def perform_create(self, serializer):
+        """
+        Automatically set the current user as the seller.
+        """
         serializer.save(seller=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
+        """
+        Override retrieve to increment view count when a listing is viewed.
+        """
         instance = self.get_object()
         instance.views += 1
         instance.save()
@@ -218,12 +369,23 @@ class MarketplaceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def my_listings(self, request):
+        """
+        Custom action to get current user's marketplace listings.
+        
+        Returns:
+            List of marketplace items created by the current user
+        """
         queryset = self.queryset.filter(seller=request.user)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
 
 class EventParticipantViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for EventParticipant model.
+    
+    Handles CRUD operations for event participants with filtering capabilities.
+    """
     queryset = EventParticipant.objects.all()
     serializer_class = EventParticipantSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -235,7 +397,16 @@ class EventParticipantViewSet(viewsets.ModelViewSet):
 @permission_classes([permissions.AllowAny])
 def contact_form(request):
     """
-    Handle contact form submissions and send email notifications
+    Handle contact form submissions and send email notifications.
+    
+    This endpoint allows anyone to submit a contact form. It sends an email
+    to the admin and a confirmation email to the user.
+    
+    Args:
+        request: HTTP request object containing name, email, subject, and message
+        
+    Returns:
+        Response with success/error message
     """
     try:
         name = request.data.get('name')
@@ -243,12 +414,13 @@ def contact_form(request):
         subject = request.data.get('subject')
         message = request.data.get('message')
         
+        # Validate required fields
         if not all([name, email, subject, message]):
             return Response({
                 'error': 'All fields are required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Email content
+        # Prepare email content for admin notification
         email_subject = f"CalloutRacing Contact: {subject}"
         email_body = f"""
 New contact form submission from CalloutRacing:
@@ -273,7 +445,7 @@ This message was sent from the CalloutRacing contact form.
             fail_silently=False,
         )
         
-        # Send confirmation email to user
+        # Prepare confirmation email for user
         confirmation_subject = "Thank you for contacting CalloutRacing"
         confirmation_body = f"""
 Dear {name},
@@ -288,6 +460,7 @@ Best regards,
 The CalloutRacing Team
         """
         
+        # Send confirmation email to user
         send_mail(
             subject=confirmation_subject,
             message=confirmation_body,
@@ -310,11 +483,20 @@ The CalloutRacing Team
 @permission_classes([permissions.AllowAny])
 def login_view(request):
     """
-    User login endpoint - supports email usernames
+    User login endpoint - supports email usernames.
+    
+    Authenticates users and returns a token for API access.
+    
+    Args:
+        request: HTTP request object containing username and password
+        
+    Returns:
+        Response with authentication token and user data
     """
     username = request.data.get('username')
     password = request.data.get('password')
     
+    # Validate required fields
     if not username or not password:
         return Response({
             'error': 'Username and password are required'
@@ -324,6 +506,7 @@ def login_view(request):
     user = authenticate(username=username, password=password)
     
     if user:
+        # Get or create authentication token
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
@@ -345,7 +528,15 @@ def login_view(request):
 @permission_classes([permissions.AllowAny])
 def register_view(request):
     """
-    User registration endpoint - allows emails to be used as usernames
+    User registration endpoint - allows emails to be used as usernames.
+    
+    Creates new user accounts with validation for unique usernames and emails.
+    
+    Args:
+        request: HTTP request object containing user registration data
+        
+    Returns:
+        Response with authentication token and user data
     """
     username = request.data.get('username')
     email = request.data.get('email')
@@ -359,7 +550,7 @@ def register_view(request):
             'error': 'Username, email, and password are required'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Check if username is an email
+    # Check if username is an email format
     import re
     email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
     is_email_username = email_pattern.match(username) is not None
