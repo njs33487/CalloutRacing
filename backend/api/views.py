@@ -306,7 +306,7 @@ The CalloutRacing Team
 @permission_classes([permissions.AllowAny])
 def login_view(request):
     """
-    User login endpoint
+    User login endpoint - supports email usernames
     """
     username = request.data.get('username')
     password = request.data.get('password')
@@ -316,6 +316,7 @@ def login_view(request):
             'error': 'Username and password are required'
         }, status=status.HTTP_400_BAD_REQUEST)
     
+    # Try to authenticate with the provided username
     user = authenticate(username=username, password=password)
     
     if user:
@@ -340,7 +341,7 @@ def login_view(request):
 @permission_classes([permissions.AllowAny])
 def register_view(request):
     """
-    User registration endpoint
+    User registration endpoint - allows emails to be used as usernames
     """
     username = request.data.get('username')
     email = request.data.get('email')
@@ -354,12 +355,24 @@ def register_view(request):
             'error': 'Username, email, and password are required'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    # Check if user already exists
+    # Check if username is an email
+    import re
+    email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    is_email_username = email_pattern.match(username) is not None
+    
+    # If username is an email, ensure it matches the email field
+    if is_email_username and username != email:
+        return Response({
+            'error': 'If using email as username, it must match the email field'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if user already exists (by username or email)
     if User.objects.filter(username=username).exists():
         return Response({
             'username': ['A user with this username already exists.']
         }, status=status.HTTP_400_BAD_REQUEST)
     
+    # Check if email is already used by another user
     if User.objects.filter(email=email).exists():
         return Response({
             'email': ['A user with this email already exists.']

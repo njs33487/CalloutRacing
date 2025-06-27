@@ -23,13 +23,27 @@ export default function Signup() {
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {}
 
-    // Username validation
+    // Username validation - allow emails as usernames
     if (!formData.username) {
       newErrors.username = 'Username is required'
     } else if (formData.username.length < 3) {
       newErrors.username = 'Username must be at least 3 characters'
-    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, and underscores'
+    } else {
+      // Check if username is an email format
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+      const isEmail = emailPattern.test(formData.username)
+      
+      if (isEmail) {
+        // If username is an email, it should match the email field
+        if (formData.username !== formData.email) {
+          newErrors.username = 'If using email as username, it must match the email field'
+        }
+      } else {
+        // Regular username validation (letters, numbers, underscores)
+        if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+          newErrors.username = 'Username can only contain letters, numbers, and underscores (or use your email)'
+        }
+      }
     }
 
     // Email validation
@@ -224,7 +238,7 @@ export default function Signup() {
             {/* Username */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
+                Username or Email
               </label>
               <div className="mt-1">
                 <input
@@ -236,9 +250,12 @@ export default function Signup() {
                   value={formData.username}
                   onChange={handleInputChange}
                   className={`input-field ${errors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}`}
-                  placeholder="Choose a unique username"
+                  placeholder="Choose a username or use your email"
                 />
               </div>
+              <p className="mt-1 text-xs text-gray-500">
+                You can use your email address as your username
+              </p>
               {errors.username && (
                 <p className="mt-1 text-sm text-red-600">{errors.username}</p>
               )}

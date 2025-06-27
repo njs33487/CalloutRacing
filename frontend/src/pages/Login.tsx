@@ -76,7 +76,7 @@ export default function Login() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
+                Username or Email
               </label>
               <div className="mt-1">
                 <input
@@ -88,7 +88,7 @@ export default function Login() {
                   value={formData.username}
                   onChange={handleInputChange}
                   className="input-field"
-                  placeholder="Enter your username"
+                  placeholder="Enter your username or email"
                 />
               </div>
             </div>
