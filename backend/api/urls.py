@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, UserProfileViewSet, TrackViewSet, EventViewSet,
     CalloutViewSet, RaceResultViewSet, MarketplaceViewSet, EventParticipantViewSet,
-    contact_form, login_view, register_view, logout_view, user_profile
+    contact_form, login_view, register_view, logout_view, user_profile, stats_view
 )
 
 router = DefaultRouter()
@@ -23,4 +23,5 @@ urlpatterns = [
     path('auth/register/', register_view, name='register'),
     path('auth/logout/', logout_view, name='logout'),
     path('auth/profile/', user_profile, name='user-profile'),
+    path('stats/', stats_view, name='stats'),
 ] 

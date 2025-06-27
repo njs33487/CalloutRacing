@@ -455,4 +455,40 @@ def user_profile(request):
     except UserProfile.DoesNotExist:
         return Response({
             'error': 'Profile not found'
-        }, status=status.HTTP_404_NOT_FOUND) 
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def stats_view(request):
+    """
+    Get platform statistics
+    """
+    from django.db.models import Count, Q
+    from django.utils import timezone
+    
+    try:
+        # Get counts
+        active_callouts = Callout.objects.filter(
+            Q(status='pending') | Q(status='accepted')
+        ).count()
+        
+        upcoming_events = Event.objects.filter(
+            start_date__gt=timezone.now(),
+            is_active=True
+        ).count()
+        
+        marketplace_items = Marketplace.objects.filter(is_active=True).count()
+        
+        total_racers = User.objects.count()
+        
+        return Response({
+            'active_callouts': active_callouts,
+            'upcoming_events': upcoming_events,
+            'marketplace_items': marketplace_items,
+            'total_racers': total_racers,
+        })
+    except Exception as e:
+        return Response({
+            'error': 'Failed to fetch statistics'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
