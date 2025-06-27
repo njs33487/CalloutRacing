@@ -7,8 +7,7 @@ import {
   UserGroupIcon,
   MapPinIcon,
   TrophyIcon,
-  ClockIcon,
-  UserIcon
+  ClockIcon
 } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
