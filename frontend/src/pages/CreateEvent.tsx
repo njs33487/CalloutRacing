@@ -1,9 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CalendarIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
 import { Track } from '../types'
+
+interface ImageFile {
+  file: File;
+  preview: string;
+  id: string;
+}
 
 export default function CreateEvent() {
   const navigate = useNavigate()
@@ -16,8 +22,10 @@ export default function CreateEvent() {
     max_participants: '',
     entry_fee: '',
     description: '',
-    is_public: true
+    is_public: true,
+    rules: ''
   })
+  const [images, setImages] = useState<ImageFile[]>([])
 
   // Fetch tracks for dropdown
   const { data: tracksData } = useQuery({
@@ -29,7 +37,30 @@ export default function CreateEvent() {
 
   // Create event mutation
   const createEvent = useMutation({
-    mutationFn: (data: any) => api.post('/events/', data),
+    mutationFn: async (data: any) => {
+      const formDataToSend = new FormData()
+      
+      // Add form fields
+      Object.keys(data).forEach(key => {
+        if (key !== 'images') {
+          formDataToSend.append(key, data[key])
+        }
+      })
+      
+      // Add images
+      images.forEach((imageFile, index) => {
+        formDataToSend.append('images', imageFile.file)
+        if (index === 0) {
+          formDataToSend.append('primary_image', 'true')
+        }
+      })
+      
+      return api.post('/events/', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+    },
     onSuccess: () => {
       navigate('/app/events')
     }
@@ -40,10 +71,11 @@ export default function CreateEvent() {
     
     const submitData = {
       ...formData,
-      track: parseInt(formData.track),
-      max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
+      track: parseInt(formData.track) || null,
+      max_participants: parseInt(formData.max_participants) || null,
       entry_fee: parseFloat(formData.entry_fee) || 0,
-      is_public: formData.is_public
+      is_public: formData.is_public,
+      images
     }
 
     createEvent.mutate(submitData)
@@ -54,6 +86,36 @@ export default function CreateEvent() {
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.checked
+    })
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const imageFile: ImageFile = {
+            file,
+            preview: e.target?.result as string,
+            id: Math.random().toString(36).substr(2, 9)
+          }
+          setImages(prev => [...prev, imageFile])
+        }
+        reader.readAsDataURL(file)
+      }
+    })
+  }
+
+  const removeImage = (id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id))
   }
 
   return (
@@ -198,6 +260,81 @@ export default function CreateEvent() {
             placeholder="Describe your event..."
             required
           />
+        </div>
+
+        {/* Image Upload Section */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Event Images
+          </label>
+          <div className="space-y-4">
+            {/* Image Upload Input */}
+            <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
+              <div className="space-y-1 text-center">
+                <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="image-upload"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                  >
+                    <span>Upload images</span>
+                    <input
+                      id="image-upload"
+                      name="image-upload"
+                      type="file"
+                      className="sr-only"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+              </div>
+            </div>
+
+            {/* Image Previews */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {images.map((image, index) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(image.id)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
+                        Primary
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="is_public"
+            name="is_public"
+            checked={formData.is_public}
+            onChange={handleCheckboxChange}
+            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+          />
+          <label htmlFor="is_public" className="ml-2 block text-sm text-gray-900">
+            Make this event public
+          </label>
         </div>
 
         {createEvent.error && (

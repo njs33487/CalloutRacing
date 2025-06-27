@@ -142,6 +142,21 @@ export default function Callouts() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {callouts.map((callout: Callout) => (
           <div key={callout.id} className="card hover:shadow-md transition-shadow">
+            {/* Callout Image */}
+            <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
+              {callout.images && callout.images.length > 0 ? (
+                <img
+                  src={callout.images.find(img => img.is_primary)?.image || callout.images[0].image}
+                  alt="Callout"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <BoltIcon className="h-16 w-16 text-gray-400" />
+                </div>
+              )}
+            </div>
+
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center">
                 <BoltIcon className="h-6 w-6 text-primary-600 mr-2" />

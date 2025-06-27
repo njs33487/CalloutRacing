@@ -146,6 +146,21 @@ export default function Events() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map((event: Event) => (
           <div key={event.id} className="card hover:shadow-md transition-shadow">
+            {/* Event Image */}
+            <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
+              {event.images && event.images.length > 0 ? (
+                <img
+                  src={event.images.find(img => img.is_primary)?.image || event.images[0].image}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <CalendarIcon className="h-16 w-16 text-gray-400" />
+                </div>
+              )}
+            </div>
+
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center">
                 <CalendarIcon className="h-6 w-6 text-primary-600 mr-2" />

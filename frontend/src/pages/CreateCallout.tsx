@@ -1,23 +1,32 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { BoltIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { BoltIcon, MagnifyingGlassIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
-import { User } from '../types'
+import { User, Track } from '../types'
+
+interface ImageFile {
+  file: File;
+  preview: string;
+  id: string;
+}
 
 export default function CreateCallout() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     challenged: '',
-    race_type: 'quarter_mile',
-    location_type: 'track',
+    message: '',
+    location_type: 'street',
+    race_type: 'roll_race',
     track: '',
     street_location: '',
+    scheduled_date: '',
     wager_amount: '',
-    message: ''
+    car_details: ''
   })
   const [searchQuery, setSearchQuery] = useState('')
   const [showUserSearch, setShowUserSearch] = useState(false)
+  const [images, setImages] = useState<ImageFile[]>([])
 
   // Search users
   const { data: usersData } = useQuery({
@@ -28,9 +37,38 @@ export default function CreateCallout() {
 
   const users = usersData?.results || []
 
+  // Fetch tracks for dropdown
+  const { data: tracks = [] } = useQuery<Track[]>({
+    queryKey: ['tracks'],
+    queryFn: () => api.get('/tracks/').then(res => res.data)
+  })
+
   // Create callout mutation
   const createCallout = useMutation({
-    mutationFn: (data: any) => api.post('/callouts/', data),
+    mutationFn: async (data: any) => {
+      const formDataToSend = new FormData()
+      
+      // Add form fields
+      Object.keys(data).forEach(key => {
+        if (key !== 'images') {
+          formDataToSend.append(key, data[key])
+        }
+      })
+      
+      // Add images
+      images.forEach((imageFile, index) => {
+        formDataToSend.append('images', imageFile.file)
+        if (index === 0) {
+          formDataToSend.append('primary_image', 'true')
+        }
+      })
+      
+      return api.post('/callouts/', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+    },
     onSuccess: () => {
       navigate('/app/callouts')
     }
@@ -39,18 +77,12 @@ export default function CreateCallout() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    const submitData: any = {
-      challenged: parseInt(formData.challenged),
-      race_type: formData.race_type,
-      location_type: formData.location_type,
-      wager_amount: formData.wager_amount ? parseFloat(formData.wager_amount) : 0,
-      message: formData.message
-    }
-
-    if (formData.location_type === 'track' && formData.track) {
-      submitData.track = parseInt(formData.track)
-    } else if (formData.location_type === 'street' && formData.street_location) {
-      submitData.street_location = formData.street_location
+    const submitData = {
+      ...formData,
+      track: formData.track ? parseInt(formData.track) : null,
+      wager_amount: parseFloat(formData.wager_amount) || 0,
+      scheduled_date: formData.scheduled_date || null,
+      images
     }
 
     createCallout.mutate(submitData)
@@ -75,6 +107,29 @@ export default function CreateCallout() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
     setShowUserSearch(true)
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const imageFile: ImageFile = {
+            file,
+            preview: e.target?.result as string,
+            id: Math.random().toString(36).substr(2, 9)
+          }
+          setImages(prev => [...prev, imageFile])
+        }
+        reader.readAsDataURL(file)
+      }
+    })
+  }
+
+  const removeImage = (id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id))
   }
 
   return (
@@ -173,9 +228,9 @@ export default function CreateCallout() {
               required
             >
               <option value="">Select a track</option>
-              <option value="1">Speedway International</option>
-              <option value="2">Local Drag Strip</option>
-              <option value="3">Raceway Park</option>
+              {tracks.map((track: Track) => (
+                <option key={track.id} value={track.id.toString()}>{track.name}</option>
+              ))}
             </select>
           </div>
         ) : (
@@ -214,6 +269,35 @@ export default function CreateCallout() {
         </div>
 
         <div>
+          <label htmlFor="scheduled_date" className="block text-sm font-medium text-gray-700 mb-2">
+            Scheduled Date (Optional)
+          </label>
+          <input
+            type="datetime-local"
+            id="scheduled_date"
+            name="scheduled_date"
+            value={formData.scheduled_date}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="car_details" className="block text-sm font-medium text-gray-700 mb-2">
+            Car Details (Optional)
+          </label>
+          <textarea
+            id="car_details"
+            name="car_details"
+            value={formData.car_details}
+            onChange={handleChange}
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Enter car details"
+          />
+        </div>
+
+        <div>
           <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
             Message
           </label>
@@ -227,6 +311,66 @@ export default function CreateCallout() {
             placeholder="Add a message to your challenge..."
             required
           />
+        </div>
+
+        <div>
+          <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
+            Images (Optional)
+          </label>
+          <div className="space-y-4">
+            {/* Image Upload Input */}
+            <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
+              <div className="space-y-1 text-center">
+                <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="image-upload"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                  >
+                    <span>Upload images</span>
+                    <input
+                      id="image-upload"
+                      name="image-upload"
+                      type="file"
+                      className="sr-only"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+              </div>
+            </div>
+
+            {/* Image Previews */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {images.map((image, index) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(image.id)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
+                        Primary
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {createCallout.error && (

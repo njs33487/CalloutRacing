@@ -3,11 +3,29 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { CarProfile, UserPost } from '../types';
+import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+
+interface ImageFile {
+  file: File;
+  preview: string;
+  id: string;
+}
 
 const Profile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'overview' | 'cars' | 'posts' | 'friends'>('overview');
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileImage, setProfileImage] = useState<ImageFile | null>(null);
+  const [coverImage, setCoverImage] = useState<ImageFile | null>(null);
+  const [editForm, setEditForm] = useState({
+    bio: '',
+    location: '',
+    car_make: '',
+    car_model: '',
+    car_year: '',
+    car_mods: ''
+  });
 
   // Fetch current user's profile
   const { data: profile, isLoading, error } = useQuery({
@@ -30,6 +48,40 @@ const Profile = () => {
     enabled: !!user
   });
 
+  // Update profile mutation
+  const updateProfile = useMutation({
+    mutationFn: async (data: any) => {
+      const formData = new FormData();
+      
+      // Add form fields
+      Object.keys(data).forEach(key => {
+        if (key !== 'profile_image' && key !== 'cover_image') {
+          formData.append(key, data[key]);
+        }
+      });
+      
+      // Add images
+      if (profileImage) {
+        formData.append('profile_picture', profileImage.file);
+      }
+      if (coverImage) {
+        formData.append('cover_photo', coverImage.file);
+      }
+      
+      return api.patch('/profiles/me/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      setIsEditing(false);
+      setProfileImage(null);
+      setCoverImage(null);
+    }
+  });
+
   // Like post mutation
   const likePost = useMutation({
     mutationFn: (postId: number) => api.post(`/posts/${postId}/like_post/`),
@@ -37,6 +89,52 @@ const Profile = () => {
       queryClient.invalidateQueries({ queryKey: ['user-posts'] });
     }
   });
+
+  const handleEditClick = () => {
+    if (profile) {
+      setEditForm({
+        bio: profile.bio || '',
+        location: profile.location || '',
+        car_make: profile.car_make || '',
+        car_model: profile.car_model || '',
+        car_year: profile.car_year || '',
+        car_mods: profile.car_mods || ''
+      });
+    }
+    setIsEditing(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'cover') => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageFile: ImageFile = {
+          file,
+          preview: e.target?.result as string,
+          id: Math.random().toString(36).substr(2, 9)
+        };
+        if (type === 'profile') {
+          setProfileImage(imageFile);
+        } else {
+          setCoverImage(imageFile);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile.mutate(editForm);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setEditForm({
+      ...editForm,
+      [e.target.name]: e.target.value
+    });
+  };
 
   if (isLoading) {
     return (
@@ -114,7 +212,10 @@ const Profile = () => {
 
                 {/* Edit Profile Button */}
                 <div className="mt-4 md:mt-0">
-                  <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+                  <button 
+                    onClick={handleEditClick}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                  >
                     Edit Profile
                   </button>
                 </div>
@@ -249,6 +350,230 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
+              <button
+                onClick={() => setIsEditing(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Profile Picture Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Profile Picture
+                </label>
+                <div className="flex items-center space-x-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-600 to-yellow-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
+                    {profileImage ? (
+                      <img
+                        src={profileImage.preview}
+                        alt="Profile Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : profile.profile_picture ? (
+                      <img
+                        src={profile.profile_picture}
+                        alt="Current Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      profile.user.first_name?.[0] || profile.user.username[0]
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="profile-image-upload"
+                      className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                      <PhotoIcon className="h-4 w-4 mr-2" />
+                      Upload Photo
+                    </label>
+                    <input
+                      id="profile-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'profile')}
+                      className="sr-only"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Cover Photo Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cover Photo
+                </label>
+                <div className="relative">
+                  <div className="h-32 bg-gradient-to-r from-red-600 to-yellow-500 rounded-lg overflow-hidden">
+                    {coverImage ? (
+                      <img
+                        src={coverImage.preview}
+                        alt="Cover Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : profile.cover_photo ? (
+                      <img
+                        src={profile.cover_photo}
+                        alt="Current Cover"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="absolute top-2 right-2">
+                    <label
+                      htmlFor="cover-image-upload"
+                      className="cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                      <PhotoIcon className="h-4 w-4 mr-2" />
+                      Upload Cover
+                    </label>
+                    <input
+                      id="cover-image-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'cover')}
+                      className="sr-only"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  value={editForm.bio}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  value={editForm.location}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="City, State"
+                />
+              </div>
+
+              {/* Car Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="car_make" className="block text-sm font-medium text-gray-700 mb-2">
+                    Car Make
+                  </label>
+                  <input
+                    type="text"
+                    id="car_make"
+                    name="car_make"
+                    value={editForm.car_make}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g., Ford"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="car_model" className="block text-sm font-medium text-gray-700 mb-2">
+                    Car Model
+                  </label>
+                  <input
+                    type="text"
+                    id="car_model"
+                    name="car_model"
+                    value={editForm.car_model}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g., Mustang"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="car_year" className="block text-sm font-medium text-gray-700 mb-2">
+                    Car Year
+                  </label>
+                  <input
+                    type="number"
+                    id="car_year"
+                    name="car_year"
+                    value={editForm.car_year}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g., 2020"
+                    min="1900"
+                    max="2030"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="car_mods" className="block text-sm font-medium text-gray-700 mb-2">
+                    Modifications
+                  </label>
+                  <input
+                    type="text"
+                    id="car_mods"
+                    name="car_mods"
+                    value={editForm.car_mods}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g., Turbo, Exhaust"
+                  />
+                </div>
+              </div>
+
+              {updateProfile.error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-800">
+                    {(updateProfile.error as any)?.response?.data?.error || 'Failed to update profile. Please try again.'}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="btn-secondary flex-1"
+                  disabled={updateProfile.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary flex-1"
+                  disabled={updateProfile.isPending}
+                >
+                  {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

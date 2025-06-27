@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { ShoppingBagIcon } from '@heroicons/react/24/outline'
+import { ShoppingBagIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { api } from '../services/api'
+
+interface ImageFile {
+  file: File;
+  preview: string;
+  id: string;
+}
 
 export default function CreateListing() {
   const navigate = useNavigate()
@@ -17,10 +23,34 @@ export default function CreateListing() {
     trade_offered: false,
     trade_description: ''
   })
+  const [images, setImages] = useState<ImageFile[]>([])
 
   // Create listing mutation
   const createListing = useMutation({
-    mutationFn: (data: any) => api.post('/marketplace/', data),
+    mutationFn: async (data: any) => {
+      const formDataToSend = new FormData()
+      
+      // Add form fields
+      Object.keys(data).forEach(key => {
+        if (key !== 'images') {
+          formDataToSend.append(key, data[key])
+        }
+      })
+      
+      // Add images
+      images.forEach((imageFile, index) => {
+        formDataToSend.append('images', imageFile.file)
+        if (index === 0) {
+          formDataToSend.append('primary_image', 'true')
+        }
+      })
+      
+      return api.post('/marketplace/', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+    },
     onSuccess: () => {
       navigate('/app/marketplace')
     }
@@ -33,7 +63,8 @@ export default function CreateListing() {
       ...formData,
       price: parseFloat(formData.price) || 0,
       is_negotiable: formData.is_negotiable,
-      trade_offered: formData.trade_offered
+      trade_offered: formData.trade_offered,
+      images
     }
 
     createListing.mutate(submitData)
@@ -51,6 +82,29 @@ export default function CreateListing() {
       ...formData,
       [e.target.name]: e.target.checked
     })
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const imageFile: ImageFile = {
+            file,
+            preview: e.target?.result as string,
+            id: Math.random().toString(36).substr(2, 9)
+          }
+          setImages(prev => [...prev, imageFile])
+        }
+        reader.readAsDataURL(file)
+      }
+    })
+  }
+
+  const removeImage = (id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id))
   }
 
   return (
@@ -163,6 +217,67 @@ export default function CreateListing() {
             placeholder="Describe your item..."
             required
           />
+        </div>
+
+        {/* Image Upload Section */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Images
+          </label>
+          <div className="space-y-4">
+            {/* Image Upload Input */}
+            <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary-400 transition-colors">
+              <div className="space-y-1 text-center">
+                <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="image-upload"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                  >
+                    <span>Upload images</span>
+                    <input
+                      id="image-upload"
+                      name="image-upload"
+                      type="file"
+                      className="sr-only"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
+                </div>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+              </div>
+            </div>
+
+            {/* Image Previews */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {images.map((image, index) => (
+                  <div key={image.id} className="relative group">
+                    <img
+                      src={image.preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(image.id)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs px-2 py-1 rounded">
+                        Primary
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-4">

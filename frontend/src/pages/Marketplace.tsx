@@ -172,15 +172,19 @@ export default function Marketplace() {
         {items.map((item: MarketplaceItem) => (
           <div key={item.id} className="card hover:shadow-md transition-shadow">
             {/* Item Image */}
-            {item.images && item.images.length > 0 && (
-              <div className="mb-4">
+            <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
+              {item.images && item.images.length > 0 ? (
                 <img
                   src={item.images.find(img => img.is_primary)?.image || item.images[0].image}
                   alt={item.title}
-                  className="w-full h-48 object-cover rounded-lg"
+                  className="w-full h-full object-cover"
                 />
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ShoppingBagIcon className="h-16 w-16 text-gray-400" />
+                </div>
+              )}
+            </div>
             
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center">

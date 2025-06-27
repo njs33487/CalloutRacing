@@ -37,8 +37,15 @@ export interface Callout {
   message: string;
   scheduled_date?: string;
   winner?: User;
+  images?: CalloutImage[];
   created_at: string;
   updated_at: string;
+}
+
+export interface CalloutImage {
+  id: number;
+  image: string;
+  is_primary: boolean;
 }
 
 // Event types
@@ -56,8 +63,15 @@ export interface Event {
   is_public: boolean;
   is_active: boolean;
   participants_count?: number;
+  images?: EventImage[];
   created_at: string;
   updated_at: string;
+}
+
+export interface EventImage {
+  id: number;
+  image: string;
+  is_primary: boolean;
 }
 
 // Track types
