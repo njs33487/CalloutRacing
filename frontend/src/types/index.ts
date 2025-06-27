@@ -1,4 +1,10 @@
-// User and Profile types
+// TypeScript type definitions for the CalloutRacing application
+
+// ============================================================================
+// USER & PROFILE TYPES
+// ============================================================================
+
+// Basic user information from Django auth
 export interface User {
   id: number;
   username: string;
@@ -8,6 +14,7 @@ export interface User {
   date_joined: string;
 }
 
+// Extended user profile with racing stats and personal info
 export interface UserProfile {
   id: number;
   user: User;
@@ -23,7 +30,11 @@ export interface UserProfile {
   updated_at: string;
 }
 
-// Callout types
+// ============================================================================
+// CALLOUT (RACE CHALLENGE) TYPES
+// ============================================================================
+
+// Race challenge between two users
 export interface Callout {
   id: number;
   challenger: User;
@@ -42,13 +53,18 @@ export interface Callout {
   updated_at: string;
 }
 
+// Images associated with a callout
 export interface CalloutImage {
   id: number;
   image: string;
   is_primary: boolean;
 }
 
-// Event types
+// ============================================================================
+// EVENT TYPES
+// ============================================================================
+
+// Racing event organized by a user
 export interface Event {
   id: number;
   title: string;
@@ -68,13 +84,18 @@ export interface Event {
   updated_at: string;
 }
 
+// Images associated with an event
 export interface EventImage {
   id: number;
   image: string;
   is_primary: boolean;
 }
 
-// Track types
+// ============================================================================
+// TRACK TYPES
+// ============================================================================
+
+// Racing track information
 export interface Track {
   id: number;
   name: string;
@@ -86,7 +107,11 @@ export interface Track {
   created_at: string;
 }
 
-// Marketplace types
+// ============================================================================
+// MARKETPLACE TYPES
+// ============================================================================
+
+// Item for sale in the marketplace
 export interface MarketplaceItem {
   id: number;
   title: string;
@@ -107,13 +132,18 @@ export interface MarketplaceItem {
   images?: MarketplaceImage[];
 }
 
+// Images associated with a marketplace item
 export interface MarketplaceImage {
   id: number;
   image: string;
   is_primary: boolean;
 }
 
-// Car Profile types
+// ============================================================================
+// CAR PROFILE TYPES
+// ============================================================================
+
+// Detailed car information and specifications
 export interface CarProfile {
   id: number;
   name: string;
@@ -141,6 +171,7 @@ export interface CarProfile {
   created_at: string;
 }
 
+// Car modification/upgrade information
 export interface CarModification {
   id: number;
   category: string;
@@ -152,6 +183,7 @@ export interface CarModification {
   is_installed: boolean;
 }
 
+// Images associated with a car
 export interface CarImage {
   id: number;
   image: string;
@@ -159,7 +191,11 @@ export interface CarImage {
   is_primary: boolean;
 }
 
-// Post types
+// ============================================================================
+// SOCIAL POST TYPES
+// ============================================================================
+
+// User social media post
 export interface UserPost {
   id: number;
   content: string;
@@ -172,6 +208,7 @@ export interface UserPost {
   comments: PostComment[];
 }
 
+// Comment on a social post
 export interface PostComment {
   id: number;
   content: string;
@@ -179,7 +216,11 @@ export interface PostComment {
   created_at: string;
 }
 
-// API Response types
+// ============================================================================
+// API RESPONSE TYPES
+// ============================================================================
+
+// Standard paginated API response
 export interface ApiResponse<T> {
   count: number;
   next?: string;
@@ -187,6 +228,7 @@ export interface ApiResponse<T> {
   results: T[];
 }
 
+// Application statistics for dashboard
 export interface Stats {
   total_users: number;
   total_tracks: number;
@@ -199,7 +241,11 @@ export interface Stats {
   total_racers: number;
 }
 
-// Form types
+// ============================================================================
+// FORM TYPES
+// ============================================================================
+
+// Form data for creating a new callout
 export interface CreateCalloutForm {
   challenged: string;
   race_type: string;
@@ -210,6 +256,7 @@ export interface CreateCalloutForm {
   message: string;
 }
 
+// Form data for creating a new event
 export interface CreateEventForm {
   title: string;
   event_type: string;
@@ -222,6 +269,7 @@ export interface CreateEventForm {
   is_public: boolean;
 }
 
+// Form data for creating a new marketplace listing
 export interface CreateListingForm {
   title: string;
   category: string;

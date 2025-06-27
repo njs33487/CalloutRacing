@@ -1,8 +1,10 @@
+// API Service - centralizes all backend API calls and handles authentication
 import axios from 'axios'
 
-// Get API URL from environment variable or use default
+// Get API URL from environment variable or use default production URL
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend.up.railway.app'
 
+// Create axios instance with base configuration
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -10,7 +12,7 @@ const api = axios.create({
   },
 })
 
-// Request interceptor to add auth token
+// Request interceptor - automatically adds authentication token to all requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -19,11 +21,12 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor for error handling
+// Response interceptor - handles authentication errors and redirects to login
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Clear invalid token and redirect to login
       localStorage.removeItem('token')
       window.location.href = '/login'
     }
@@ -31,7 +34,7 @@ api.interceptors.response.use(
   }
 )
 
-// API endpoints
+// Authentication API endpoints
 export const authAPI = {
   register: (data: any) => api.post('/auth/register/', data),
   login: (data: any) => api.post('/auth/login/', data),
@@ -39,16 +42,19 @@ export const authAPI = {
   profile: () => api.get('/auth/profile/'),
 }
 
+// Contact form API
 export const contactAPI = {
   send: (data: any) => api.post('/contact/', data),
 }
 
+// User management API endpoints
 export const userAPI = {
   list: () => api.get('/users/'),
   profile: (id: number) => api.get(`/profiles/${id}/`),
   updateProfile: (id: number, data: any) => api.patch(`/profiles/${id}/`, data),
 }
 
+// Callout (race challenge) API endpoints
 export const calloutAPI = {
   list: () => api.get('/callouts/'),
   create: (data: any) => api.post('/callouts/', data),
@@ -60,6 +66,7 @@ export const calloutAPI = {
   complete: (id: number, data: any) => api.post(`/callouts/${id}/complete_race/`, data),
 }
 
+// Event management API endpoints
 export const eventAPI = {
   list: () => api.get('/events/'),
   create: (data: any) => api.post('/events/', data),
@@ -70,6 +77,7 @@ export const eventAPI = {
   leave: (id: number) => api.post(`/events/${id}/leave_event/`),
 }
 
+// Marketplace (buy/sell) API endpoints
 export const marketplaceAPI = {
   list: () => api.get('/marketplace/'),
   create: (data: any) => api.post('/marketplace/', data),
@@ -79,6 +87,7 @@ export const marketplaceAPI = {
   myListings: () => api.get('/marketplace/my_listings/'),
 }
 
+// Track management API endpoints
 export const trackAPI = {
   list: () => api.get('/tracks/'),
   create: (data: any) => api.post('/tracks/', data),
@@ -87,6 +96,7 @@ export const trackAPI = {
   delete: (id: number) => api.delete(`/tracks/${id}/`),
 }
 
+// Car management API endpoints
 export const carAPI = {
   list: () => api.get('/cars/'),
   create: (data: any) => api.post('/cars/', data),
@@ -96,6 +106,7 @@ export const carAPI = {
   myCars: () => api.get('/cars/my_cars/'),
 }
 
+// Social posts API endpoints
 export const postAPI = {
   list: () => api.get('/posts/'),
   create: (data: any) => api.post('/posts/', data),

@@ -253,7 +253,7 @@ export default function CreateListing() {
 
             {/* Image Previews */}
             {images.length > 0 && (
-              <>
+              <div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {images.map((image, index) => (
                     <div key={image.id} className="relative group">
@@ -277,7 +277,7 @@ export default function CreateListing() {
                     </div>
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

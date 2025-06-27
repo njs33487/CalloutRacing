@@ -371,7 +371,7 @@ const Profile = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Profile Picture
                 </label>
-                <>
+                <div>
                   <div className="flex items-center space-x-4">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-r from-red-600 to-yellow-500 flex items-center justify-center text-white text-xl font-bold overflow-hidden">
                       {profileImage ? (
@@ -407,7 +407,7 @@ const Profile = () => {
                       />
                     </div>
                   </div>
-                </>
+                </div>
               </div>
 
               {/* Cover Photo Upload */}

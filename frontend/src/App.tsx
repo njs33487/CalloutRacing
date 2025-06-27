@@ -1,3 +1,4 @@
+// Main App component - handles routing and authentication context
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -17,21 +18,23 @@ import CreateListing from './pages/CreateListing'
 
 function App() {
   return (
+    // Wrap entire app in authentication context
     <AuthProvider>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          {/* Public routes */}
+          {/* Public routes - accessible without authentication */}
           <Route path="/" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/contact" element={<Contact />} />
           
-          {/* Protected routes with layout */}
+          {/* Protected routes - require authentication and use shared layout */}
           <Route path="/app" element={
             <ProtectedRoute>
               <Layout />
             </ProtectedRoute>
           }>
+            {/* Dashboard and main app pages */}
             <Route index element={<Home />} />
             <Route path="callouts" element={<Callouts />} />
             <Route path="callouts/create" element={<CreateCallout />} />

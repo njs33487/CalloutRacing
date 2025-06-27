@@ -1,6 +1,8 @@
+// Authentication Context - manages user authentication state across the app
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { authAPI } from '../services/api'
 
+// User data structure
 interface User {
   id: number
   username: string
@@ -9,6 +11,7 @@ interface User {
   last_name: string
 }
 
+// Authentication context interface - defines available methods and state
 interface AuthContextType {
   user: User | null
   token: string | null
@@ -19,8 +22,10 @@ interface AuthContextType {
   isAuthenticated: boolean
 }
 
+// Create the authentication context
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Custom hook to use authentication context with error handling
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
@@ -33,13 +38,16 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
+// Main authentication provider component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  // State for user data, authentication token, and loading status
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Check for existing authentication on app startup
   useEffect(() => {
-    // Check for existing token on app load
+    // Retrieve stored authentication data from localStorage
     const storedToken = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
     
@@ -47,13 +55,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(storedToken)
       setUser(JSON.parse(storedUser))
       
-      // Verify token is still valid
+      // Verify the stored token is still valid with the server
       authAPI.profile()
         .then(response => {
           setUser(response.data)
         })
         .catch(() => {
-          // Token is invalid, clear storage
+          // Token is invalid, clear all stored authentication data
           localStorage.removeItem('token')
           localStorage.removeItem('user')
           setToken(null)
@@ -67,32 +75,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [])
 
+  // Login function - authenticates user and stores credentials
   const login = async (username: string, password: string) => {
     const response = await authAPI.login({ username, password })
     const { token: newToken, user: newUser } = response.data
     
+    // Update state and store in localStorage
     setToken(newToken)
     setUser(newUser)
     localStorage.setItem('token', newToken)
     localStorage.setItem('user', JSON.stringify(newUser))
   }
 
+  // Register function - creates new user account and logs them in
   const register = async (userData: any) => {
     const response = await authAPI.register(userData)
     const { token: newToken, user: newUser } = response.data
     
+    // Update state and store in localStorage
     setToken(newToken)
     setUser(newUser)
     localStorage.setItem('token', newToken)
     localStorage.setItem('user', JSON.stringify(newUser))
   }
 
+  // Logout function - clears authentication data and notifies server
   const logout = async () => {
     try {
       await authAPI.logout()
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
+      // Always clear local authentication data
       setToken(null)
       setUser(null)
       localStorage.removeItem('token')
@@ -100,6 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
+  // Context value object with all authentication methods and state
   const value: AuthContextType = {
     user,
     token,
