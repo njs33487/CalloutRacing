@@ -58,13 +58,14 @@ export default function Contact() {
     {
       icon: PhoneIcon,
       title: 'Call Us',
-      details: ['+1 (555) 123-4567', 'Mon-Fri 9AM-6PM EST'],
-      description: 'Speak with our team'
+      details: ['(856) 212-6894', 'Mon-Fri 9AM-6PM EST'],
+      description: 'Speak with our team',
+      link: 'tel:+18562126894'
     },
     {
       icon: MapPinIcon,
       title: 'Visit Us',
-      details: ['123 Racing Street', 'Speed City, SC 12345'],
+      details: ['110 Elizabeth St', 'Interlachen, FL 32148'],
       description: 'Come see us in person'
     },
     {
