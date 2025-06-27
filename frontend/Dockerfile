@@ -25,8 +25,8 @@ RUN npm prune --production
 # Make start script executable
 RUN chmod +x start.sh
 
-# Expose port (Railway will set the actual port via $PORT)
-EXPOSE $PORT
+# Expose port 8000 (Railway will override with $PORT if needed)
+EXPOSE 8000
 
 # Start the application using the start script
 CMD ["./start.sh"] 
