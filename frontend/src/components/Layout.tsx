@@ -8,6 +8,7 @@ import {
   PlusIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline'
+import { useAuth } from '../contexts/AuthContext'
 
 const navigation = [
   { name: 'Dashboard', href: '/app', icon: HomeIcon },
@@ -20,28 +21,11 @@ const navigation = [
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { logout } = useAuth()
 
   const handleLogout = async () => {
-    try {
-      // Call logout API
-      const token = localStorage.getItem('token')
-      if (token) {
-        await fetch('/api/auth/logout/', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Token ${token}`,
-            'Content-Type': 'application/json',
-          },
-        })
-      }
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      // Clear localStorage and redirect
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      navigate('/')
-    }
+    await logout()
+    navigate('/')
   }
 
   return (

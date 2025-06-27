@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EyeIcon, EyeSlashIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { register } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -80,46 +82,32 @@ export default function Signup() {
     setIsLoading(true)
     
     try {
-      const response = await fetch('/api/auth/register/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-        }),
+      await register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
       })
       
-      const data = await response.json()
-      
-      if (response.ok) {
-        // Store token in localStorage
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        // Redirect to app
-        navigate('/app')
-      } else {
-        // Handle specific backend errors
-        if (data.username) {
-          setErrors({ username: data.username[0] })
-        } else if (data.email) {
-          setErrors({ email: data.email[0] })
-        } else if (data.password) {
-          setErrors({ password: data.password[0] })
-        } else if (data.non_field_errors) {
-          setErrors({ general: data.non_field_errors[0] })
-        } else {
-          setErrors({ general: 'Registration failed. Please try again.' })
-        }
-      }
-    } catch (error) {
+      // Redirect to app
+      navigate('/app')
+    } catch (error: any) {
       console.error('Signup failed:', error)
-      setErrors({ general: 'Network error. Please try again.' })
+      
+      // Handle specific backend errors
+      const errorData = error.response?.data
+      if (errorData?.username) {
+        setErrors({ username: errorData.username[0] })
+      } else if (errorData?.email) {
+        setErrors({ email: errorData.email[0] })
+      } else if (errorData?.password) {
+        setErrors({ password: errorData.password[0] })
+      } else if (errorData?.non_field_errors) {
+        setErrors({ general: errorData.non_field_errors[0] })
+      } else {
+        setErrors({ general: 'Registration failed. Please try again.' })
+      }
     } finally {
       setIsLoading(false)
     }

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -18,29 +20,12 @@ export default function Login() {
     setError('')
     
     try {
-      const response = await fetch('/api/auth/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-      
-      const data = await response.json()
-      
-      if (response.ok) {
-        // Store token in localStorage
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        // Redirect to app
-        navigate('/app')
-      } else {
-        setError(data.error || 'Invalid username or password')
-      }
-    } catch (error) {
+      await login(formData.username, formData.password)
+      // Redirect to app
+      navigate('/app')
+    } catch (error: any) {
       console.error('Login failed:', error)
-      setError('Network error. Please try again.')
+      setError(error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || 'Invalid username or password')
     } finally {
       setIsLoading(false)
     }

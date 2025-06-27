@@ -7,6 +7,7 @@ import {
   ClockIcon,
   PaperAirplaneIcon
 } from '@heroicons/react/24/outline'
+import { contactAPI } from '../services/api'
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -23,27 +24,15 @@ export default function Contact() {
     setIsLoading(true)
     
     try {
-      const response = await fetch('/api/contact/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+      await contactAPI.send(formData)
       
-      const data = await response.json()
+      // Reset form and show success message
+      setFormData({ name: '', email: '', subject: '', message: '' })
+      setIsSubmitted(true)
       
-      if (response.ok) {
-        // Reset form and show success message
-        setFormData({ name: '', email: '', subject: '', message: '' })
-        setIsSubmitted(true)
-        
-        // Reset success message after 5 seconds
-        setTimeout(() => setIsSubmitted(false), 5000)
-      } else {
-        throw new Error(data.error || 'Failed to send message')
-      }
-    } catch (error) {
+      // Reset success message after 5 seconds
+      setTimeout(() => setIsSubmitted(false), 5000)
+    } catch (error: any) {
       console.error('Contact form failed:', error)
       alert('Sorry, there was an error sending your message. Please try again.')
     } finally {
