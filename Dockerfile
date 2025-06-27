@@ -30,8 +30,8 @@ COPY backend/ backend/
 # Collect static files
 RUN cd backend && python manage.py collectstatic --noinput
 
-# Expose port
-EXPOSE 8000
+# Expose port (Railway uses PORT environment variable)
+EXPOSE 8080
 
 # Run the application
 CMD ["./start.sh"] 

@@ -21,6 +21,13 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(','
 if 'RAILWAY_STATIC_URL' in os.environ:
     ALLOWED_HOSTS.append(os.environ['RAILWAY_STATIC_URL'].replace('https://', '').replace('http://', ''))
 
+# Add common Railway domains
+ALLOWED_HOSTS.extend([
+    'calloutracing.up.railway.app',
+    '.railway.app',
+    '.up.railway.app'
+])
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',

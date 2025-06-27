@@ -8,18 +8,18 @@ Set these environment variables in your Railway project dashboard:
 ```
 SECRET_KEY=!c+z8w*$64yzo4kic#hkly@t7&%ro&^6$#wb52+*_vzwfao(@0
 DEBUG=False
-ALLOWED_HOSTS=localhost,127.0.0.1,.railway.app
+ALLOWED_HOSTS=localhost,127.0.0.1,.railway.app,calloutracing.up.railway.app
 ```
 
-### Database (Railway will provide DATABASE_URL automatically)
+### Database (Railway PostgreSQL)
 ```
-DATABASE_URL=postgresql://username:password@host:port/database
+DATABASE_URL=postgresql://postgres:YYXsAGJBiHdzoqKwgluUEhgIrIkAcauu@postgres.railway.internal:5432/railway
 ```
-*Note: Railway automatically provides this when you add a PostgreSQL database*
+*Note: This is your actual Railway PostgreSQL database URL*
 
 ### CORS Settings
 ```
-CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com,https://your-railway-app.railway.app
+CORS_ALLOWED_ORIGINS=https://calloutracing.up.railway.app
 ```
 
 ### Email Configuration (for contact form)
@@ -29,7 +29,7 @@ EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=digibin@digitalbinarysolutionsllc.com
-EMAIL_HOST_PASSWORD=your-gmail-app-password
+EMAIL_HOST_PASSWORD=troc jbbw ikct mdsl
 DEFAULT_FROM_EMAIL=digibin@digitalbinarysolutionsllc.com
 ```
 
@@ -71,14 +71,15 @@ Railway will automatically provide `DATABASE_URL` when you:
 ```
 SECRET_KEY=!c+z8w*$64yzo4kic#hkly@t7&%ro&^6$#wb52+*_vzwfao(@0
 DEBUG=False
-ALLOWED_HOSTS=localhost,127.0.0.1,.railway.app
-CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com,https://your-railway-app.railway.app
+ALLOWED_HOSTS=localhost,127.0.0.1,.railway.app,calloutracing.up.railway.app
+DATABASE_URL=postgresql://postgres:YYXsAGJBiHdzoqKwgluUEhgIrIkAcauu@postgres.railway.internal:5432/railway
+CORS_ALLOWED_ORIGINS=https://calloutracing.up.railway.app
 EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=digibin@digitalbinarysolutionsllc.com
-EMAIL_HOST_PASSWORD=your-gmail-app-password
+EMAIL_HOST_PASSWORD=troc jbbw ikct mdsl
 DEFAULT_FROM_EMAIL=digibin@digitalbinarysolutionsllc.com
 ```
 
