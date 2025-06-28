@@ -246,60 +246,67 @@ def login_view(request):
 @api_view(['POST'])
 @permission_classes([permission_classes.AllowAny])
 def register_view(request):
-    """User registration endpoint."""
+    """User registration endpoint with robust error logging."""
     username = request.data.get('username')
     email = request.data.get('email')
     password = request.data.get('password')
     first_name = request.data.get('first_name', '')
     last_name = request.data.get('last_name', '')
-    
+
     if not username or not email or not password:
         return Response({
             'error': 'Username, email, and password are required'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+
     # Check if user already exists
     if User.objects.filter(username=username).exists():
         return Response({
             'error': 'Username already exists'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+
     if User.objects.filter(email=email).exists():
         return Response({
             'error': 'Email already exists'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Create user
-    user = User.objects.create_user(
-        username=username,
-        email=email,
-        password=password,
-        first_name=first_name,
-        last_name=last_name,
-        email_verified=False
-    )
-    
-    # Generate verification token
-    user.email_verification_token = uuid.uuid4()
-    user.email_verification_expires_at = timezone.now() + timedelta(hours=24)
-    user.save()
-    
+
+    try:
+        # Create user
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email_verified=False
+        )
+        # Generate verification token
+        user.email_verification_token = uuid.uuid4()
+        user.email_verification_expires_at = timezone.now() + timedelta(hours=24)
+        user.save()
+    except Exception as e:
+        return Response({
+            'error': f'Failed to create user: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     # Send verification email
     try:
         send_verification_email(user)
         user.email_verification_sent_at = timezone.now()
         user.save()
     except Exception as e:
-        # Log the error but don't fail registration
+        # Log the error and return it in the response for debugging
         print(f"Failed to send verification email: {e}")
-    
+        return Response({
+            'error': f'Failed to send verification email: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     # Send welcome email
     try:
         send_welcome_email(user)
     except Exception as e:
-        # Log the error but don't fail registration
         print(f"Failed to send welcome email: {e}")
-    
+        # Do not fail registration for welcome email issues
+
     return Response({
         'message': 'Registration successful. Please check your email to verify your account.',
         'user': {
