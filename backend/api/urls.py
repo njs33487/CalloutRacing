@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, UserProfileViewSet, UserProfileDetailViewSet,
     login_view, register_view, logout_view, user_profile,
-    verify_email, resend_verification_email,
+    verify_email, resend_verification_email, check_user_exists,
     google_sso, facebook_sso, sso_config, stats_view, global_search
 )
 
@@ -56,6 +56,7 @@ urlpatterns = [
     # path('contact/', contact_form, name='contact-form'),
     path('auth/login/', login_view, name='login'),
     path('auth/register/', register_view, name='register'),
+    path('auth/check-user/', check_user_exists, name='check-user'),
     path('auth/logout/', logout_view, name='logout'),
     path('auth/profile/', user_profile, name='user-profile'),
     path('auth/google/', google_sso, name='google-sso'),
