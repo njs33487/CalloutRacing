@@ -14,6 +14,7 @@ from django.db import models  # type: ignore
 from django.contrib.auth.models import AbstractUser  # type: ignore
 from django.core.validators import MinValueValidator, MaxValueValidator  # type: ignore
 from django.utils import timezone  # type: ignore
+from django.conf import settings
 import uuid
 
 
@@ -44,7 +45,7 @@ class User(AbstractUser):
 
 class UserProfile(models.Model):
     """User profile model for additional user information."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True, help_text="User's bio or description")
     location = models.CharField(max_length=200, blank=True, help_text="User's location")
     car_make = models.CharField(max_length=50, blank=True, help_text="User's car make")
@@ -117,7 +118,7 @@ class Event(models.Model):
     entry_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Entry fee")
     is_public = models.BooleanField(default=True, help_text="Whether event is public")
     is_active = models.BooleanField(default=True, help_text="Whether event is active")
-    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organized_events')
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='organized_events')
     track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='events')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -131,8 +132,8 @@ class Event(models.Model):
 
 class Callout(models.Model):
     """Race callout model."""
-    challenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_callouts')
-    challenged = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_callouts')
+    challenger = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_callouts')
+    challenged = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_callouts')
     location_type = models.CharField(max_length=20, choices=[
         ('track', 'Track'),
         ('street', 'Street'),
@@ -154,7 +155,7 @@ class Callout(models.Model):
         ('cancelled', 'Cancelled'),
     ], default='pending', help_text="Callout status")
     scheduled_date = models.DateTimeField(blank=True, null=True, help_text="Scheduled race date")
-    winner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='won_races')
+    winner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name='won_races')
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True)
     track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -169,8 +170,8 @@ class Callout(models.Model):
 
 class RaceResult(models.Model):
     """Race result model."""
-    winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='race_wins')
-    loser = models.ForeignKey(User, on_delete=models.CASCADE, related_name='race_losses')
+    winner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='race_wins')
+    loser = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='race_losses')
     winner_time = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Winner's time")
     loser_time = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Loser's time")
     winner_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True, help_text="Winner's speed")
@@ -212,7 +213,7 @@ class Marketplace(models.Model):
     contact_email = models.EmailField(blank=True, help_text="Contact email")
     is_active = models.BooleanField(default=True, help_text="Whether listing is active")
     views = models.IntegerField(default=0, help_text="Number of views")
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_items')
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='marketplace_items')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -241,7 +242,7 @@ class MarketplaceImage(models.Model):
 class EventParticipant(models.Model):
     """Event participant model."""
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='participants')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_participations')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='event_participations')
     registration_date = models.DateTimeField(auto_now_add=True, help_text="When user registered")
     is_confirmed = models.BooleanField(default=False, help_text="Whether participation is confirmed")
 
@@ -255,8 +256,8 @@ class EventParticipant(models.Model):
 
 class Friendship(models.Model):
     """Friendship model."""
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friendship_requests_sent')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friendship_requests_received')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='friendship_requests_sent')
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='friendship_requests_received')
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
@@ -276,8 +277,8 @@ class Friendship(models.Model):
 
 class Message(models.Model):
     """Message model."""
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_messages')
     content = models.TextField(help_text="Message content")
     is_read = models.BooleanField(default=False, help_text="Whether message has been read")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -291,7 +292,7 @@ class Message(models.Model):
 
 class CarProfile(models.Model):
     """Car profile model."""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cars')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cars')
     name = models.CharField(max_length=100, help_text="Car name")
     make = models.CharField(max_length=50, help_text="Car make")
     model = models.CharField(max_length=50, help_text="Car model")
@@ -382,11 +383,11 @@ class CarImage(models.Model):
 
 class UserPost(models.Model):
     """User post model."""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='posts')
     content = models.TextField(help_text="Post content")
     image = models.ImageField(upload_to='post_images/', blank=True, null=True, help_text="Post image")
     car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, related_name='posts', blank=True, null=True)
-    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_posts', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -404,7 +405,7 @@ class UserPost(models.Model):
 class PostComment(models.Model):
     """Post comment model."""
     post = models.ForeignKey(UserPost, on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='post_comments')
     content = models.TextField(help_text="Comment content")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -417,7 +418,7 @@ class PostComment(models.Model):
 
 class Subscription(models.Model):
     """Subscription model."""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
     subscription_type = models.CharField(max_length=20, choices=[
         ('basic', 'Basic'),
         ('premium', 'Premium'),
@@ -443,7 +444,7 @@ class Subscription(models.Model):
 
 class Payment(models.Model):
     """Payment model."""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments')
     payment_type = models.CharField(max_length=20, choices=[
         ('subscription', 'Subscription'),
         ('marketplace', 'Marketplace'),
@@ -471,7 +472,7 @@ class Payment(models.Model):
 
 class UserWallet(models.Model):
     """User wallet model."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wallet')
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Wallet balance")
     is_active = models.BooleanField(default=True, help_text="Whether wallet is active")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -486,8 +487,8 @@ class UserWallet(models.Model):
 
 class MarketplaceOrder(models.Model):
     """Marketplace order model."""
-    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sales')
+    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='purchases')
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sales')
     item = models.ForeignKey(Marketplace, on_delete=models.CASCADE, related_name='orders')
     quantity = models.IntegerField(default=1, help_text="Order quantity")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Total order amount")
@@ -512,7 +513,7 @@ class MarketplaceOrder(models.Model):
 
 class MarketplaceReview(models.Model):
     """Marketplace review model."""
-    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_reviews')
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='marketplace_reviews')
     order = models.OneToOneField(MarketplaceOrder, on_delete=models.CASCADE, related_name='review')
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Review rating")
     title = models.CharField(max_length=200, help_text="Review title")
@@ -531,7 +532,7 @@ class MarketplaceReview(models.Model):
 
 class Bet(models.Model):
     """Bet model."""
-    bettor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bets')
+    bettor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bets')
     bet_type = models.CharField(max_length=20, choices=[
         ('callout', 'Callout'),
         ('event', 'Event'),
@@ -579,7 +580,7 @@ class BettingPool(models.Model):
 
 class Notification(models.Model):
     """Notification model."""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     notification_type = models.CharField(max_length=20, choices=[
         ('callout', 'Callout'),
         ('friend_request', 'Friend Request'),
@@ -625,7 +626,7 @@ class HotSpot(models.Model):
     is_verified = models.BooleanField(default=False, help_text="Whether this is a verified official location")
     is_active = models.BooleanField(default=True, help_text="Whether this hot spot is currently active")
     total_races = models.IntegerField(default=0, help_text="Total number of races held here")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_hotspots')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_hotspots')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -651,7 +652,7 @@ class RacingCrew(models.Model):
     rules = models.TextField(blank=True, help_text="Crew rules")
     website = models.URLField(blank=True, help_text="Crew website")
     social_media = models.JSONField(default=dict, blank=True, help_text="Social media links")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_crews')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_crews')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -665,7 +666,7 @@ class RacingCrew(models.Model):
 class CrewMembership(models.Model):
     """Crew membership model."""
     crew = models.ForeignKey(RacingCrew, on_delete=models.CASCADE, related_name='memberships')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crew_memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='crew_memberships')
     role = models.CharField(max_length=50, choices=[
         ('member', 'Member'),
         ('officer', 'Officer'),
@@ -679,7 +680,7 @@ class CrewMembership(models.Model):
         ('banned', 'Banned'),
     ], default='pending', help_text="Membership status")
     joined_date = models.DateTimeField(auto_now_add=True, help_text="When member joined")
-    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='crew_invitations_sent')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name='crew_invitations_sent')
     notes = models.TextField(blank=True, help_text="Admin notes")
 
     def __str__(self):
@@ -692,7 +693,7 @@ class CrewMembership(models.Model):
 
 class LocationBroadcast(models.Model):
     """Location broadcast model."""
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='location_broadcasts')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='location_broadcasts')
     location = models.CharField(max_length=200, help_text="Current location")
     latitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Latitude coordinate")
     longitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Longitude coordinate")
@@ -710,8 +711,8 @@ class LocationBroadcast(models.Model):
 
 class ReputationRating(models.Model):
     """Reputation rating model."""
-    rater = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_given')
-    rated_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_received')
+    rater = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ratings_given')
+    rated_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='ratings_received')
     callout = models.ForeignKey(Callout, on_delete=models.CASCADE, related_name='ratings', blank=True, null=True)
     punctuality = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Punctuality rating (1-5)")
     rule_adherence = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Rule adherence rating (1-5)")
@@ -730,7 +731,7 @@ class ReputationRating(models.Model):
 
 class OpenChallenge(models.Model):
     """Open challenge model."""
-    challenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='open_challenges_created')
+    challenger = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='open_challenges_created')
     title = models.CharField(max_length=200, help_text="Challenge title")
     description = models.TextField(help_text="Challenge description")
     location = models.CharField(max_length=200, help_text="Challenge location")
@@ -758,7 +759,7 @@ class OpenChallenge(models.Model):
 class ChallengeResponse(models.Model):
     """Challenge response model."""
     challenge = models.ForeignKey(OpenChallenge, on_delete=models.CASCADE, related_name='responses')
-    respondent = models.ForeignKey(User, on_delete=models.CASCADE, related_name='challenge_responses')
+    respondent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='challenge_responses')
     message = models.TextField(blank=True, help_text="Response message")
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
@@ -796,7 +797,7 @@ class BuildLog(models.Model):
     allow_comments = models.BooleanField(default=True)
     allow_ratings = models.BooleanField(default=True)
     views = models.IntegerField(default=0)
-    likes = models.ManyToManyField(User, related_name='liked_builds', blank=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_builds', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -882,7 +883,7 @@ class CarTour(models.Model):
     is_public = models.BooleanField(default=True)
     allow_comments = models.BooleanField(default=True)
     views = models.IntegerField(default=0)
-    likes = models.ManyToManyField(User, related_name='liked_tours', blank=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_tours', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -924,7 +925,7 @@ class PerformanceData(models.Model):
     notes = models.TextField(blank=True)
     modifications = models.TextField(blank=True)
     is_verified = models.BooleanField(default=False)
-    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='verified_performance_data')
+    verified_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name='verified_performance_data')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -958,7 +959,7 @@ class BuildWishlist(models.Model):
 
 class WishlistSuggestion(models.Model):
     wishlist_item = models.ForeignKey(BuildWishlist, on_delete=models.CASCADE, related_name='suggestions')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist_suggestions_given')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist_suggestions_given')
     suggestion = models.TextField()
     alternative_part = models.CharField(max_length=200, blank=True)
     price_info = models.CharField(max_length=200, blank=True)
@@ -975,7 +976,7 @@ class WishlistSuggestion(models.Model):
 
 class BuildRating(models.Model):
     build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='ratings')
-    rater = models.ForeignKey(User, on_delete=models.CASCADE, related_name='build_ratings_given')
+    rater = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='build_ratings_given')
     creativity = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     execution = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     documentation = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
@@ -997,13 +998,13 @@ class BuildComment(models.Model):
     build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='comments', blank=True, null=True)
     milestone = models.ForeignKey(BuildMilestone, on_delete=models.CASCADE, related_name='comments', blank=True, null=True)
     tour = models.ForeignKey(CarTour, on_delete=models.CASCADE, related_name='comments', blank=True, null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='build_comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='build_comments')
     content = models.TextField()
     comment_type = models.CharField(max_length=20, default='general')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='replies', blank=True, null=True)
     is_approved = models.BooleanField(default=True)
     is_flagged = models.BooleanField(default=False)
-    likes = models.ManyToManyField(User, related_name='liked_build_comments', blank=True)
+    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_build_comments', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -1047,7 +1048,7 @@ class BuildBadge(models.Model):
 class BuildBadgeAward(models.Model):
     build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='badge_awards')
     badge = models.ForeignKey(BuildBadge, on_delete=models.CASCADE, related_name='awards')
-    awarded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='badges_awarded')
+    awarded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='badges_awarded')
     awarded_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
     

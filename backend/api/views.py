@@ -15,14 +15,13 @@ from rest_framework import viewsets, permissions, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db import models
 from rest_framework.authtoken.models import Token
 from core.models import (
-    UserProfile, Track, Event, Callout, RaceResult, 
+    User, UserProfile, Track, Event, Callout, RaceResult, 
     Marketplace, MarketplaceImage, EventParticipant,
     Friendship, Message, CarProfile, CarModification, 
     CarImage, UserPost, PostComment, Subscription, Payment, UserWallet,
