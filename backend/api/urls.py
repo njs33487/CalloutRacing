@@ -5,7 +5,9 @@ from .views import (
     CalloutViewSet, RaceResultViewSet, MarketplaceViewSet, EventParticipantViewSet,
     FriendshipViewSet, MessageViewSet, CarProfileViewSet, CarModificationViewSet,
     CarImageViewSet, UserPostViewSet, PostCommentViewSet, UserProfileDetailViewSet,
-    contact_form, login_view, register_view, logout_view, user_profile, stats_view
+    contact_form, login_view, register_view, logout_view, user_profile, stats_view,
+    HotSpotViewSet, LocationBroadcastViewSet, RacingCrewViewSet, CrewMembershipViewSet,
+    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet
 )
 
 router = DefaultRouter()
@@ -25,6 +27,21 @@ router.register(r'car-modifications', CarModificationViewSet, basename='car-modi
 router.register(r'car-images', CarImageViewSet, basename='car-image')
 router.register(r'posts', UserPostViewSet, basename='post')
 router.register(r'post-comments', PostCommentViewSet, basename='post-comment')
+
+# Hot spots and location-based features
+router.register(r'hotspots', HotSpotViewSet, basename='hotspot')
+router.register(r'location-broadcasts', LocationBroadcastViewSet, basename='locationbroadcast')
+
+# Racing crews and groups
+router.register(r'crews', RacingCrewViewSet, basename='racingcrew')
+router.register(r'crew-memberships', CrewMembershipViewSet, basename='crewmembership')
+
+# Reputation and ratings
+router.register(r'reputation-ratings', ReputationRatingViewSet, basename='reputationrating')
+
+# Open challenges
+router.register(r'open-challenges', OpenChallengeViewSet, basename='openchallenge')
+router.register(r'challenge-responses', ChallengeResponseViewSet, basename='challengeresponse')
 
 urlpatterns = [
     path('', include(router.urls)),

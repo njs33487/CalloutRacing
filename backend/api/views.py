@@ -27,7 +27,8 @@ from core.models import (
     Friendship, Message, CarProfile, CarModification, 
     CarImage, UserPost, PostComment, Subscription, Payment, UserWallet,
     MarketplaceOrder, MarketplaceReview, Bet, BettingPool, Notification,
-    ContactSubmission
+    ContactSubmission, HotSpot, RacingCrew, CrewMembership, LocationBroadcast,
+    ReputationRating, OpenChallenge, ChallengeResponse
 )
 from .serializers import (
     UserSerializer, UserProfileSerializer, TrackSerializer, EventSerializer,
@@ -38,9 +39,14 @@ from .serializers import (
     UserPostSerializer, PostCommentSerializer, UserProfileDetailSerializer,
     SubscriptionSerializer, PaymentSerializer, UserWalletSerializer,
     MarketplaceOrderSerializer, MarketplaceReviewSerializer, BetSerializer,
-    BettingPoolSerializer, NotificationSerializer, SubscriptionPlanSerializer
+    BettingPoolSerializer, NotificationSerializer, SubscriptionPlanSerializer,
+    HotSpotSerializer, RacingCrewSerializer, CrewMembershipSerializer,
+    LocationBroadcastSerializer, ReputationRatingSerializer, OpenChallengeSerializer,
+    ChallengeResponseSerializer
 )
 from django.utils import timezone
+from datetime import timedelta
+import math
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -294,135 +300,123 @@ class EventViewSet(viewsets.ModelViewSet):
 
 class CalloutViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Callout model.
+    API endpoint for Callout model.
     
-    Handles CRUD operations for race callouts with custom actions for accepting/declining
-    and completing races. Users can only see callouts they're involved in.
+    Provides CRUD operations for race callouts between users.
     """
     queryset = Callout.objects.all()
     serializer_class = CalloutSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'location_type', 'race_type', 'challenger', 'challenged']
-    search_fields = ['message']
-    ordering_fields = ['created_at', 'scheduled_date']
-
-    def get_serializer_class(self):
-        """
-        Use detailed serializer for retrieve actions to include related data.
-        """
-        if self.action == 'retrieve':
-            return CalloutDetailSerializer
-        return CalloutSerializer
-
+    
     def get_queryset(self):
-        """
-        Filter queryset to only show callouts where the current user is involved
-        (either as challenger or challenged).
-        """
+        """Filter callouts based on user participation and privacy."""
         user = self.request.user
-        return Callout.objects.filter(
-            models.Q(challenger=user) | models.Q(challenged=user)
-        )
-
-    def perform_create(self, serializer):
-        """
-        Automatically set the current user as the challenger.
-        """
-        serializer.save(challenger=self.request.user)
-
-    @action(detail=True, methods=['post'])
-    def accept_callout(self, request, pk=None):
-        """
-        Custom action to accept a callout.
         
-        Args:
-            request: HTTP request object
-            pk: Primary key of the callout
-            
-        Returns:
-            Response with success/error message
-        """
+        # Get callouts where user is challenger, challenged, or in a crew
+        queryset = Callout.objects.filter(
+            models.Q(challenger=user) |
+            models.Q(challenged=user) |
+            models.Q(crew__members=user) |
+            models.Q(is_private=False)
+        ).distinct()
+        
+        # Filter by status
+        status = self.request.query_params.get('status', None)
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        # Filter by location type
+        location_type = self.request.query_params.get('location_type', None)
+        if location_type:
+            queryset = queryset.filter(location_type=location_type)
+        
+        # Filter by race type
+        race_type = self.request.query_params.get('race_type', None)
+        if race_type:
+            queryset = queryset.filter(race_type=race_type)
+        
+        # Filter by experience level
+        experience_level = self.request.query_params.get('experience_level', None)
+        if experience_level:
+            queryset = queryset.filter(experience_level=experience_level)
+        
+        return queryset.order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        """Set the challenger when creating a callout."""
+        serializer.save(challenger=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
+        """Accept a callout."""
         callout = self.get_object()
-        # Verify the current user is the challenged party
+        
         if callout.challenged != request.user:
-            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Not authorized'}, status=403)
+        
+        if callout.status != 'pending':
+            return Response({'error': 'Callout already processed'}, status=400)
         
         callout.status = 'accepted'
         callout.save()
-        return Response({'message': 'Callout accepted'})
-
-    @action(detail=True, methods=['post'])
-    def decline_callout(self, request, pk=None):
-        """
-        Custom action to decline a callout.
         
-        Args:
-            request: HTTP request object
-            pk: Primary key of the callout
-            
-        Returns:
-            Response with success/error message
-        """
+        return Response({'status': 'Callout accepted'})
+    
+    @action(detail=True, methods=['post'])
+    def decline(self, request, pk=None):
+        """Decline a callout."""
         callout = self.get_object()
-        # Verify the current user is the challenged party
+        
         if callout.challenged != request.user:
-            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Not authorized'}, status=403)
+        
+        if callout.status != 'pending':
+            return Response({'error': 'Callout already processed'}, status=400)
         
         callout.status = 'declined'
         callout.save()
-        return Response({'message': 'Callout declined'})
-
+        
+        return Response({'status': 'Callout declined'})
+    
     @action(detail=True, methods=['post'])
-    def complete_race(self, request, pk=None):
-        """
-        Custom action to complete a race and update user statistics.
-        
-        Args:
-            request: HTTP request object containing winner_id
-            pk: Primary key of the callout
-            
-        Returns:
-            Response with success/error message
-        """
+    def complete(self, request, pk=None):
+        """Mark a callout as completed with winner."""
         callout = self.get_object()
-        # Verify callout is accepted before completing
-        if callout.status != 'accepted':
-            return Response({'error': 'Callout must be accepted first'}, status=status.HTTP_400_BAD_REQUEST)
-        
         winner_id = request.data.get('winner_id')
+        
         if not winner_id:
-            return Response({'error': 'Winner ID required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'winner_id required'}, status=400)
+        
+        if callout.challenger != request.user and callout.challenged != request.user:
+            return Response({'error': 'Not authorized'}, status=403)
+        
+        if callout.status != 'accepted':
+            return Response({'error': 'Callout must be accepted first'}, status=400)
         
         try:
             winner = User.objects.get(id=winner_id)
-            # Verify winner is one of the participants
             if winner not in [callout.challenger, callout.challenged]:
-                return Response({'error': 'Invalid winner'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Update callout status and set winner
-            callout.status = 'completed'
-            callout.winner = winner
-            callout.save()
-            
-            # Determine loser and update both user profiles
-            loser = callout.challenged if winner == callout.challenger else callout.challenger
-            
-            # Update winner's profile
-            winner_profile = winner.profile
-            winner_profile.wins += 1
-            winner_profile.total_races += 1
-            winner_profile.save()
-            
-            # Update loser's profile
-            loser_profile = loser.profile
-            loser_profile.losses += 1
-            loser_profile.total_races += 1
-            loser_profile.save()
-            
-            return Response({'message': 'Race completed'})
+                return Response({'error': 'Winner must be a participant'}, status=400)
         except User.DoesNotExist:
-            return Response({'error': 'Invalid user'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Winner not found'}, status=404)
+        
+        callout.status = 'completed'
+        callout.winner = winner
+        callout.save()
+        
+        # Update user stats
+        winner_profile = winner.profile
+        loser_profile = (callout.challenged if winner == callout.challenger else callout.challenger).profile
+        
+        winner_profile.wins += 1
+        winner_profile.total_races += 1
+        winner_profile.save()
+        
+        loser_profile.losses += 1
+        loser_profile.total_races += 1
+        loser_profile.save()
+        
+        return Response({'status': 'Callout completed'})
 
 
 class RaceResultViewSet(viewsets.ModelViewSet):
@@ -1679,4 +1673,379 @@ def subscription_plans(request):
                 break
     
     serializer = SubscriptionPlanSerializer(plans, many=True)
-    return Response(serializer.data) 
+    return Response(serializer.data)
+
+
+# Add these new viewsets after the existing viewsets
+
+class HotSpotViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for HotSpot model.
+    
+    Provides CRUD operations for racing hot spots including tracks,
+    street meet points, and popular racing locations.
+    """
+    queryset = HotSpot.objects.all()
+    serializer_class = HotSpotSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter hot spots based on query parameters."""
+        queryset = HotSpot.objects.filter(is_active=True)
+        
+        # Filter by spot type
+        spot_type = self.request.query_params.get('spot_type', None)
+        if spot_type:
+            queryset = queryset.filter(spot_type=spot_type)
+        
+        # Filter by location (city/state)
+        city = self.request.query_params.get('city', None)
+        if city:
+            queryset = queryset.filter(city__icontains=city)
+        
+        state = self.request.query_params.get('state', None)
+        if state:
+            queryset = queryset.filter(state__icontains=state)
+        
+        # Filter by verification status
+        is_verified = self.request.query_params.get('is_verified', None)
+        if is_verified is not None:
+            queryset = queryset.filter(is_verified=is_verified.lower() == 'true')
+        
+        return queryset.order_by('-is_verified', '-total_races', 'name')
+    
+    def perform_create(self, serializer):
+        """Set the creator when creating a new hot spot."""
+        serializer.save(created_by=self.request.user)
+
+
+class RacingCrewViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for RacingCrew model.
+    
+    Provides CRUD operations for racing crews and car clubs.
+    """
+    queryset = RacingCrew.objects.all()
+    serializer_class = RacingCrewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter crews based on user membership and privacy settings."""
+        user = self.request.user
+        
+        # Get crews the user owns, admins, or is a member of
+        user_crews = RacingCrew.objects.filter(
+            models.Q(owner=user) |
+            models.Q(admins=user) |
+            models.Q(members=user)
+        )
+        
+        # Get public crews
+        public_crews = RacingCrew.objects.filter(is_private=False)
+        
+        # Combine and remove duplicates
+        queryset = (user_crews | public_crews).distinct()
+        
+        # Filter by crew type
+        crew_type = self.request.query_params.get('crew_type', None)
+        if crew_type:
+            queryset = queryset.filter(crew_type=crew_type)
+        
+        return queryset.order_by('-member_count', 'name')
+    
+    def perform_create(self, serializer):
+        """Set the owner when creating a new crew."""
+        crew = serializer.save(owner=self.request.user)
+        # Add creator as admin and member
+        crew.admins.add(self.request.user)
+        crew.members.add(self.request.user)
+        crew.member_count = crew.members.count()
+        crew.save()
+
+
+class CrewMembershipViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for CrewMembership model.
+    
+    Manages crew memberships and invitations.
+    """
+    queryset = CrewMembership.objects.all()
+    serializer_class = CrewMembershipSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter memberships based on user's crews."""
+        user = self.request.user
+        
+        # Get memberships for crews the user owns or admins
+        return CrewMembership.objects.filter(
+            models.Q(crew__owner=user) |
+            models.Q(crew__admins=user)
+        ).order_by('-joined_at')
+    
+    @action(detail=True, methods=['post'])
+    def accept_invitation(self, request, pk=None):
+        """Accept a crew invitation."""
+        membership = self.get_object()
+        
+        if membership.user != request.user:
+            return Response({'error': 'Not authorized'}, status=403)
+        
+        if membership.status != 'pending':
+            return Response({'error': 'Invitation already processed'}, status=400)
+        
+        membership.status = 'active'
+        membership.save()
+        
+        # Add user to crew members
+        crew = membership.crew
+        crew.members.add(request.user)
+        crew.member_count = crew.members.count()
+        crew.save()
+        
+        return Response({'status': 'Invitation accepted'})
+    
+    @action(detail=True, methods=['post'])
+    def decline_invitation(self, request, pk=None):
+        """Decline a crew invitation."""
+        membership = self.get_object()
+        
+        if membership.user != request.user:
+            return Response({'error': 'Not authorized'}, status=403)
+        
+        if membership.status != 'pending':
+            return Response({'error': 'Invitation already processed'}, status=400)
+        
+        membership.status = 'declined'
+        membership.save()
+        
+        return Response({'status': 'Invitation declined'})
+
+
+class LocationBroadcastViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for LocationBroadcast model.
+    
+    Manages real-time location broadcasting for "I'm Here, Who's There?" feature.
+    """
+    queryset = LocationBroadcast.objects.all()
+    serializer_class = LocationBroadcastSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter broadcasts based on location and activity."""
+        queryset = LocationBroadcast.objects.filter(is_active=True)
+        
+        # Filter by hot spot
+        hot_spot_id = self.request.query_params.get('hot_spot', None)
+        if hot_spot_id:
+            queryset = queryset.filter(hot_spot_id=hot_spot_id)
+        
+        # Filter by location radius (basic implementation)
+        lat = self.request.query_params.get('lat', None)
+        lng = self.request.query_params.get('lng', None)
+        radius = self.request.query_params.get('radius', 10)  # Default 10 miles
+        
+        if lat and lng:
+            # Simple distance filtering (can be enhanced with proper geospatial queries)
+            lat, lng = float(lat), float(lng)
+            radius = float(radius)
+            
+            # Basic bounding box filter (approximate)
+            lat_range = radius / 69  # Rough miles to degrees conversion
+            lng_range = radius / (69 * math.cos(math.radians(lat)))
+            
+            queryset = queryset.filter(
+                latitude__range=(lat - lat_range, lat + lat_range),
+                longitude__range=(lng - lng_range, lng + lng_range)
+            )
+        
+        return queryset.order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        """Set the user and expiration when creating a broadcast."""
+        # Set expiration to 2 hours from now
+        expires_at = timezone.now() + timedelta(hours=2)
+        serializer.save(user=self.request.user, expires_at=expires_at)
+    
+    @action(detail=False, methods=['post'])
+    def deactivate_all(self, request):
+        """Deactivate all active broadcasts for the current user."""
+        LocationBroadcast.objects.filter(
+            user=request.user,
+            is_active=True
+        ).update(is_active=False)
+        
+        return Response({'status': 'All broadcasts deactivated'})
+
+
+class ReputationRatingViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for ReputationRating model.
+    
+    Manages sportsmanship and reputation ratings between users.
+    """
+    queryset = ReputationRating.objects.all()
+    serializer_class = ReputationRatingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter ratings based on user relationships."""
+        user = self.request.user
+        
+        # Get ratings given by or received by the user
+        return ReputationRating.objects.filter(
+            models.Q(rater=user) | models.Q(rated_user=user)
+        ).order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        """Set the rater when creating a rating."""
+        serializer.save(rater=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def user_stats(self, request):
+        """Get reputation statistics for a user."""
+        user_id = request.query_params.get('user_id', None)
+        if not user_id:
+            return Response({'error': 'user_id required'}, status=400)
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
+        
+        ratings = ReputationRating.objects.filter(rated_user=user)
+        
+        if not ratings.exists():
+            return Response({
+                'user_id': user.id,
+                'username': user.username,
+                'average_ratings': {
+                    'punctuality': 0,
+                    'rule_adherence': 0,
+                    'sportsmanship': 0,
+                    'overall': 0
+                },
+                'total_ratings': 0
+            })
+        
+        stats = {
+            'user_id': user.id,
+            'username': user.username,
+            'average_ratings': {
+                'punctuality': ratings.aggregate(avg=models.Avg('punctuality'))['punctuality__avg'],
+                'rule_adherence': ratings.aggregate(avg=models.Avg('rule_adherence'))['rule_adherence__avg'],
+                'sportsmanship': ratings.aggregate(avg=models.Avg('sportsmanship'))['sportsmanship__avg'],
+                'overall': ratings.aggregate(avg=models.Avg('overall'))['overall__avg']
+            },
+            'total_ratings': ratings.count()
+        }
+        
+        return Response(stats)
+
+
+class OpenChallengeViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for OpenChallenge model.
+    
+    Manages public open challenges for racing.
+    """
+    queryset = OpenChallenge.objects.all()
+    serializer_class = OpenChallengeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter challenges based on various criteria."""
+        queryset = OpenChallenge.objects.filter(is_active=True)
+        
+        # Filter by challenge type
+        challenge_type = self.request.query_params.get('challenge_type', None)
+        if challenge_type:
+            queryset = queryset.filter(challenge_type=challenge_type)
+        
+        # Filter by location
+        location = self.request.query_params.get('location', None)
+        if location:
+            queryset = queryset.filter(location__icontains=location)
+        
+        # Filter by horsepower requirements
+        min_hp = self.request.query_params.get('min_horsepower', None)
+        if min_hp:
+            queryset = queryset.filter(min_horsepower__lte=min_hp)
+        
+        max_hp = self.request.query_params.get('max_horsepower', None)
+        if max_hp:
+            queryset = queryset.filter(max_horsepower__gte=max_hp)
+        
+        # Filter by scheduled date
+        scheduled_after = self.request.query_params.get('scheduled_after', None)
+        if scheduled_after:
+            queryset = queryset.filter(scheduled_date__gte=scheduled_after)
+        
+        return queryset.order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        """Set the challenger when creating a new challenge."""
+        serializer.save(challenger=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def respond(self, request, pk=None):
+        """Respond to an open challenge."""
+        challenge = self.get_object()
+        status = request.data.get('status', 'interested')
+        message = request.data.get('message', '')
+        
+        # Check if user already responded
+        existing_response = ChallengeResponse.objects.filter(
+            challenge=challenge,
+            responder=request.user
+        ).first()
+        
+        if existing_response:
+            existing_response.status = status
+            existing_response.message = message
+            existing_response.save()
+            return Response({'status': 'Response updated'})
+        
+        # Create new response
+        ChallengeResponse.objects.create(
+            challenge=challenge,
+            responder=request.user,
+            status=status,
+            message=message
+        )
+        
+        return Response({'status': 'Response submitted'})
+    
+    @action(detail=True, methods=['get'])
+    def responses(self, request, pk=None):
+        """Get all responses for a challenge."""
+        challenge = self.get_object()
+        responses = ChallengeResponse.objects.filter(challenge=challenge)
+        serializer = ChallengeResponseSerializer(responses, many=True)
+        return Response(serializer.data)
+
+
+class ChallengeResponseViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for ChallengeResponse model.
+    
+    Manages responses to open challenges.
+    """
+    queryset = ChallengeResponse.objects.all()
+    serializer_class = ChallengeResponseSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter responses based on user's challenges and responses."""
+        user = self.request.user
+        
+        # Get responses to challenges created by the user
+        # and responses made by the user
+        return ChallengeResponse.objects.filter(
+            models.Q(challenge__challenger=user) | models.Q(responder=user)
+        ).order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        """Set the responder when creating a response."""
+        serializer.save(responder=self.request.user) 

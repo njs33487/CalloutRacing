@@ -16,6 +16,7 @@ import Friends from './pages/Friends'
 import CreateCallout from './pages/CreateCallout'
 import CreateEvent from './pages/CreateEvent'
 import CreateListing from './pages/CreateListing'
+import HotSpots from './pages/HotSpots'
 
 function App() {
   return (
@@ -45,6 +46,9 @@ function App() {
             <Route path="marketplace/create" element={<CreateListing />} />
             <Route path="profile" element={<Profile />} />
             <Route path="friends" element={<Friends />} />
+            
+            {/* Advanced callout racing features */}
+            <Route path="hotspots" element={<HotSpots />} />
           </Route>
         </Routes>
       </div>

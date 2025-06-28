@@ -39,15 +39,25 @@ export interface Callout {
   id: number;
   challenger: User;
   challenged: User;
-  race_type: string;
-  location_type: string;
-  street_location?: string;
-  track?: Track;
-  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  event: Event | null;
+  track: Track | null;
+  hot_spot: HotSpot | null;
+  crew: RacingCrew | null;
+  location_type: 'track' | 'street' | 'hot_spot';
+  street_location: string;
+  race_type: 'quarter_mile' | 'eighth_mile' | 'roll_race' | 'dig_race' | 'heads_up' | 'bracket';
+  max_horsepower: number | null;
+  min_horsepower: number | null;
+  tire_requirement: string;
+  rules: string;
+  experience_level: 'beginner' | 'intermediate' | 'experienced' | 'pro';
+  is_private: boolean;
+  is_invite_only: boolean;
   wager_amount: number;
   message: string;
-  scheduled_date?: string;
-  winner?: User;
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
+  scheduled_date: string | null;
+  winner: User | null;
   images?: CalloutImage[];
   created_at: string;
   updated_at: string;
@@ -280,4 +290,108 @@ export interface CreateListingForm {
   is_negotiable: boolean;
   trade_offered: boolean;
   trade_description: string;
+}
+
+// Add these new interfaces after the existing interfaces
+
+export interface HotSpot {
+  id: number;
+  name: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  latitude: number;
+  longitude: number;
+  spot_type: 'track' | 'street_meet' | 'parking_lot' | 'industrial' | 'other';
+  rules: string;
+  amenities: string;
+  peak_hours: string;
+  is_verified: boolean;
+  is_active: boolean;
+  created_by: User;
+  total_races: number;
+  last_activity: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RacingCrew {
+  id: number;
+  name: string;
+  description: string;
+  crew_type: 'car_club' | 'racing_crew' | 'friend_group' | 'team';
+  is_private: boolean;
+  is_invite_only: boolean;
+  owner: User;
+  admins: User[];
+  members: User[];
+  member_count: number;
+  total_races: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CrewMembership {
+  id: number;
+  crew: RacingCrew;
+  user: User;
+  status: 'pending' | 'active' | 'banned';
+  joined_at: string;
+  invited_by: User | null;
+}
+
+export interface LocationBroadcast {
+  id: number;
+  user: User;
+  hot_spot: HotSpot | null;
+  latitude: number;
+  longitude: number;
+  address: string;
+  message: string;
+  is_active: boolean;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface ReputationRating {
+  id: number;
+  rater: User;
+  rated_user: User;
+  punctuality: number;
+  rule_adherence: number;
+  sportsmanship: number;
+  overall: number;
+  comment: string;
+  created_at: string;
+}
+
+export interface OpenChallenge {
+  id: number;
+  challenger: User;
+  title: string;
+  description: string;
+  challenge_type: 'street' | 'track' | 'roll_race' | 'dig_race' | 'meetup';
+  max_horsepower: number | null;
+  min_horsepower: number | null;
+  tire_requirement: string;
+  location: string;
+  hot_spot: HotSpot | null;
+  scheduled_date: string | null;
+  rules: string;
+  stakes: string;
+  is_active: boolean;
+  max_participants: number | null;
+  responses_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChallengeResponse {
+  id: number;
+  responder: User;
+  status: 'interested' | 'accepted' | 'declined';
+  message: string;
+  created_at: string;
 } 

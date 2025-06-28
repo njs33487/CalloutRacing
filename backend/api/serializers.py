@@ -20,7 +20,8 @@ from core.models import (
     Friendship, Message, CarProfile, CarModification, 
     CarImage, UserPost, PostComment, Subscription, Payment,
     UserWallet, MarketplaceOrder, MarketplaceReview, Bet, BettingPool,
-    Notification
+    Notification, HotSpot, RacingCrew, LocationBroadcast, ReputationRating,
+    OpenChallenge, ChallengeResponse, CrewMembership
 )
 from django.db import models
 
@@ -92,6 +93,111 @@ class EventSerializer(serializers.ModelSerializer):
         return obj.participants.count()
 
 
+class HotSpotSerializer(serializers.ModelSerializer):
+    """Serializer for HotSpot model."""
+    created_by = UserSerializer(read_only=True)
+    total_races = serializers.ReadOnlyField()
+    last_activity = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = HotSpot
+        fields = [
+            'id', 'name', 'description', 'address', 'city', 'state', 'zip_code',
+            'latitude', 'longitude', 'spot_type', 'rules', 'amenities', 'peak_hours',
+            'is_verified', 'is_active', 'created_by', 'total_races', 'last_activity',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_by', 'total_races', 'last_activity', 'created_at', 'updated_at']
+
+
+class RacingCrewSerializer(serializers.ModelSerializer):
+    """Serializer for RacingCrew model."""
+    owner = UserSerializer(read_only=True)
+    admins = UserSerializer(many=True, read_only=True)
+    members = UserSerializer(many=True, read_only=True)
+    member_count = serializers.ReadOnlyField()
+    total_races = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = RacingCrew
+        fields = [
+            'id', 'name', 'description', 'crew_type', 'is_private', 'is_invite_only',
+            'owner', 'admins', 'members', 'member_count', 'total_races',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['owner', 'admins', 'members', 'member_count', 'total_races', 'created_at', 'updated_at']
+
+
+class CrewMembershipSerializer(serializers.ModelSerializer):
+    """Serializer for CrewMembership model."""
+    crew = RacingCrewSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    invited_by = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = CrewMembership
+        fields = ['id', 'crew', 'user', 'status', 'joined_at', 'invited_by']
+        read_only_fields = ['joined_at', 'invited_by']
+
+
+class LocationBroadcastSerializer(serializers.ModelSerializer):
+    """Serializer for LocationBroadcast model."""
+    user = UserSerializer(read_only=True)
+    hot_spot = HotSpotSerializer(read_only=True)
+    
+    class Meta:
+        model = LocationBroadcast
+        fields = [
+            'id', 'user', 'hot_spot', 'latitude', 'longitude', 'address',
+            'message', 'is_active', 'expires_at', 'created_at'
+        ]
+        read_only_fields = ['user', 'created_at']
+
+
+class ReputationRatingSerializer(serializers.ModelSerializer):
+    """Serializer for ReputationRating model."""
+    rater = UserSerializer(read_only=True)
+    rated_user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = ReputationRating
+        fields = [
+            'id', 'rater', 'rated_user', 'punctuality', 'rule_adherence',
+            'sportsmanship', 'overall', 'comment', 'created_at'
+        ]
+        read_only_fields = ['rater', 'created_at']
+
+
+class OpenChallengeSerializer(serializers.ModelSerializer):
+    """Serializer for OpenChallenge model."""
+    challenger = UserSerializer(read_only=True)
+    hot_spot = HotSpotSerializer(read_only=True)
+    responses_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = OpenChallenge
+        fields = [
+            'id', 'challenger', 'title', 'description', 'challenge_type',
+            'max_horsepower', 'min_horsepower', 'tire_requirement', 'location',
+            'hot_spot', 'scheduled_date', 'rules', 'stakes', 'is_active',
+            'max_participants', 'responses_count', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['challenger', 'responses_count', 'created_at', 'updated_at']
+    
+    def get_responses_count(self, obj):
+        return obj.challenge_responses.count()
+
+
+class ChallengeResponseSerializer(serializers.ModelSerializer):
+    """Serializer for ChallengeResponse model."""
+    responder = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = ChallengeResponse
+        fields = ['id', 'responder', 'status', 'message', 'created_at']
+        read_only_fields = ['responder', 'created_at']
+
+
 class CalloutSerializer(serializers.ModelSerializer):
     """
     Serializer for Callout model.
@@ -103,10 +209,19 @@ class CalloutSerializer(serializers.ModelSerializer):
     challenged = UserSerializer(read_only=True)
     event = EventSerializer(read_only=True)
     track = TrackSerializer(read_only=True)
+    hot_spot = HotSpotSerializer(read_only=True)
+    crew = RacingCrewSerializer(read_only=True)
+    winner = UserSerializer(read_only=True)
 
     class Meta:
         model = Callout
-        fields = '__all__'
+        fields = [
+            'id', 'challenger', 'challenged', 'event', 'track', 'hot_spot', 'crew',
+            'location_type', 'street_location', 'race_type', 'max_horsepower',
+            'min_horsepower', 'tire_requirement', 'rules', 'experience_level',
+            'is_private', 'is_invite_only', 'wager_amount', 'message', 'status',
+            'scheduled_date', 'winner', 'created_at', 'updated_at'
+        ]
         read_only_fields = ['challenger', 'created_at', 'updated_at']
 
 

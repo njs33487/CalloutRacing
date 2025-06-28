@@ -1,5 +1,6 @@
 // API Service - centralizes all backend API calls and handles authentication
 import axios from 'axios'
+import { HotSpot, RacingCrew, CrewMembership, LocationBroadcast, ReputationRating, OpenChallenge, ChallengeResponse, Callout } from '../types';
 
 // Get API URL from environment variable or use default production URL
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend.up.railway.app/api'
@@ -147,5 +148,206 @@ export const postAPI = {
   delete: (id: number) => api.delete(`/posts/${id}/`),
   likePost: (id: number) => api.post(`/posts/${id}/like_post/`),
 }
+
+// Hot Spots API
+export const getHotSpots = async (params?: {
+  spot_type?: string;
+  city?: string;
+  state?: string;
+  is_verified?: boolean;
+}): Promise<HotSpot[]> => {
+  const queryParams = new URLSearchParams();
+  if (params?.spot_type) queryParams.append('spot_type', params.spot_type);
+  if (params?.city) queryParams.append('city', params.city);
+  if (params?.state) queryParams.append('state', params.state);
+  if (params?.is_verified !== undefined) queryParams.append('is_verified', params.is_verified.toString());
+  
+  const response = await api.get(`/hotspots/?${queryParams}`);
+  return response.data;
+};
+
+export const createHotSpot = async (data: Partial<HotSpot>): Promise<HotSpot> => {
+  const response = await api.post('/hotspots/', data);
+  return response.data;
+};
+
+export const updateHotSpot = async (id: number, data: Partial<HotSpot>): Promise<HotSpot> => {
+  const response = await api.put(`/hotspots/${id}/`, data);
+  return response.data;
+};
+
+export const deleteHotSpot = async (id: number): Promise<void> => {
+  await api.delete(`/hotspots/${id}/`);
+};
+
+// Racing Crews API
+export const getRacingCrews = async (params?: {
+  crew_type?: string;
+}): Promise<RacingCrew[]> => {
+  const queryParams = new URLSearchParams();
+  if (params?.crew_type) queryParams.append('crew_type', params.crew_type);
+  
+  const response = await api.get(`/crews/?${queryParams}`);
+  return response.data;
+};
+
+export const createRacingCrew = async (data: Partial<RacingCrew>): Promise<RacingCrew> => {
+  const response = await api.post('/crews/', data);
+  return response.data;
+};
+
+export const updateRacingCrew = async (id: number, data: Partial<RacingCrew>): Promise<RacingCrew> => {
+  const response = await api.put(`/crews/${id}/`, data);
+  return response.data;
+};
+
+export const deleteRacingCrew = async (id: number): Promise<void> => {
+  await api.delete(`/crews/${id}/`);
+};
+
+// Crew Memberships API
+export const getCrewMemberships = async (): Promise<CrewMembership[]> => {
+  const response = await api.get('/crew-memberships/');
+  return response.data;
+};
+
+export const acceptCrewInvitation = async (id: number): Promise<void> => {
+  await api.post(`/crew-memberships/${id}/accept_invitation/`);
+};
+
+export const declineCrewInvitation = async (id: number): Promise<void> => {
+  await api.post(`/crew-memberships/${id}/decline_invitation/`);
+};
+
+// Location Broadcasts API
+export const getLocationBroadcasts = async (params?: {
+  hot_spot?: number;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+}): Promise<LocationBroadcast[]> => {
+  const queryParams = new URLSearchParams();
+  if (params?.hot_spot) queryParams.append('hot_spot', params.hot_spot.toString());
+  if (params?.lat) queryParams.append('lat', params.lat.toString());
+  if (params?.lng) queryParams.append('lng', params.lng.toString());
+  if (params?.radius) queryParams.append('radius', params.radius.toString());
+  
+  const response = await api.get(`/location-broadcasts/?${queryParams}`);
+  return response.data;
+};
+
+export const createLocationBroadcast = async (data: Partial<LocationBroadcast>): Promise<LocationBroadcast> => {
+  const response = await api.post('/location-broadcasts/', data);
+  return response.data;
+};
+
+export const deactivateAllBroadcasts = async (): Promise<void> => {
+  await api.post('/location-broadcasts/deactivate_all/');
+};
+
+// Reputation Ratings API
+export const getReputationRatings = async (): Promise<ReputationRating[]> => {
+  const response = await api.get('/reputation-ratings/');
+  return response.data;
+};
+
+export const createReputationRating = async (data: Partial<ReputationRating>): Promise<ReputationRating> => {
+  const response = await api.post('/reputation-ratings/', data);
+  return response.data;
+};
+
+export const getUserReputationStats = async (userId: number): Promise<{
+  user_id: number;
+  username: string;
+  average_ratings: {
+    punctuality: number;
+    rule_adherence: number;
+    sportsmanship: number;
+    overall: number;
+  };
+  total_ratings: number;
+}> => {
+  const response = await api.get(`/reputation-ratings/user_stats/?user_id=${userId}`);
+  return response.data;
+};
+
+// Open Challenges API
+export const getOpenChallenges = async (params?: {
+  challenge_type?: string;
+  location?: string;
+  min_horsepower?: number;
+  max_horsepower?: number;
+  scheduled_after?: string;
+}): Promise<OpenChallenge[]> => {
+  const queryParams = new URLSearchParams();
+  if (params?.challenge_type) queryParams.append('challenge_type', params.challenge_type);
+  if (params?.location) queryParams.append('location', params.location);
+  if (params?.min_horsepower) queryParams.append('min_horsepower', params.min_horsepower.toString());
+  if (params?.max_horsepower) queryParams.append('max_horsepower', params.max_horsepower.toString());
+  if (params?.scheduled_after) queryParams.append('scheduled_after', params.scheduled_after);
+  
+  const response = await api.get(`/open-challenges/?${queryParams}`);
+  return response.data;
+};
+
+export const createOpenChallenge = async (data: Partial<OpenChallenge>): Promise<OpenChallenge> => {
+  const response = await api.post('/open-challenges/', data);
+  return response.data;
+};
+
+export const updateOpenChallenge = async (id: number, data: Partial<OpenChallenge>): Promise<OpenChallenge> => {
+  const response = await api.put(`/open-challenges/${id}/`, data);
+  return response.data;
+};
+
+export const deleteOpenChallenge = async (id: number): Promise<void> => {
+  await api.delete(`/open-challenges/${id}/`);
+};
+
+export const respondToChallenge = async (id: number, data: {
+  status: 'interested' | 'accepted' | 'declined';
+  message?: string;
+}): Promise<void> => {
+  await api.post(`/open-challenges/${id}/respond/`, data);
+};
+
+export const getChallengeResponsesForChallenge = async (id: number): Promise<ChallengeResponse[]> => {
+  const response = await api.get(`/open-challenges/${id}/responses/`);
+  return response.data;
+};
+
+// Challenge Responses API
+export const getChallengeResponses = async (): Promise<ChallengeResponse[]> => {
+  const response = await api.get('/challenge-responses/');
+  return response.data;
+};
+
+export const createChallengeResponse = async (data: Partial<ChallengeResponse>): Promise<ChallengeResponse> => {
+  const response = await api.post('/challenge-responses/', data);
+  return response.data;
+};
+
+// Update existing Callout API functions to include new fields
+export const createCallout = async (data: Partial<Callout>): Promise<Callout> => {
+  const response = await api.post('/callouts/', data);
+  return response.data;
+};
+
+export const updateCallout = async (id: number, data: Partial<Callout>): Promise<Callout> => {
+  const response = await api.put(`/callouts/${id}/`, data);
+  return response.data;
+};
+
+export const acceptCallout = async (id: number): Promise<void> => {
+  await api.post(`/callouts/${id}/accept/`);
+};
+
+export const declineCallout = async (id: number): Promise<void> => {
+  await api.post(`/callouts/${id}/decline/`);
+};
+
+export const completeCallout = async (id: number, winnerId: number): Promise<void> => {
+  await api.post(`/callouts/${id}/complete/`, { winner_id: winnerId });
+};
 
 export { api } 

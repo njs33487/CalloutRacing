@@ -7,7 +7,8 @@ import {
   UserIcon,
   PlusIcon,
   ArrowRightOnRectangleIcon,
-  UsersIcon
+  UsersIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -16,6 +17,7 @@ const navigation = [
   { name: 'Callouts', href: '/app/callouts', icon: BoltIcon },
   { name: 'Events', href: '/app/events', icon: CalendarIcon },
   { name: 'Marketplace', href: '/app/marketplace', icon: ShoppingBagIcon },
+  { name: 'Hot Spots', href: '/app/hotspots', icon: MapPinIcon },
   { name: 'Friends', href: '/app/friends', icon: UsersIcon },
   { name: 'Profile', href: '/app/profile', icon: UserIcon },
 ]

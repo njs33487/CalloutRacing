@@ -165,6 +165,147 @@ class Event(models.Model):
         return self.start_date <= now <= self.end_date
 
 
+class HotSpot(models.Model):
+    """
+    Designated racing locations and meetup spots.
+    
+    This model represents official and user-designated locations where racers
+    gather, including tracks, street meet points, and popular parking lots.
+    """
+    name = models.CharField(max_length=200, help_text="Name of the hot spot")
+    description = models.TextField(blank=True, help_text="Description of the location")
+    
+    # Location details
+    address = models.CharField(max_length=500, help_text="Full address")
+    city = models.CharField(max_length=100, help_text="City")
+    state = models.CharField(max_length=50, help_text="State")
+    zip_code = models.CharField(max_length=20, help_text="ZIP code")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Latitude coordinate")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Longitude coordinate")
+    
+    # Hot spot details
+    spot_type = models.CharField(max_length=20, choices=[
+        ('track', 'Official Track'),
+        ('street_meet', 'Street Meet Point'),
+        ('parking_lot', 'Parking Lot'),
+        ('industrial', 'Industrial Area'),
+        ('other', 'Other'),
+    ], help_text="Type of racing location")
+    
+    # Rules and amenities
+    rules = models.TextField(blank=True, help_text="Specific rules for this location")
+    amenities = models.TextField(blank=True, help_text="Available amenities")
+    peak_hours = models.CharField(max_length=100, blank=True, help_text="Typical peak hours (e.g., 'Friday 8PM-12AM')")
+    
+    # Status and verification
+    is_verified = models.BooleanField(default=False, help_text="Whether this is a verified official location")
+    is_active = models.BooleanField(default=True, help_text="Whether this hot spot is currently active")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_hotspots')
+    
+    # Metrics
+    total_races = models.IntegerField(default=0, help_text="Total number of races held here")
+    last_activity = models.DateTimeField(blank=True, null=True, help_text="Last known activity at this location")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.city}, {self.state}"
+
+    class Meta:
+        ordering = ['-is_verified', '-total_races', 'name']
+
+
+class RacingCrew(models.Model):
+    """
+    Private racing groups and car clubs.
+    
+    This model allows users to create private groups for organizing
+    races with friends or club members.
+    """
+    name = models.CharField(max_length=200, help_text="Name of the crew/club")
+    description = models.TextField(blank=True, help_text="Description of the crew")
+    
+    # Crew details
+    crew_type = models.CharField(max_length=20, choices=[
+        ('car_club', 'Car Club'),
+        ('racing_crew', 'Racing Crew'),
+        ('friend_group', 'Friend Group'),
+        ('team', 'Racing Team'),
+    ], help_text="Type of crew")
+    
+    # Privacy settings
+    is_private = models.BooleanField(default=True, help_text="Whether this crew is private")
+    is_invite_only = models.BooleanField(default=True, help_text="Whether membership is by invitation only")
+    
+    # Crew stats
+    member_count = models.IntegerField(default=0, help_text="Number of members")
+    total_races = models.IntegerField(default=0, help_text="Total races organized by this crew")
+    
+    # Leadership
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_crews')
+    admins = models.ManyToManyField(User, related_name='admin_crews', blank=True)
+    members = models.ManyToManyField(User, related_name='member_crews', blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['-member_count', 'name']
+
+
+class CrewMembership(models.Model):
+    """
+    Membership details for racing crews.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('active', 'Active'),
+        ('banned', 'Banned'),
+    ]
+    
+    crew = models.ForeignKey(RacingCrew, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crew_memberships')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    joined_at = models.DateTimeField(auto_now_add=True)
+    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='crew_invites_sent')
+
+    class Meta:
+        unique_together = ['crew', 'user']
+        ordering = ['-joined_at']
+
+
+class LocationBroadcast(models.Model):
+    """
+    Real-time location broadcasting for "I'm Here, Who's There?" feature.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='location_broadcasts')
+    hot_spot = models.ForeignKey(HotSpot, on_delete=models.CASCADE, related_name='broadcasts', blank=True, null=True)
+    
+    # Location details
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    address = models.CharField(max_length=500, blank=True)
+    
+    # Broadcast details
+    message = models.CharField(max_length=200, blank=True, help_text="Optional message (e.g., 'Looking for a race!')")
+    is_active = models.BooleanField(default=True, help_text="Whether this broadcast is currently active")
+    
+    # Duration
+    expires_at = models.DateTimeField(help_text="When this broadcast expires")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} at {self.address or 'Unknown location'}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
 class Callout(models.Model):
     """
     Race callouts between users.
@@ -179,10 +320,13 @@ class Callout(models.Model):
     # Event and location
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Associated event (optional)")
     track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Track for the race (optional)")
+    hot_spot = models.ForeignKey(HotSpot, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Hot spot for the race (optional)")
+    crew = models.ForeignKey(RacingCrew, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Associated crew (optional)")
     
     location_type = models.CharField(max_length=20, choices=[
         ('track', 'Track'),
         ('street', 'Street'),
+        ('hot_spot', 'Hot Spot'),
     ], help_text="Type of location for the race")
     
     street_location = models.CharField(max_length=200, blank=True, help_text="Street location for street races")
@@ -193,12 +337,31 @@ class Callout(models.Model):
         ('eighth_mile', 'Eighth Mile'),
         ('roll_race', 'Roll Race'),
         ('dig_race', 'Dig Race'),
+        ('heads_up', 'Heads Up'),
+        ('bracket', 'Bracket Race'),
     ], help_text="Type of race")
+    
+    # Performance requirements
+    max_horsepower = models.IntegerField(blank=True, null=True, help_text="Maximum horsepower allowed")
+    min_horsepower = models.IntegerField(blank=True, null=True, help_text="Minimum horsepower required")
+    tire_requirement = models.CharField(max_length=50, blank=True, help_text="Tire requirements")
+    
+    # Rules and experience
+    rules = models.TextField(blank=True, help_text="Specific rules for this race")
+    experience_level = models.CharField(max_length=20, choices=[
+        ('beginner', 'Beginner Friendly'),
+        ('intermediate', 'Intermediate'),
+        ('experienced', 'Experienced Only'),
+        ('pro', 'Professional'),
+    ], blank=True, help_text="Required experience level")
+    
+    # Privacy
+    is_private = models.BooleanField(default=False, help_text="Whether this is a private callout")
+    is_invite_only = models.BooleanField(default=False, help_text="Whether this requires an invitation")
     
     wager_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Amount wagered on the race")
     message = models.TextField(blank=True, help_text="Message from challenger to challenged")
     
-    # Status
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
@@ -215,11 +378,104 @@ class Callout(models.Model):
     updated_at = models.DateTimeField(auto_now=True, help_text="When the callout was last updated")
 
     def __str__(self):
-        """String representation of the callout."""
-        return f"{self.challenger.username} vs {self.challenged.username}"
+        return f"{self.challenger.username} vs {self.challenged.username} - {self.race_type}"
 
     class Meta:
         ordering = ['-created_at']  # Most recent first
+
+
+class ReputationRating(models.Model):
+    """
+    Sportsmanship and reputation ratings between users.
+    """
+    rater = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_given')
+    rated_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_received')
+    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, related_name='ratings', blank=True, null=True)
+    
+    # Rating categories
+    punctuality = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Punctuality rating (1-5)")
+    rule_adherence = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Rule adherence rating (1-5)")
+    sportsmanship = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Sportsmanship rating (1-5)")
+    overall = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Overall rating (1-5)")
+    
+    # Comments
+    comment = models.TextField(blank=True, help_text="Optional comment about the experience")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['rater', 'rated_user', 'callout']
+        ordering = ['-created_at']
+
+
+class OpenChallenge(models.Model):
+    """
+    Public open challenges for racing.
+    """
+    challenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='open_challenges')
+    title = models.CharField(max_length=200, help_text="Challenge title")
+    description = models.TextField(help_text="Detailed description of the challenge")
+    
+    # Challenge details
+    challenge_type = models.CharField(max_length=20, choices=[
+        ('street', 'Street Race'),
+        ('track', 'Track Race'),
+        ('roll_race', 'Roll Race'),
+        ('dig_race', 'Dig Race'),
+        ('meetup', 'Meetup'),
+    ], help_text="Type of challenge")
+    
+    # Performance requirements
+    max_horsepower = models.IntegerField(blank=True, null=True, help_text="Maximum horsepower allowed")
+    min_horsepower = models.IntegerField(blank=True, null=True, help_text="Minimum horsepower required")
+    tire_requirement = models.CharField(max_length=50, blank=True, help_text="Tire requirements (e.g., 'street tires only')")
+    
+    # Location and timing
+    location = models.CharField(max_length=500, help_text="General location or area")
+    hot_spot = models.ForeignKey(HotSpot, on_delete=models.CASCADE, related_name='open_challenges', blank=True, null=True)
+    scheduled_date = models.DateTimeField(blank=True, null=True, help_text="When the challenge is scheduled")
+    
+    # Rules and stakes
+    rules = models.TextField(blank=True, help_text="Specific rules for this challenge")
+    stakes = models.CharField(max_length=200, blank=True, help_text="What's at stake (e.g., 'winner buys pizza')")
+    
+    # Status
+    is_active = models.BooleanField(default=True, help_text="Whether this challenge is still open")
+    max_participants = models.IntegerField(blank=True, null=True, help_text="Maximum number of participants")
+    
+    # Responses
+    responses = models.ManyToManyField(User, through='ChallengeResponse', related_name='responded_challenges')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} by {self.challenger.username}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class ChallengeResponse(models.Model):
+    """
+    Responses to open challenges.
+    """
+    STATUS_CHOICES = [
+        ('interested', 'Interested'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+    ]
+    
+    challenge = models.ForeignKey(OpenChallenge, on_delete=models.CASCADE, related_name='challenge_responses')
+    responder = models.ForeignKey(User, on_delete=models.CASCADE, related_name='challenge_responses')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='interested')
+    message = models.TextField(blank=True, help_text="Response message")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['challenge', 'responder']
+        ordering = ['-created_at']
 
 
 class RaceResult(models.Model):
