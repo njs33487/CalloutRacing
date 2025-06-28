@@ -36,9 +36,9 @@ export default function About() {
           {/* Logo */}
           <div className="mb-6 sm:mb-8">
             <img 
-              src="/android-chrome-192x192.png" 
-              alt="CalloutRacing Logo" 
-              className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mx-auto mb-4"
+              src="/callourRacingLaunch.jpg" 
+              alt="CalloutRacing Launch" 
+              className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mx-auto mb-4 object-cover rounded-lg"
             />
           </div>
           
