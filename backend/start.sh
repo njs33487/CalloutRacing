@@ -12,9 +12,18 @@ echo "Django version: $(python -c 'import django; print(django.get_version())')"
 cd backend
 echo "Changed to backend directory: $(pwd)"
 
-# Run migrations with enhanced logging - $(date)
+# Check if migrations need to be run
+echo "=== Checking migration status ==="
+python manage.py showmigrations || echo "Failed to show migrations"
+
+# Run migrations with enhanced logging and fallback
 echo "=== Running database migrations ==="
-python manage.py migrate --noinput --verbosity=2
+if python manage.py migrate --noinput --verbosity=2; then
+    echo "=== Migrations completed successfully ==="
+else
+    echo "=== Standard migration failed, trying alternative method ==="
+    python migrate_db.py
+fi
 
 # Collect static files (in case they weren't collected during build)
 echo "=== Collecting static files ==="
