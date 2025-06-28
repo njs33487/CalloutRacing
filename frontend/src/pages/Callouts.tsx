@@ -1,15 +1,22 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { BoltIcon, PlusIcon, MapPinIcon, CalendarIcon } from '@heroicons/react/24/outline'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { BoltIcon, PlusIcon, MapPinIcon, CalendarIcon, CheckIcon, XMarkIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { calloutAPI } from '../services/api'
 import { Callout } from '../types'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Callouts() {
+  const { user: authUser } = useAuth();
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedCallout, setSelectedCallout] = useState<Callout | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Fetch callouts from API
-  const { data: calloutsData, isLoading, error } = useQuery({
+  const { data: calloutsData, isLoading, error: fetchError } = useQuery({
     queryKey: ['callouts', statusFilter],
     queryFn: () => calloutAPI.list().then(res => res.data)
   });
@@ -20,6 +27,55 @@ export default function Callouts() {
   const filteredCallouts = statusFilter === 'all' 
     ? callouts 
     : callouts.filter((callout: Callout) => callout.status === statusFilter);
+
+  // Mutations for CRUD operations
+  const acceptMutation = useMutation({
+    mutationFn: (calloutId: number) => calloutAPI.accept(calloutId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['callouts'] });
+      setSuccess('Callout accepted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error accepting callout:', error);
+      setError('Failed to accept callout. Please try again.');
+    }
+  });
+
+  const declineMutation = useMutation({
+    mutationFn: (calloutId: number) => calloutAPI.decline(calloutId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['callouts'] });
+      setSuccess('Callout declined successfully!');
+    },
+    onError: (error) => {
+      console.error('Error declining callout:', error);
+      setError('Failed to decline callout. Please try again.');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (calloutId: number) => calloutAPI.delete(calloutId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['callouts'] });
+      setShowDeleteConfirm(null);
+      setSuccess('Callout deleted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error deleting callout:', error);
+      setError('Failed to delete callout. Please try again.');
+    }
+  });
+
+  // Clear messages after 5 seconds
+  useState(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -51,6 +107,33 @@ export default function Callouts() {
     return 'Location TBD';
   }
 
+  const canManageCallout = (callout: Callout) => {
+    if (!authUser) return false;
+    return callout.challenger.id === authUser.id || callout.challenged.id === authUser.id;
+  }
+
+  const canAcceptDecline = (callout: Callout) => {
+    if (!authUser) return false;
+    return callout.status === 'pending' && callout.challenged.id === authUser.id;
+  }
+
+  const canDelete = (callout: Callout) => {
+    if (!authUser) return false;
+    return callout.challenger.id === authUser.id && callout.status === 'pending';
+  }
+
+  const handleAcceptCallout = (calloutId: number) => {
+    acceptMutation.mutate(calloutId);
+  };
+
+  const handleDeclineCallout = (calloutId: number) => {
+    declineMutation.mutate(calloutId);
+  };
+
+  const handleDeleteCallout = (calloutId: number) => {
+    deleteMutation.mutate(calloutId);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -75,7 +158,7 @@ export default function Callouts() {
     );
   }
 
-  if (error) {
+  if (fetchError) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -105,6 +188,37 @@ export default function Callouts() {
 
   return (
     <div className="space-y-6">
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-800">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -195,38 +309,113 @@ export default function Callouts() {
               </div>
             </div>
             
+            {/* Action Buttons */}
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <Link
-                to={`/app/callouts/${callout.id}`}
-                className="btn-primary w-full text-center"
-              >
-                View Details
-              </Link>
+              <div className="flex items-center justify-between">
+                <Link
+                  to={`/app/callouts/${callout.id}`}
+                  className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+                >
+                  View Details
+                </Link>
+                
+                {canManageCallout(callout) && (
+                  <div className="flex space-x-2">
+                    {canAcceptDecline(callout) && (
+                      <>
+                        <button
+                          onClick={() => handleAcceptCallout(callout.id)}
+                          disabled={acceptMutation.isPending}
+                          className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Accept Callout"
+                        >
+                          <CheckIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeclineCallout(callout.id)}
+                          disabled={declineMutation.isPending}
+                          className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Decline Callout"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                    
+                    {canDelete(callout) && (
+                      <button
+                        onClick={() => setShowDeleteConfirm(callout.id)}
+                        className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700"
+                        title="Delete Callout"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                    
+                    {callout.challenger.id === authUser?.id && callout.status === 'pending' && (
+                      <Link
+                        to={`/app/callouts/${callout.id}/edit`}
+                        className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"
+                        title="Edit Callout"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
+      {/* Empty State */}
       {filteredCallouts.length === 0 && (
         <div className="text-center py-12">
           <BoltIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No callouts found</h3>
-          <p className="text-gray-600">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Callouts Found</h3>
+          <p className="text-gray-600 mb-6">
             {statusFilter === 'all' 
-              ? 'No callouts have been created yet. Be the first to create one!'
-              : `No callouts with status "${statusFilter}" found.`
+              ? "No callouts have been created yet. Be the first to challenge someone!"
+              : `No ${statusFilter} callouts found.`
             }
           </p>
-          {statusFilter !== 'all' && (
-            <button
-              onClick={() => setStatusFilter('all')}
-              className="mt-4 text-primary-600 hover:text-primary-700 font-medium"
+          {statusFilter === 'all' && (
+            <Link
+              to="/app/callouts/create"
+              className="btn-primary inline-flex items-center"
             >
-              View all callouts
-            </button>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Create First Callout
+            </Link>
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Callout</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this callout? This action cannot be undone.</p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => handleDeleteCallout(showDeleteConfirm)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 } 

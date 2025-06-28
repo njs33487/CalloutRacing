@@ -1,26 +1,57 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ShoppingBagIcon, PlusIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
-import { api } from '../services/api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ShoppingBagIcon, PlusIcon, CurrencyDollarIcon, TrashIcon, PencilIcon, PhoneIcon, EnvelopeIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import { marketplaceAPI } from '../services/api'
 import { MarketplaceItem } from '../types'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Marketplace() {
+  const { user: authUser } = useAuth();
+  const queryClient = useQueryClient();
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Fetch marketplace items from API
-  const { data: itemsData, isLoading, error } = useQuery({
+  const { data: itemsData, isLoading, error: fetchError } = useQuery({
     queryKey: ['marketplace', categoryFilter],
     queryFn: () => {
       const params = new URLSearchParams();
       if (categoryFilter !== 'all') {
         params.append('category', categoryFilter);
       }
-      return api.get(`/marketplace/?${params.toString()}`).then(res => res.data);
+      return marketplaceAPI.list().then(res => res.data);
     }
   });
 
   const items = itemsData?.results || [];
+
+  // Mutations for CRUD operations
+  const deleteMutation = useMutation({
+    mutationFn: (itemId: number) => marketplaceAPI.delete(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      setShowDeleteConfirm(null);
+      setSuccess('Item deleted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error deleting item:', error);
+      setError('Failed to delete item. Please try again.');
+    }
+  });
+
+  // Clear messages after 5 seconds
+  useState(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -81,6 +112,27 @@ export default function Marketplace() {
     }
   }
 
+  const isItemOwner = (item: MarketplaceItem) => {
+    return authUser && item.seller.id === authUser.id;
+  };
+
+  const canDeleteItem = (item: MarketplaceItem) => {
+    return isItemOwner(item);
+  };
+
+  const handleDeleteItem = (itemId: number) => {
+    deleteMutation.mutate(itemId);
+  };
+
+  const handleContactSeller = (item: MarketplaceItem) => {
+    // This could open a contact modal or redirect to messaging
+    if (item.contact_phone) {
+      window.open(`tel:${item.contact_phone}`, '_blank');
+    } else if (item.contact_email) {
+      window.open(`mailto:${item.contact_email}`, '_blank');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -105,7 +157,7 @@ export default function Marketplace() {
     );
   }
 
-  if (error) {
+  if (fetchError) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -135,6 +187,37 @@ export default function Marketplace() {
 
   return (
     <div className="space-y-6">
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-800">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -199,49 +282,78 @@ export default function Marketplace() {
             </div>
             
             <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center text-sm text-gray-600">
+                  <CurrencyDollarIcon className="h-4 w-4 mr-2" />
+                  <span className="font-semibold text-green-600">${item.price}</span>
+                </div>
+                <span className="text-xs text-gray-500">
+                  {getConditionDisplay(item.condition)}
+                </span>
+              </div>
+              
               <div className="flex items-center text-sm text-gray-600">
-                <CurrencyDollarIcon className="h-4 w-4 mr-2" />
-                <span className="font-semibold text-green-600">${item.price.toLocaleString()}</span>
-                {item.is_negotiable && (
-                  <span className="ml-2 text-xs text-gray-500">(Negotiable)</span>
-                )}
-              </div>
-              
-              <div className="text-sm">
-                <span className="text-gray-600">Condition: </span>
-                <span className="font-medium">{getConditionDisplay(item.condition)}</span>
-              </div>
-              
-              <div className="text-sm">
-                <span className="text-gray-600">Seller: </span>
-                <span className="font-medium">{item.seller.first_name || item.seller.username}</span>
-              </div>
-              
-              <div className="text-sm text-gray-600">
-                📍 {item.location}
+                <MapPinIcon className="h-4 w-4 mr-2" />
+                {item.location}
               </div>
               
               <p className="text-sm text-gray-700 line-clamp-2">{item.description}</p>
               
-              {item.trade_offered && (
-                <div className="text-sm text-blue-600">
-                  💱 Trade offers accepted
-                </div>
-              )}
-              
-              <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>Seller: {item.seller.first_name} {item.seller.last_name}</span>
                 <span>{item.views} views</span>
-                <span>{formatDate(item.created_at)}</span>
+              </div>
+              
+              <div className="text-xs text-gray-500">
+                Listed: {formatDate(item.created_at)}
               </div>
             </div>
             
+            {/* Action Buttons */}
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <Link
-                to={`/app/marketplace/${item.id}`}
-                className="w-full btn-secondary text-sm text-center block"
-              >
-                View Details
-              </Link>
+              <div className="flex items-center justify-between">
+                <Link
+                  to={`/app/marketplace/${item.id}`}
+                  className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+                >
+                  View Details
+                </Link>
+                
+                <div className="flex space-x-2">
+                  {!isItemOwner(item) && (item.contact_phone || item.contact_email) && (
+                    <button
+                      onClick={() => handleContactSeller(item)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm"
+                    >
+                      {item.contact_phone ? (
+                        <PhoneIcon className="h-4 w-4" />
+                      ) : (
+                        <EnvelopeIcon className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
+                  
+                  {canDeleteItem(item) && (
+                    <button
+                      onClick={() => setShowDeleteConfirm(item.id)}
+                      className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700"
+                      title="Delete Item"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
+                  
+                  {isItemOwner(item) && (
+                    <Link
+                      to={`/app/marketplace/${item.id}/edit`}
+                      className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"
+                      title="Edit Item"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Link>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -250,13 +362,11 @@ export default function Marketplace() {
       {/* Empty State */}
       {items.length === 0 && (
         <div className="text-center py-12">
-          <ShoppingBagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {categoryFilter === 'all' ? 'No items for sale' : `No ${getCategoryDisplay(categoryFilter)} items`}
-          </h3>
+          <ShoppingBagIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Items Found</h3>
           <p className="text-gray-600 mb-6">
             {categoryFilter === 'all' 
-              ? 'Be the first to list an item in the marketplace!'
+              ? "No items have been listed yet. Be the first to list something!"
               : `No ${getCategoryDisplay(categoryFilter)} items found.`
             }
           </p>
@@ -266,11 +376,36 @@ export default function Marketplace() {
               className="btn-primary inline-flex items-center"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              List Your First Item
+              List First Item
             </Link>
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Item</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => handleDeleteItem(showDeleteConfirm)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 } 

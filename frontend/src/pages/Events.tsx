@@ -1,26 +1,81 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { CalendarIcon, PlusIcon, MapPinIcon, UserGroupIcon } from '@heroicons/react/24/outline'
-import { api } from '../services/api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { CalendarIcon, PlusIcon, MapPinIcon, UserGroupIcon, CheckIcon, XMarkIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { eventAPI } from '../services/api'
 import { Event } from '../types'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Events() {
+  const { user: authUser } = useAuth();
+  const queryClient = useQueryClient();
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Fetch events from API
-  const { data: eventsData, isLoading, error } = useQuery({
+  const { data: eventsData, isLoading, error: fetchError } = useQuery({
     queryKey: ['events', eventTypeFilter],
     queryFn: () => {
       const params = new URLSearchParams();
       if (eventTypeFilter !== 'all') {
         params.append('event_type', eventTypeFilter);
       }
-      return api.get(`/events/?${params.toString()}`).then(res => res.data);
+      return eventAPI.list().then(res => res.data);
     }
   });
 
   const events = eventsData?.results || [];
+
+  // Mutations for CRUD operations
+  const joinMutation = useMutation({
+    mutationFn: (eventId: number) => eventAPI.join(eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setSuccess('Successfully joined the event!');
+    },
+    onError: (error) => {
+      console.error('Error joining event:', error);
+      setError('Failed to join event. Please try again.');
+    }
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: (eventId: number) => eventAPI.leave(eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setSuccess('Successfully left the event.');
+    },
+    onError: (error) => {
+      console.error('Error leaving event:', error);
+      setError('Failed to leave event. Please try again.');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (eventId: number) => eventAPI.delete(eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setShowDeleteConfirm(null);
+      setSuccess('Event deleted successfully!');
+    },
+    onError: (error) => {
+      console.error('Error deleting event:', error);
+      setError('Failed to delete event. Please try again.');
+    }
+  });
+
+  // Clear messages after 5 seconds
+  useState(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError(null);
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -56,6 +111,46 @@ export default function Events() {
     }
   }
 
+  const isEventOrganizer = (event: Event) => {
+    return authUser && event.organizer.id === authUser.id;
+  };
+
+  const isEventParticipant = (event: Event) => {
+    // Since the Event type doesn't include participants array, we'll use a different approach
+    // This would need to be implemented based on the actual API response
+    return false; // Placeholder - would need API endpoint to check participation
+  };
+
+  const canJoinEvent = (event: Event) => {
+    if (!authUser) return false;
+    if (isEventOrganizer(event)) return false;
+    if (isEventParticipant(event)) return false;
+    if (event.max_participants && (event.participants_count || 0) >= event.max_participants) return false;
+    return true;
+  };
+
+  const canLeaveEvent = (event: Event) => {
+    if (!authUser) return false;
+    if (isEventOrganizer(event)) return false;
+    return isEventParticipant(event);
+  };
+
+  const canDeleteEvent = (event: Event) => {
+    return isEventOrganizer(event);
+  };
+
+  const handleJoinEvent = (eventId: number) => {
+    joinMutation.mutate(eventId);
+  };
+
+  const handleLeaveEvent = (eventId: number) => {
+    leaveMutation.mutate(eventId);
+  };
+
+  const handleDeleteEvent = (eventId: number) => {
+    deleteMutation.mutate(eventId);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -80,7 +175,7 @@ export default function Events() {
     );
   }
 
-  if (error) {
+  if (fetchError) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -110,6 +205,37 @@ export default function Events() {
 
   return (
     <div className="space-y-6">
+      {/* Error/Success Messages */}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-800">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -199,17 +325,74 @@ export default function Events() {
               <p className="text-sm text-gray-700 line-clamp-2">{event.description}</p>
               
               <div className="text-xs text-gray-500">
-                Organized by: {event.organizer.first_name || event.organizer.username}
+                Organized by: {event.organizer.first_name} {event.organizer.last_name}
               </div>
             </div>
             
+            {/* Action Buttons */}
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <Link
-                to={`/app/events/${event.id}`}
-                className="w-full btn-secondary text-sm text-center block"
-              >
-                View Details
-              </Link>
+              <div className="flex items-center justify-between">
+                <Link
+                  to={`/app/events/${event.id}`}
+                  className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+                >
+                  View Details
+                </Link>
+                
+                <div className="flex space-x-2">
+                  {canJoinEvent(event) && (
+                    <button
+                      onClick={() => handleJoinEvent(event.id)}
+                      disabled={joinMutation.isPending}
+                      className="bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      {joinMutation.isPending ? 'Joining...' : 'Join'}
+                    </button>
+                  )}
+                  
+                  {canLeaveEvent(event) && (
+                    <button
+                      onClick={() => handleLeaveEvent(event.id)}
+                      disabled={leaveMutation.isPending}
+                      className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      {leaveMutation.isPending ? 'Leaving...' : 'Leave'}
+                    </button>
+                  )}
+                  
+                  {isEventParticipant(event) && (
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm">
+                      Joined
+                    </span>
+                  )}
+                  
+                  {isEventOrganizer(event) && (
+                    <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-lg text-sm">
+                      Organizer
+                    </span>
+                  )}
+                  
+                  {canDeleteEvent(event) && (
+                    <button
+                      onClick={() => setShowDeleteConfirm(event.id)}
+                      className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700"
+                      title="Delete Event"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  )}
+                  
+                  {isEventOrganizer(event) && (
+                    <Link
+                      to={`/app/events/${event.id}/edit`}
+                      className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"
+                      title="Edit Event"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Link>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -218,14 +401,12 @@ export default function Events() {
       {/* Empty State */}
       {events.length === 0 && (
         <div className="text-center py-12">
-          <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {eventTypeFilter === 'all' ? 'No events yet' : `No ${getEventTypeDisplay(eventTypeFilter)} events`}
-          </h3>
+          <CalendarIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Events Found</h3>
           <p className="text-gray-600 mb-6">
             {eventTypeFilter === 'all' 
-              ? 'Be the first to create an event and bring the racing community together!'
-              : `No ${getEventTypeDisplay(eventTypeFilter)} events found.`
+              ? "No events have been created yet. Be the first to organize one!"
+              : `No ${eventTypeFilter} events found.`
             }
           </p>
           {eventTypeFilter === 'all' && (
@@ -234,11 +415,36 @@ export default function Events() {
               className="btn-primary inline-flex items-center"
             >
               <PlusIcon className="h-4 w-4 mr-2" />
-              Create Your First Event
+              Create First Event
             </Link>
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Event</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this event? This action cannot be undone.</p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => handleDeleteEvent(showDeleteConfirm)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
