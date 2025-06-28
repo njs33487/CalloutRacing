@@ -8,10 +8,6 @@ echo "Current directory: $(pwd)"
 echo "Python version: $(python --version)"
 echo "Django version: $(python -c 'import django; print(django.get_version())')"
 
-# Change to backend directory
-cd backend
-echo "Changed to backend directory: $(pwd)"
-
 # Check if migrations need to be run
 echo "=== Checking migration status ==="
 python manage.py showmigrations || echo "Failed to show migrations"
