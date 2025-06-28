@@ -12,7 +12,7 @@ echo "Django version: $(python -c 'import django; print(django.get_version())')"
 cd backend
 echo "Changed to backend directory: $(pwd)"
 
-# Run migrations with enhanced logging
+# Run migrations with enhanced logging - $(date)
 echo "=== Running database migrations ==="
 python manage.py migrate --noinput --verbosity=2
 
