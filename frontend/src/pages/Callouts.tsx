@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { BoltIcon, PlusIcon, MapPinIcon, CalendarIcon } from '@heroicons/react/24/outline'
-import { api } from '../services/api'
+import { calloutAPI } from '../services/api'
 import { Callout } from '../types'
 
 export default function Callouts() {
@@ -11,16 +11,15 @@ export default function Callouts() {
   // Fetch callouts from API
   const { data: calloutsData, isLoading, error } = useQuery({
     queryKey: ['callouts', statusFilter],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
-      }
-      return api.get(`/callouts/?${params.toString()}`).then(res => res.data);
-    }
+    queryFn: () => calloutAPI.list().then(res => res.data)
   });
 
   const callouts = calloutsData?.results || [];
+
+  // Filter callouts by status on the frontend
+  const filteredCallouts = statusFilter === 'all' 
+    ? callouts 
+    : callouts.filter((callout: Callout) => callout.status === statusFilter);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -140,7 +139,7 @@ export default function Callouts() {
 
       {/* Callouts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {callouts.map((callout: Callout) => (
+        {filteredCallouts.map((callout: Callout) => (
           <div key={callout.id} className="card hover:shadow-md transition-shadow">
             {/* Callout Image */}
             <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
@@ -199,7 +198,7 @@ export default function Callouts() {
             <div className="mt-4 pt-4 border-t border-gray-200">
               <Link
                 to={`/app/callouts/${callout.id}`}
-                className="w-full btn-secondary text-sm text-center block"
+                className="btn-primary w-full text-center"
               >
                 View Details
               </Link>
@@ -208,27 +207,23 @@ export default function Callouts() {
         ))}
       </div>
 
-      {/* Empty State */}
-      {callouts.length === 0 && (
+      {filteredCallouts.length === 0 && (
         <div className="text-center py-12">
-          <BoltIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {statusFilter === 'all' ? 'No callouts yet' : `No ${statusFilter} callouts`}
-          </h3>
-          <p className="text-gray-600 mb-6">
+          <BoltIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No callouts found</h3>
+          <p className="text-gray-600">
             {statusFilter === 'all' 
-              ? 'Be the first to create a callout and challenge other racers!'
-              : `No ${statusFilter} callouts found.`
+              ? 'No callouts have been created yet. Be the first to create one!'
+              : `No callouts with status "${statusFilter}" found.`
             }
           </p>
-          {statusFilter === 'all' && (
-            <Link
-              to="/app/callouts/create"
-              className="btn-primary inline-flex items-center"
+          {statusFilter !== 'all' && (
+            <button
+              onClick={() => setStatusFilter('all')}
+              className="mt-4 text-primary-600 hover:text-primary-700 font-medium"
             >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Create Your First Callout
-            </Link>
+              View all callouts
+            </button>
           )}
         </div>
       )}

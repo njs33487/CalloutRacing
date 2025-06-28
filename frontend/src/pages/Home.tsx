@@ -1,16 +1,16 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { 
   BoltIcon, 
   CalendarIcon, 
   ShoppingBagIcon, 
-  UserGroupIcon,
-  MapPinIcon,
-  TrophyIcon,
-  ClockIcon
+  TrophyIcon, 
+  ClockIcon, 
+  UserGroupIcon 
 } from '@heroicons/react/24/outline'
-import { api } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import { calloutAPI, eventAPI, marketplaceAPI } from '../services/api'
+import { api } from '../services/api'
 
 export default function Home() {
   const { user } = useAuth()
@@ -18,66 +18,74 @@ export default function Home() {
   // User-specific data
   const { data: userProfile } = useQuery({
     queryKey: ['user-profile'],
-    queryFn: () => api.get('/auth/profile/'),
+    queryFn: () => calloutAPI.list().then(res => res.data),
     enabled: !!user
   })
 
   const { data: userCallouts } = useQuery({
     queryKey: ['user-callouts'],
-    queryFn: () => api.get('/callouts/?challenger=me&challenged=me'),
+    queryFn: () => calloutAPI.list().then(res => res.data),
     enabled: !!user
   })
 
   const { data: userEvents } = useQuery({
     queryKey: ['user-events'],
-    queryFn: () => api.get('/events/?participant=me'),
+    queryFn: () => eventAPI.list().then(res => res.data),
     enabled: !!user
   })
 
   // General data
   const { data: recentCallouts } = useQuery({
     queryKey: ['recent-callouts'],
-    queryFn: () => api.get('/callouts/?limit=5')
+    queryFn: () => calloutAPI.list().then(res => res.data)
   })
 
   const { data: upcomingEvents } = useQuery({
     queryKey: ['upcoming-events'],
-    queryFn: () => api.get('/events/?is_upcoming=true&limit=5')
+    queryFn: () => eventAPI.list().then(res => res.data)
   })
 
   const { data: marketplaceItems } = useQuery({
     queryKey: ['marketplace-items'],
-    queryFn: () => api.get('/marketplace/?limit=5')
+    queryFn: () => marketplaceAPI.list().then(res => res.data)
   })
 
   const { data: stats } = useQuery({
     queryKey: ['stats'],
-    queryFn: () => api.get('/stats/')
+    queryFn: () => api.get('/stats/').then(res => res.data)
   })
+
+  // Filter user's callouts (frontend filtering since backend doesn't support user filtering)
+  const userCalloutsFiltered = userCallouts?.results?.filter((callout: any) => 
+    callout.challenger?.id === user?.id || callout.challenged?.id === user?.id
+  ) || []
+
+  const pendingCallouts = userCalloutsFiltered.filter((c: any) => c.status === 'pending')
+  const activeCallouts = userCalloutsFiltered.filter((c: any) => c.status === 'pending' || c.status === 'accepted')
 
   // User stats
   const userStats = [
     { 
       name: 'My Wins', 
-      value: userProfile?.data?.wins || 0, 
+      value: userProfile?.wins || 0, 
       icon: TrophyIcon, 
       color: 'text-yellow-600' 
     },
     { 
       name: 'My Races', 
-      value: userProfile?.data?.total_races || 0, 
+      value: userProfile?.total_races || 0, 
       icon: BoltIcon, 
       color: 'text-red-600' 
     },
     { 
       name: 'My Events', 
-      value: userEvents?.data?.results?.length || 0, 
+      value: userEvents?.results?.length || 0, 
       icon: CalendarIcon, 
       color: 'text-blue-600' 
     },
     { 
       name: 'Active Callouts', 
-      value: userCallouts?.data?.results?.filter((c: any) => c.status === 'pending' || c.status === 'accepted').length || 0, 
+      value: activeCallouts.length || 0, 
       icon: ClockIcon, 
       color: 'text-green-600' 
     },
@@ -85,10 +93,10 @@ export default function Home() {
 
   // Global stats
   const globalStats = [
-    { name: 'Active Callouts', value: stats?.data?.active_callouts || 0, icon: BoltIcon, color: 'text-red-600' },
-    { name: 'Upcoming Events', value: stats?.data?.upcoming_events || 0, icon: CalendarIcon, color: 'text-blue-600' },
-    { name: 'Marketplace Items', value: stats?.data?.marketplace_items || 0, icon: ShoppingBagIcon, color: 'text-green-600' },
-    { name: 'Total Racers', value: stats?.data?.total_racers || 0, icon: UserGroupIcon, color: 'text-purple-600' },
+    { name: 'Active Callouts', value: stats?.active_callouts || 0, icon: BoltIcon, color: 'text-red-600' },
+    { name: 'Upcoming Events', value: stats?.upcoming_events || 0, icon: CalendarIcon, color: 'text-blue-600' },
+    { name: 'Marketplace Items', value: stats?.marketplace_items || 0, icon: ShoppingBagIcon, color: 'text-green-600' },
+    { name: 'Total Racers', value: stats?.total_racers || 0, icon: UserGroupIcon, color: 'text-purple-600' },
   ]
 
   return (
@@ -101,19 +109,19 @@ export default function Home() {
           </h1>
           <p className="text-xl mb-6 text-primary-100">
             {user ? 
-              `Ready to race? You have ${userCallouts?.data?.results?.filter((c: any) => c.status === 'pending').length || 0} pending callouts.` :
+              `Ready to race? You have ${pendingCallouts.length} pending callouts.` :
               'The ultimate drag racing social network. Challenge racers, join events, and buy/sell parts.'
             }
           </p>
           <div className="flex space-x-4">
             <Link
-              to="/callouts/create"
+              to="/app/callouts/create"
               className="bg-white text-primary-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
             >
               Create Callout
             </Link>
             <Link
-              to="/events"
+              to="/app/events"
               className="border border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white hover:text-primary-600 transition-colors"
             >
               Browse Events
@@ -171,12 +179,12 @@ export default function Home() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">My Active Callouts</h2>
-              <Link to="/callouts" className="text-primary-600 hover:text-primary-700 text-sm">
+              <Link to="/app/callouts" className="text-primary-600 hover:text-primary-700 text-sm">
                 View all
               </Link>
             </div>
             <div className="space-y-3">
-              {userCallouts?.data?.results?.filter((c: any) => c.status === 'pending' || c.status === 'accepted').slice(0, 3).map((callout: any) => (
+              {activeCallouts.slice(0, 3).map((callout: any) => (
                 <div key={callout.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                   <BoltIcon className="h-5 w-5 text-primary-600" />
                   <div className="flex-1">
@@ -196,7 +204,7 @@ export default function Home() {
                   </span>
                 </div>
               ))}
-              {(!userCallouts?.data?.results || userCallouts.data.results.length === 0) && (
+              {activeCallouts.length === 0 && (
                 <p className="text-gray-500 text-sm">No active callouts. Create one to get started!</p>
               )}
             </div>
@@ -206,29 +214,25 @@ export default function Home() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">My Upcoming Events</h2>
-              <Link to="/events" className="text-primary-600 hover:text-primary-700 text-sm">
+              <Link to="/app/events" className="text-primary-600 hover:text-primary-700 text-sm">
                 View all
               </Link>
             </div>
             <div className="space-y-3">
-              {userEvents?.data?.results?.slice(0, 3).map((event: any) => (
+              {userEvents?.results?.slice(0, 3).map((event: any) => (
                 <div key={event.id} className="p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-start space-x-3">
                     <CalendarIcon className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                      <p className="text-xs text-gray-500 flex items-center">
-                        <MapPinIcon className="h-3 w-3 mr-1" />
-                        {event.track?.name}
-                      </p>
                       <p className="text-xs text-gray-500">
-                        {new Date(event.start_date).toLocaleDateString()}
+                        {new Date(event.start_date).toLocaleDateString()} • {event.track?.name || 'TBD'}
                       </p>
                     </div>
                   </div>
                 </div>
               ))}
-              {(!userEvents?.data?.results || userEvents.data.results.length === 0) && (
+              {(!userEvents?.results || userEvents.results.length === 0) && (
                 <p className="text-gray-500 text-sm">No upcoming events. Join one to get started!</p>
               )}
             </div>
@@ -236,18 +240,18 @@ export default function Home() {
         </div>
       )}
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Recent Community Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Callouts */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Recent Callouts</h2>
-            <Link to="/callouts" className="text-primary-600 hover:text-primary-700 text-sm">
+            <Link to="/app/callouts" className="text-primary-600 hover:text-primary-700 text-sm">
               View all
             </Link>
           </div>
           <div className="space-y-3">
-            {recentCallouts?.data?.results?.slice(0, 3).map((callout: any) => (
+            {recentCallouts?.results?.slice(0, 5).map((callout: any) => (
               <div key={callout.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 <BoltIcon className="h-5 w-5 text-primary-600" />
                 <div className="flex-1">
@@ -255,7 +259,7 @@ export default function Home() {
                     {callout.challenger.username} vs {callout.challenged.username}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {callout.race_type} • {callout.location_type}
+                    {callout.race_type} • {callout.location_type} • {new Date(callout.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <span className={`px-2 py-1 text-xs rounded-full ${
@@ -267,61 +271,35 @@ export default function Home() {
                 </span>
               </div>
             ))}
+            {(!recentCallouts?.results || recentCallouts.results.length === 0) && (
+              <p className="text-gray-500 text-sm">No recent callouts.</p>
+            )}
           </div>
         </div>
 
-        {/* Upcoming Events */}
+        {/* Recent Marketplace Items */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Upcoming Events</h2>
-            <Link to="/events" className="text-primary-600 hover:text-primary-700 text-sm">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Marketplace Items</h2>
+            <Link to="/app/marketplace" className="text-primary-600 hover:text-primary-700 text-sm">
               View all
             </Link>
           </div>
           <div className="space-y-3">
-            {upcomingEvents?.data?.results?.slice(0, 3).map((event: any) => (
-              <div key={event.id} className="p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <CalendarIcon className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{event.title}</p>
-                    <p className="text-xs text-gray-500 flex items-center">
-                      <MapPinIcon className="h-3 w-3 mr-1" />
-                      {event.track?.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(event.start_date).toLocaleDateString()}
-                    </p>
-                  </div>
+            {marketplaceItems?.results?.slice(0, 5).map((item: any) => (
+              <div key={item.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <ShoppingBagIcon className="h-5 w-5 text-green-600" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{item.title}</p>
+                  <p className="text-xs text-gray-500">
+                    ${item.price} • {item.category} • {new Date(item.created_at).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Marketplace */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Marketplace</h2>
-            <Link to="/marketplace" className="text-primary-600 hover:text-primary-700 text-sm">
-              View all
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {marketplaceItems?.data?.results?.slice(0, 3).map((item: any) => (
-              <div key={item.id} className="p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <ShoppingBagIcon className="h-5 w-5 text-green-600 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                    <p className="text-xs text-gray-500">{item.category}</p>
-                    <p className="text-sm font-semibold text-primary-600">
-                      ${item.price}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {(!marketplaceItems?.results || marketplaceItems.results.length === 0) && (
+              <p className="text-gray-500 text-sm">No recent marketplace items.</p>
+            )}
           </div>
         </div>
       </div>
