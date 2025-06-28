@@ -616,6 +616,7 @@ def login_view(request):
     User login endpoint - supports email usernames.
     
     Authenticates users and returns a token for API access.
+    Requires email verification before allowing login.
     
     Args:
         request: HTTP request object containing username and password
@@ -636,6 +637,13 @@ def login_view(request):
     user = authenticate(username=username, password=password)
     
     if user:
+        # Check if email is verified
+        if not user.email_verified:
+            return Response({
+                'error': 'Please verify your email address before logging in. Check your email for a verification link.',
+                'email_verification_required': True
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
         # Get or create authentication token
         token, created = Token.objects.get_or_create(user=user)
         return Response({
@@ -661,12 +669,13 @@ def register_view(request):
     User registration endpoint - allows emails to be used as usernames.
     
     Creates new user accounts with validation for unique usernames and emails.
+    Sends email verification and requires email verification before login.
     
     Args:
         request: HTTP request object containing user registration data
         
     Returns:
-        Response with authentication token and user data
+        Response with success message (no automatic login)
     """
     username = request.data.get('username')
     email = request.data.get('email')
@@ -716,19 +725,20 @@ def register_view(request):
         # Create user profile
         UserProfile.objects.create(user=user)
         
-        # Generate token
-        token, created = Token.objects.get_or_create(user=user)
+        # Send email verification
+        from core.email_service import send_email_verification
+        email_sent = send_email_verification(user)
         
-        return Response({
-            'token': token.key,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-            }
-        }, status=status.HTTP_201_CREATED)
+        if email_sent:
+            return Response({
+                'message': 'Registration successful! Please check your email to verify your account before logging in.',
+                'email_sent': True
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'message': 'Registration successful! However, we could not send the verification email. Please contact support.',
+                'email_sent': False
+            }, status=status.HTTP_201_CREATED)
         
     except Exception as e:
         return Response({
@@ -2051,7 +2061,7 @@ class ChallengeResponseViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def global_search(request):
     """
     Global search endpoint that searches across multiple models.
@@ -2352,4 +2362,70 @@ def sso_config(request):
         }
     }
     
-    return Response(config) 
+    return Response(config)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def verify_email(request, token):
+    """
+    Email verification endpoint.
+    
+    Verifies user's email address using the provided token.
+    
+    Args:
+        request: HTTP request object
+        token: UUID token for email verification
+        
+    Returns:
+        Response with verification result
+    """
+    from core.email_service import verify_email_token
+    
+    success, user, message = verify_email_token(token)
+    
+    if success:
+        return Response({
+            'message': message,
+            'verified': True
+        })
+    else:
+        return Response({
+            'error': message,
+            'verified': False
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def resend_verification_email(request):
+    """
+    Resend verification email endpoint.
+    
+    Resends verification email to user's email address.
+    
+    Args:
+        request: HTTP request object containing email
+        
+    Returns:
+        Response with resend result
+    """
+    email = request.data.get('email')
+    
+    if not email:
+        return Response({
+            'error': 'Email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    from core.email_service import resend_verification_email
+    
+    success, message = resend_verification_email(email)
+    
+    if success:
+        return Response({
+            'message': message
+        })
+    else:
+        return Response({
+            'error': message
+        }, status=status.HTTP_400_BAD_REQUEST) 

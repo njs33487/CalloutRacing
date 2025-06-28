@@ -6,6 +6,7 @@ import About from './pages/About'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Contact from './pages/Contact'
+import EmailVerification from './pages/EmailVerification'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Callouts from './pages/Callouts'
@@ -30,6 +31,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/verify-email/:token" element={<EmailVerification />} />
           
           {/* Protected routes - require authentication and use shared layout */}
           <Route path="/app" element={

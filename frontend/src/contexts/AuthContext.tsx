@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null
   token: string | null
   login: (username: string, password: string) => Promise<void>
-  register: (userData: any) => Promise<void>
+  register: (userData: any) => Promise<any>
   googleLogin: (idToken: string) => Promise<void>
   facebookLogin: (accessToken: string) => Promise<void>
   logout: () => void
@@ -92,13 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Register function - creates new user account and logs them in
   const register = async (userData: any) => {
     const response = await authAPI.register(userData)
-    const { token: newToken, user: newUser } = response.data
-    
-    // Update state and store in localStorage
-    setToken(newToken)
-    setUser(newUser)
-    localStorage.setItem('token', newToken)
-    localStorage.setItem('user', JSON.stringify(newUser))
+    return response
   }
 
   // Google SSO login function

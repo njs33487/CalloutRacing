@@ -8,7 +8,7 @@ from .views import (
     contact_form, login_view, register_view, logout_view, user_profile, stats_view,
     HotSpotViewSet, LocationBroadcastViewSet, RacingCrewViewSet, CrewMembershipViewSet,
     ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet, global_search,
-    google_sso, facebook_sso, sso_config
+    google_sso, facebook_sso, sso_config, verify_email, resend_verification_email
 )
 
 router = DefaultRouter()
@@ -54,6 +54,8 @@ urlpatterns = [
     path('auth/google/', google_sso, name='google-sso'),
     path('auth/facebook/', facebook_sso, name='facebook-sso'),
     path('auth/sso-config/', sso_config, name='sso-config'),
+    path('auth/verify-email/<str:token>/', verify_email, name='verify-email'),
+    path('auth/resend-verification/', resend_verification_email, name='resend-verification'),
     path('stats/', stats_view, name='stats'),
     path('search/', global_search, name='global-search'),
 ] 

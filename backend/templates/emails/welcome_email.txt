@@ -1,0 +1,32 @@
+Welcome to CalloutRacing!
+
+Hi {{ user.first_name|default:user.username }},
+
+🎉 Congratulations! Your email has been verified and your CalloutRacing account is now fully active!
+
+You're now part of the ultimate drag racing community. Here's what you can do to get started:
+
+🏁 Racing Callouts - Challenge other racers to head-to-head competitions
+📅 Racing Events - Join organized events, car meets, and test & tune sessions
+🛒 Marketplace - Buy, sell, and trade cars, parts, and racing equipment
+👥 Community - Connect with fellow racers and build lasting friendships
+
+Start Racing Now: {{ app_url }}
+
+🚀 Quick Start Guide:
+1. Complete your profile - Add your car details and racing stats
+2. Find local racers - Use our search to discover racers in your area
+3. Join events - Browse upcoming racing events and car meets
+4. Make your first callout - Challenge someone to a race
+5. Share your builds - Show off your car modifications and achievements
+
+Need help getting started? Check out our Getting Started Guide: {{ help_url }}
+
+We're excited to see you on the track!
+
+Best regards,
+The CalloutRacing Team
+
+Follow us on social media for the latest updates and racing content!
+
+© 2024 CalloutRacing. All rights reserved. 

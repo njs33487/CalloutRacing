@@ -1,0 +1,25 @@
+Welcome to CalloutRacing!
+
+Hi {{ user.first_name|default:user.username }},
+
+Welcome to CalloutRacing! We're excited to have you join the ultimate drag racing social network.
+
+To complete your registration and start racing, please verify your email address by clicking the link below:
+
+{{ verification_url }}
+
+IMPORTANT: This verification link will expire in 24 hours. If you don't verify your email within this time, you'll need to request a new verification email.
+
+Once verified, you'll be able to:
+- Create and accept racing callouts
+- Join racing events and car meets
+- Buy and sell cars and parts in the marketplace
+- Connect with other racers in the community
+- Track your racing achievements
+
+If you didn't create an account with CalloutRacing, you can safely ignore this email.
+
+Best regards,
+The CalloutRacing Team
+
+© 2024 CalloutRacing. All rights reserved. 

@@ -44,6 +44,8 @@ export const authAPI = {
   googleSSO: (idToken: string) => api.post('/auth/google/', { id_token: idToken }),
   facebookSSO: (accessToken: string) => api.post('/auth/facebook/', { access_token: accessToken }),
   getSSOConfig: () => api.get('/auth/sso-config/'),
+  verifyEmail: (token: string) => api.get(`/auth/verify-email/${token}/`),
+  resendVerification: (email: string) => api.post('/auth/resend-verification/', { email }),
 }
 
 // Contact form API

@@ -11,9 +11,35 @@ This module contains all the database models for the CalloutRacing application, 
 All models use Django's ORM and include proper relationships, validations, and metadata.
 """
 from django.db import models  # type: ignore
-from django.contrib.auth.models import User  # type: ignore
+from django.contrib.auth.models import AbstractUser  # type: ignore
 from django.core.validators import MinValueValidator, MaxValueValidator  # type: ignore
 from django.utils import timezone  # type: ignore
+import uuid
+
+
+class User(AbstractUser):
+    """Custom User model with email verification."""
+    email_verified = models.BooleanField(default=False, help_text="Whether email has been verified")
+    email_verification_token = models.UUIDField(default=uuid.uuid4, editable=False, help_text="Token for email verification")
+    email_verification_sent_at = models.DateTimeField(blank=True, null=True, help_text="When verification email was sent")
+    email_verification_expires_at = models.DateTimeField(blank=True, null=True, help_text="When verification token expires")
+    
+    # Override email field to make it unique
+    email = models.EmailField(unique=True, help_text="User's email address")
+    
+    # Override username field to allow email format
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        help_text="Username (can be email format)"
+    )
+    
+    def __str__(self):
+        return self.username
+    
+    class Meta:
+        verbose_name = "User"
+        verbose_name_plural = "Users"
 
 
 class UserProfile(models.Model):
