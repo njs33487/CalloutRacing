@@ -8,6 +8,10 @@ echo "Current directory: $(pwd)"
 echo "Python version: $(python --version)"
 echo "Django version: $(python -c 'import django; print(django.get_version())')"
 
+# Change to root directory where manage.py is located
+cd ..
+echo "Changed to root directory: $(pwd)"
+
 # Check if migrations need to be run
 echo "=== Checking migration status ==="
 python manage.py showmigrations || echo "Failed to show migrations"
@@ -18,7 +22,7 @@ if python manage.py migrate --noinput --verbosity=2; then
     echo "=== Migrations completed successfully ==="
 else
     echo "=== Standard migration failed, trying alternative method ==="
-    python migrate_db.py
+    python backend/migrate_db.py
 fi
 
 # Collect static files (in case they weren't collected during build)
