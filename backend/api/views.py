@@ -312,11 +312,10 @@ class CalloutViewSet(viewsets.ModelViewSet):
         """Filter callouts based on user participation and privacy."""
         user = self.request.user
         
-        # Get callouts where user is challenger, challenged, or in a crew
+        # Get callouts where user is challenger, challenged, or public callouts
         queryset = Callout.objects.filter(
             models.Q(challenger=user) |
             models.Q(challenged=user) |
-            models.Q(crew__members=user) |
             models.Q(is_private=False)
         ).distinct()
         
@@ -334,11 +333,6 @@ class CalloutViewSet(viewsets.ModelViewSet):
         race_type = self.request.query_params.get('race_type', None)
         if race_type:
             queryset = queryset.filter(race_type=race_type)
-        
-        # Filter by experience level
-        experience_level = self.request.query_params.get('experience_level', None)
-        if experience_level:
-            queryset = queryset.filter(experience_level=experience_level)
         
         return queryset.order_by('-created_at')
     
