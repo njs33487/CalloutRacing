@@ -8,9 +8,11 @@ import {
   PlusIcon,
   ArrowRightOnRectangleIcon,
   UsersIcon,
-  MapPinIcon
+  MapPinIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
+import GlobalSearchBar from './GlobalSearchBar'
 
 const navigation = [
   { name: 'Dashboard', href: '/app', icon: HomeIcon },
@@ -19,6 +21,7 @@ const navigation = [
   { name: 'Marketplace', href: '/app/marketplace', icon: ShoppingBagIcon },
   { name: 'Hot Spots', href: '/app/hotspots', icon: MapPinIcon },
   { name: 'Friends', href: '/app/friends', icon: UsersIcon },
+  { name: 'Search', href: '/app/search', icon: MagnifyingGlassIcon },
   { name: 'Profile', href: '/app/profile', icon: UserIcon },
 ]
 
@@ -44,6 +47,9 @@ export default function Layout() {
                 <span className="ml-2 text-xl font-bold text-gray-900">CalloutRacing</span>
               </Link>
             </div>
+            
+            {/* Global Search Bar */}
+            <GlobalSearchBar />
             
             <div className="flex items-center space-x-4">
               <Link

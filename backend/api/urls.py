@@ -7,7 +7,7 @@ from .views import (
     CarImageViewSet, UserPostViewSet, PostCommentViewSet, UserProfileDetailViewSet,
     contact_form, login_view, register_view, logout_view, user_profile, stats_view,
     HotSpotViewSet, LocationBroadcastViewSet, RacingCrewViewSet, CrewMembershipViewSet,
-    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet
+    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet, global_search
 )
 
 router = DefaultRouter()
@@ -51,4 +51,5 @@ urlpatterns = [
     path('auth/logout/', logout_view, name='logout'),
     path('auth/profile/', user_profile, name='user-profile'),
     path('stats/', stats_view, name='stats'),
+    path('search/', global_search, name='global-search'),
 ] 

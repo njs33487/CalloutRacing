@@ -350,4 +350,15 @@ export const completeCallout = async (id: number, winnerId: number): Promise<voi
   await api.post(`/callouts/${id}/complete/`, { winner_id: winnerId });
 };
 
+// Global search API
+export const searchAPI = {
+  globalSearch: (query: string, category?: string, limit?: number) => {
+    const params = new URLSearchParams();
+    params.append('q', query);
+    if (category) params.append('category', category);
+    if (limit) params.append('limit', limit.toString());
+    return api.get(`/search/?${params}`);
+  },
+};
+
 export { api } 

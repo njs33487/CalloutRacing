@@ -47,6 +47,9 @@ from .serializers import (
 from django.utils import timezone
 from datetime import timedelta
 import math
+from django.db.models import Q
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.contrib.postgres.indexes import GinIndex
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -2042,4 +2045,100 @@ class ChallengeResponseViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Set the responder when creating a response."""
-        serializer.save(responder=self.request.user) 
+        serializer.save(responder=self.request.user)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def global_search(request):
+    """
+    Global search endpoint that searches across multiple models.
+    
+    Query parameters:
+    - q: Search query string
+    - category: Filter by category (users, events, marketplace, tracks, callouts)
+    - limit: Maximum number of results per category (default: 10)
+    """
+    query = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '').lower()
+    limit = int(request.GET.get('limit', 10))
+    
+    if not query or len(query) < 2:
+        return Response({
+            'users': [],
+            'events': [],
+            'marketplace': [],
+            'tracks': [],
+            'callouts': [],
+            'total_results': 0
+        })
+    
+    results = {
+        'users': [],
+        'events': [],
+        'marketplace': [],
+        'tracks': [],
+        'callouts': [],
+        'total_results': 0
+    }
+    
+    try:
+        # Search users
+        if not category or category == 'users':
+            users = User.objects.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query)
+            )[:limit]
+            
+            results['users'] = UserSerializer(users, many=True).data
+        
+        # Search events
+        if not category or category == 'events':
+            events = Event.objects.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(event_type__icontains=query)
+            ).filter(is_active=True)[:limit]
+            
+            results['events'] = EventSerializer(events, many=True).data
+        
+        # Search marketplace
+        if not category or category == 'marketplace':
+            marketplace_items = Marketplace.objects.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(category__icontains=query)
+            ).filter(is_active=True)[:limit]
+            
+            results['marketplace'] = MarketplaceSerializer(marketplace_items, many=True).data
+        
+        # Search tracks
+        if not category or category == 'tracks':
+            tracks = Track.objects.filter(
+                Q(name__icontains=query) |
+                Q(location__icontains=query) |
+                Q(description__icontains=query)
+            ).filter(is_active=True)[:limit]
+            
+            results['tracks'] = TrackSerializer(tracks, many=True).data
+        
+        # Search callouts
+        if not category or category == 'callouts':
+            callouts = Callout.objects.filter(
+                Q(message__icontains=query) |
+                Q(race_type__icontains=query)
+            )[:limit]
+            
+            results['callouts'] = CalloutSerializer(callouts, many=True).data
+        
+        # Calculate total results
+        results['total_results'] = sum(len(results[key]) for key in results.keys() if key != 'total_results')
+        
+        return Response(results)
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Search failed', 'details': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        ) 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { eventAPI, trackAPI } from '../services/api';
 import { Track } from '../types';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 export default function CreateEvent() {
   const navigate = useNavigate();
@@ -9,6 +10,8 @@ export default function CreateEvent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationData, setConfirmationData] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -56,66 +59,98 @@ export default function CreateEvent() {
     }));
   };
 
+  const validateForm = () => {
+    if (!formData.title.trim()) {
+      throw new Error('Event title is required');
+    }
+
+    if (!formData.description.trim()) {
+      throw new Error('Event description is required');
+    }
+
+    if (!formData.track_id) {
+      throw new Error('Please select a track');
+    }
+
+    if (!formData.start_date) {
+      throw new Error('Start date is required');
+    }
+
+    if (!formData.end_date) {
+      throw new Error('End date is required');
+    }
+
+    // Validate dates
+    const startDate = new Date(formData.start_date);
+    const endDate = new Date(formData.end_date);
+    const now = new Date();
+
+    if (startDate < now) {
+      throw new Error('Start date cannot be in the past');
+    }
+
+    if (endDate <= startDate) {
+      throw new Error('End date must be after start date');
+    }
+  };
+
+  const prepareEventData = () => {
+    return {
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      event_type: formData.event_type,
+      track: formData.track_id,
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
+      entry_fee: formData.entry_fee ? parseFloat(formData.entry_fee) : 0,
+      is_public: formData.is_public
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    try {
+      validateForm();
+      
+      // Prepare data for confirmation dialog
+      const selectedTrack = tracks.find(t => t.id === formData.track_id);
+      
+      const confirmationData = {
+        'Event Title': formData.title.trim(),
+        'Event Type': formData.event_type.charAt(0).toUpperCase() + formData.event_type.slice(1),
+        'Track': selectedTrack ? selectedTrack.name : 'Not selected',
+        'Start Date': new Date(formData.start_date).toLocaleDateString(),
+        'End Date': new Date(formData.end_date).toLocaleDateString(),
+        'Max Participants': formData.max_participants || 'No limit',
+        'Entry Fee': formData.entry_fee ? `$${formData.entry_fee}` : 'Free',
+        'Public Event': formData.is_public ? 'Yes' : 'No',
+        'Description': formData.description.trim().substring(0, 100) + (formData.description.trim().length > 100 ? '...' : '')
+      };
+
+      setConfirmationData(confirmationData);
+      setShowConfirmation(true);
+    } catch (err: any) {
+      setError(err.message || 'Please check your form inputs');
+    }
+  };
+
+  const handleConfirmCreate = async () => {
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      // Validate required fields
-      if (!formData.title.trim()) {
-        throw new Error('Event title is required');
-      }
-
-      if (!formData.description.trim()) {
-        throw new Error('Event description is required');
-      }
-
-      if (!formData.track_id) {
-        throw new Error('Please select a track');
-      }
-
-      if (!formData.start_date) {
-        throw new Error('Start date is required');
-      }
-
-      if (!formData.end_date) {
-        throw new Error('End date is required');
-      }
-
-      // Validate dates
-      const startDate = new Date(formData.start_date);
-      const endDate = new Date(formData.end_date);
-      const now = new Date();
-
-      if (startDate < now) {
-        throw new Error('Start date cannot be in the past');
-      }
-
-      if (endDate <= startDate) {
-        throw new Error('End date must be after start date');
-      }
-
-      // Prepare data for API
-      const eventData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        event_type: formData.event_type,
-        track: formData.track_id,
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
-        entry_fee: formData.entry_fee ? parseFloat(formData.entry_fee) : 0,
-        is_public: formData.is_public
-      };
-
+      const eventData = prepareEventData();
       await eventAPI.create(eventData);
       setSuccess('Event created successfully!');
+      setShowConfirmation(false);
       
       // Redirect to events page after a short delay
       setTimeout(() => {
-        navigate('/events');
+        navigate('/app/events');
       }, 1500);
 
     } catch (err: any) {
@@ -126,7 +161,7 @@ export default function CreateEvent() {
   };
 
   const handleCancel = () => {
-    navigate('/events');
+    navigate('/app/events');
   };
 
   return (
@@ -198,6 +233,8 @@ export default function CreateEvent() {
               <option value="meet">Car Meet</option>
               <option value="show">Car Show</option>
               <option value="test">Test & Tune</option>
+              <option value="championship">Championship</option>
+              <option value="exhibition">Exhibition</option>
             </select>
           </div>
 
@@ -212,14 +249,12 @@ export default function CreateEvent() {
               value={formData.track}
               onChange={(e) => {
                 const track = tracks.find(t => t.name === e.target.value);
-                if (track) {
-                  selectTrack(track);
-                }
+                if (track) selectTrack(track);
               }}
               className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
-              <option value="">Select a track</option>
+              <option value="">Select a track...</option>
               {tracks.map(track => (
                 <option key={track.id} value={track.name}>
                   {track.name} - {track.location}
@@ -228,74 +263,74 @@ export default function CreateEvent() {
             </select>
           </div>
 
-          {/* Date & Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="start_date" className="block mb-2 font-medium">
-                Start Date & Time *
-              </label>
-              <input
-                type="datetime-local"
-                id="start_date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="end_date" className="block mb-2 font-medium">
-                End Date & Time *
-              </label>
-              <input
-                type="datetime-local"
-                id="end_date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+          {/* Start Date */}
+          <div>
+            <label htmlFor="start_date" className="block mb-2 font-medium">
+              Start Date & Time *
+            </label>
+            <input
+              type="datetime-local"
+              id="start_date"
+              name="start_date"
+              value={formData.start_date}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
           </div>
 
-          {/* Optional Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="max_participants" className="block mb-2 font-medium">
-                Max Participants (Optional)
-              </label>
-              <input
-                type="number"
-                id="max_participants"
-                name="max_participants"
-                value={formData.max_participants}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="1"
-                placeholder="No limit"
-              />
-            </div>
-            <div>
-              <label htmlFor="entry_fee" className="block mb-2 font-medium">
-                Entry Fee (Optional)
-              </label>
-              <input
-                type="number"
-                id="entry_fee"
-                name="entry_fee"
-                value={formData.entry_fee}
-                onChange={handleChange}
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-              />
-            </div>
+          {/* End Date */}
+          <div>
+            <label htmlFor="end_date" className="block mb-2 font-medium">
+              End Date & Time *
+            </label>
+            <input
+              type="datetime-local"
+              id="end_date"
+              name="end_date"
+              value={formData.end_date}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
           </div>
 
-          {/* Public/Private Toggle */}
+          {/* Max Participants */}
+          <div>
+            <label htmlFor="max_participants" className="block mb-2 font-medium">
+              Maximum Participants (Optional)
+            </label>
+            <input
+              type="number"
+              id="max_participants"
+              name="max_participants"
+              value={formData.max_participants}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter maximum number of participants..."
+              min="1"
+            />
+          </div>
+
+          {/* Entry Fee */}
+          <div>
+            <label htmlFor="entry_fee" className="block mb-2 font-medium">
+              Entry Fee (Optional)
+            </label>
+            <input
+              type="number"
+              id="entry_fee"
+              name="entry_fee"
+              value={formData.entry_fee}
+              onChange={handleChange}
+              className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter entry fee amount..."
+              min="0"
+              step="0.01"
+            />
+          </div>
+
+          {/* Public Event */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -305,31 +340,44 @@ export default function CreateEvent() {
               onChange={handleChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="is_public" className="ml-2 block text-sm font-medium">
+            <label htmlFor="is_public" className="ml-2 block text-sm text-gray-900">
               Make this event public
             </label>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex space-x-4 pt-4">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded font-medium transition-colors"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loading}
-            >
-              {loading ? 'Creating...' : 'Create Event'}
-            </button>
-          </div>
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-4">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? 'Creating...' : 'Create Event'}
+          </button>
         </div>
       </form>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleConfirmCreate}
+        title="Confirm Event Creation"
+        message="Please review the event details below before creating. This action cannot be undone."
+        confirmText="Create Event"
+        cancelText="Go Back"
+        type="warning"
+        loading={loading}
+        data={confirmationData}
+      />
     </div>
   );
 } 

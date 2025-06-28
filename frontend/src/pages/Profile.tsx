@@ -13,6 +13,7 @@ import {
   XMarkIcon,
   CheckIcon
 } from '@heroicons/react/24/outline';
+import ConfirmationDialog from '../components/ConfirmationDialog';
 
 interface UserProfile {
   id: number;
@@ -89,6 +90,9 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showProfileConfirmation, setShowProfileConfirmation] = useState(false);
+  const [showPostConfirmation, setShowPostConfirmation] = useState(false);
+  const [confirmationData, setConfirmationData] = useState<any>(null);
 
   const [editForm, setEditForm] = useState({
     bio: '',
@@ -216,11 +220,34 @@ export default function Profile() {
 
   const handleSubmitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    try {
+      // Prepare data for confirmation dialog
+      const confirmationData = {
+        'Bio': editForm.bio || 'No bio',
+        'Location': editForm.location || 'Not specified',
+        'Car Make': editForm.car_make || 'Not specified',
+        'Car Model': editForm.car_model || 'Not specified',
+        'Car Year': editForm.car_year || 'Not specified',
+        'Car Modifications': editForm.car_mods || 'None'
+      };
+
+      setConfirmationData(confirmationData);
+      setShowProfileConfirmation(true);
+    } catch (error) {
+      console.error('Error preparing profile update:', error);
+      setError('Failed to prepare profile update. Please try again.');
+    }
+  };
+
+  const handleConfirmProfileUpdate = async () => {
     try {
       if (profile) {
         await userAPI.updateProfile(profile.id, editForm);
         await loadProfile();
         setIsEditing(false);
+        setShowProfileConfirmation(false);
         setSuccess('Profile updated successfully!');
       }
     } catch (error) {
@@ -248,6 +275,25 @@ export default function Profile() {
     e.preventDefault();
     if (!newPost.trim()) return;
 
+    setError('');
+
+    try {
+      // Prepare data for confirmation dialog
+      const confirmationData = {
+        'Content': newPost.substring(0, 100) + (newPost.length > 100 ? '...' : ''),
+        'Has Image': selectedImage ? 'Yes' : 'No',
+        'Image Name': selectedImage ? selectedImage.name : 'N/A'
+      };
+
+      setConfirmationData(confirmationData);
+      setShowPostConfirmation(true);
+    } catch (error) {
+      console.error('Error preparing post:', error);
+      setError('Failed to prepare post. Please try again.');
+    }
+  };
+
+  const handleConfirmPostCreate = async () => {
     setIsPosting(true);
     try {
       const postData: any = { content: newPost };
@@ -259,6 +305,7 @@ export default function Profile() {
       setNewPost('');
       setSelectedImage(null);
       setImagePreview(null);
+      setShowPostConfirmation(false);
       await loadPosts();
       setSuccess('Post created successfully!');
     } catch (error) {
@@ -763,6 +810,34 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {/* Profile Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showProfileConfirmation}
+        onClose={() => setShowProfileConfirmation(false)}
+        onConfirm={handleConfirmProfileUpdate}
+        title="Confirm Profile Update"
+        message="Please review your profile changes below before updating. This will update your public profile information."
+        confirmText="Update Profile"
+        cancelText="Cancel"
+        type="info"
+        loading={false}
+        data={confirmationData}
+      />
+
+      {/* Post Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showPostConfirmation}
+        onClose={() => setShowPostConfirmation(false)}
+        onConfirm={handleConfirmPostCreate}
+        title="Confirm Post Creation"
+        message="Please review your post content below before creating. This will be visible to other users."
+        confirmText="Create Post"
+        cancelText="Cancel"
+        type="info"
+        loading={isPosting}
+        data={confirmationData}
+      />
     </div>
   );
 } 

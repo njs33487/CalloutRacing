@@ -17,6 +17,7 @@ import CreateCallout from './pages/CreateCallout'
 import CreateEvent from './pages/CreateEvent'
 import CreateListing from './pages/CreateListing'
 import HotSpots from './pages/HotSpots'
+import Search from './pages/Search'
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
             <Route path="marketplace/create" element={<CreateListing />} />
             <Route path="profile" element={<Profile />} />
             <Route path="friends" element={<Friends />} />
+            <Route path="search" element={<Search />} />
             
             {/* Advanced callout racing features */}
             <Route path="hotspots" element={<HotSpots />} />
