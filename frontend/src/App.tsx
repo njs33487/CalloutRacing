@@ -12,6 +12,7 @@ import Callouts from './pages/Callouts'
 import Events from './pages/Events'
 import Marketplace from './pages/Marketplace'
 import Profile from './pages/Profile'
+import Friends from './pages/Friends'
 import CreateCallout from './pages/CreateCallout'
 import CreateEvent from './pages/CreateEvent'
 import CreateListing from './pages/CreateListing'
@@ -43,6 +44,7 @@ function App() {
             <Route path="marketplace" element={<Marketplace />} />
             <Route path="marketplace/create" element={<CreateListing />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="friends" element={<Friends />} />
           </Route>
         </Routes>
       </div>

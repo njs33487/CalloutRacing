@@ -73,6 +73,17 @@ export const userAPI = {
   removeProfilePicture: (id: number) => api.delete(`/profiles/${id}/remove_profile_picture/`),
   removeCoverPhoto: (id: number) => api.delete(`/profiles/${id}/remove_cover_photo/`),
   updateStats: (id: number, stats: any) => api.post(`/profiles/${id}/update_stats/`, stats),
+  
+  // Friend-related endpoints
+  searchUsers: (query: string) => api.get(`/users/search/?q=${encodeURIComponent(query)}`),
+  getFriends: () => api.get('/friendships/friends/'),
+  getPendingRequests: () => api.get('/friendships/pending_requests/'),
+  getSentRequests: () => api.get('/friendships/sent_requests/'),
+  sendFriendRequest: (userId: number) => api.post('/friendships/send_request/', { receiver: userId }),
+  acceptFriendRequest: (friendshipId: number) => api.post(`/friendships/${friendshipId}/accept/`),
+  declineFriendRequest: (friendshipId: number) => api.post(`/friendships/${friendshipId}/decline/`),
+  cancelFriendRequest: (friendshipId: number) => api.delete(`/friendships/${friendshipId}/`),
+  removeFriend: (userId: number) => api.delete(`/friendships/remove_friend/${userId}/`),
 }
 
 // Callout (race challenge) API endpoints

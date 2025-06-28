@@ -33,6 +33,15 @@ export default function About() {
       {/* Hero Section */}
       <section className="relative py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
+          {/* Logo */}
+          <div className="mb-6 sm:mb-8">
+            <img 
+              src="/android-chrome-192x192.png" 
+              alt="CalloutRacing Logo" 
+              className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mx-auto mb-4"
+            />
+          </div>
+          
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6">
             The Ultimate
             <span className="text-primary-600 block sm:inline"> Drag Racing Social Network</span>

@@ -871,6 +871,119 @@ class FriendshipViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(pending, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def friends(self, request):
+        """Get list of accepted friends with user details"""
+        user = request.user
+        friendships = Friendship.objects.filter(
+            (models.Q(sender=user) | models.Q(receiver=user)),
+            status='accepted'
+        ).select_related('sender__profile', 'receiver__profile')
+        
+        friends = []
+        for friendship in friendships:
+            if friendship.sender == user:
+                friends.append(friendship.receiver)
+            else:
+                friends.append(friendship.sender)
+        
+        from .serializers import UserSerializer
+        serializer = UserSerializer(friends, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def sent_requests(self, request):
+        """Get sent friend requests"""
+        user = request.user
+        sent = Friendship.objects.filter(sender=user, status='pending').select_related('receiver__profile')
+        serializer = self.get_serializer(sent, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def send_request(self, request):
+        """Send a friend request"""
+        receiver_id = request.data.get('receiver')
+        if not receiver_id:
+            return Response({'error': 'receiver ID required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            receiver = User.objects.get(id=receiver_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if receiver == request.user:
+            return Response({'error': 'Cannot send friend request to yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if friendship already exists
+        existing_friendship = Friendship.objects.filter(
+            (models.Q(sender=request.user, receiver=receiver) |
+             models.Q(sender=receiver, receiver=request.user))
+        ).first()
+        
+        if existing_friendship:
+            if existing_friendship.status == 'accepted':
+                return Response({'error': 'Already friends'}, status=status.HTTP_400_BAD_REQUEST)
+            elif existing_friendship.status == 'pending':
+                return Response({'error': 'Friend request already sent'}, status=status.HTTP_400_BAD_REQUEST)
+            elif existing_friendship.status == 'blocked':
+                return Response({'error': 'Cannot send request to blocked user'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        friendship = Friendship.objects.create(
+            sender=request.user,
+            receiver=receiver,
+            status='pending'
+        )
+        serializer = self.get_serializer(friendship)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
+        """Accept a friend request"""
+        friendship = self.get_object()
+        if friendship.receiver != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if friendship.status != 'pending':
+            return Response({'error': 'Request is not pending'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        friendship.status = 'accepted'
+        friendship.save()
+        return Response({'message': 'Friend request accepted'})
+
+    @action(detail=True, methods=['post'])
+    def decline(self, request, pk=None):
+        """Decline a friend request"""
+        friendship = self.get_object()
+        if friendship.receiver != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if friendship.status != 'pending':
+            return Response({'error': 'Request is not pending'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        friendship.status = 'declined'
+        friendship.save()
+        return Response({'message': 'Friend request declined'})
+
+    @action(detail=False, methods=['delete'])
+    def remove_friend(self, request, user_id=None):
+        """Remove a friend"""
+        try:
+            friend = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        friendship = Friendship.objects.filter(
+            (models.Q(sender=request.user, receiver=friend) |
+             models.Q(sender=friend, receiver=request.user)),
+            status='accepted'
+        ).first()
+        
+        if not friendship:
+            return Response({'error': 'Not friends with this user'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        friendship.delete()
+        return Response({'message': 'Friend removed'})
+
 
 class MessageViewSet(viewsets.ModelViewSet):
     queryset = Message.objects.all()
