@@ -37,13 +37,13 @@ export default function Home() {
   // General data
   const { data: recentCallouts } = useQuery({
     queryKey: ['recent-callouts'],
-    queryFn: () => calloutAPI.list().then(res => res.data)
+    queryFn: () => calloutAPI.list().then(res => res.data.results?.slice(0, 3) || [])
   })
 
-  const { data: upcomingEvents } = useQuery({
-    queryKey: ['upcoming-events'],
-    queryFn: () => eventAPI.list().then(res => res.data)
-  })
+  // const { data: upcomingEvents } = useQuery({
+  //   queryKey: ['upcoming-events'],
+  //   queryFn: () => eventAPI.list().then(res => res.data)
+  // })
 
   const { data: marketplaceItems } = useQuery({
     queryKey: ['marketplace-items'],
@@ -251,7 +251,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="space-y-3">
-            {recentCallouts?.results?.slice(0, 5).map((callout: any) => (
+            {recentCallouts?.map((callout: any) => (
               <div key={callout.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                 <BoltIcon className="h-5 w-5 text-primary-600" />
                 <div className="flex-1">
@@ -271,7 +271,7 @@ export default function Home() {
                 </span>
               </div>
             ))}
-            {(!recentCallouts?.results || recentCallouts.results.length === 0) && (
+            {(!recentCallouts || recentCallouts.length === 0) && (
               <p className="text-gray-500 text-sm">No recent callouts.</p>
             )}
           </div>

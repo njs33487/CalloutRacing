@@ -10,7 +10,6 @@ export default function Callouts() {
   const { user: authUser } = useAuth();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedCallout, setSelectedCallout] = useState<Callout | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);

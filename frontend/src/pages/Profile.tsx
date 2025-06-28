@@ -4,8 +4,6 @@ import { userAPI, postAPI } from '../services/api';
 import { 
   CameraIcon, 
   PencilIcon, 
-  TrophyIcon, 
-  FlagIcon,
   MapPinIcon,
   TruckIcon,
   HeartIcon,
@@ -13,8 +11,7 @@ import {
   ShareIcon,
   TrashIcon,
   XMarkIcon,
-  CheckIcon,
-  PlusIcon
+  CheckIcon
 } from '@heroicons/react/24/outline';
 
 interface UserProfile {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CalendarIcon, PlusIcon, MapPinIcon, UserGroupIcon, CheckIcon, XMarkIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { CalendarIcon, PlusIcon, MapPinIcon, UserGroupIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { eventAPI } from '../services/api'
 import { Event } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -115,7 +115,7 @@ export default function Events() {
     return authUser && event.organizer.id === authUser.id;
   };
 
-  const isEventParticipant = (event: Event) => {
+  const isEventParticipant = (_event: Event) => {
     // Since the Event type doesn't include participants array, we'll use a different approach
     // This would need to be implemented based on the actual API response
     return false; // Placeholder - would need API endpoint to check participation
