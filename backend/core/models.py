@@ -15,512 +15,153 @@ from django.contrib.auth.models import User  # type: ignore
 from django.core.validators import MinValueValidator, MaxValueValidator  # type: ignore
 from django.utils import timezone  # type: ignore
 
+
 class UserProfile(models.Model):
-    """
-    Extended user profile for racers.
-    
-    This model extends the default Django User model with racing-specific information
-    including car details, race statistics, and profile images.
-    """
-    # One-to-one relationship with Django User model
+    """User profile model for additional user information."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    
-    # Personal information
-    bio = models.TextField(max_length=500, blank=True, help_text="User's biography or description")
-    location = models.CharField(max_length=100, blank=True, help_text="User's location (city, state)")
-    
-    # Current car information
-    car_make = models.CharField(max_length=50, blank=True, help_text="Make of user's current car")
-    car_model = models.CharField(max_length=50, blank=True, help_text="Model of user's current car")
-    car_year = models.IntegerField(blank=True, null=True, help_text="Year of user's current car")
-    car_mods = models.TextField(blank=True, help_text="Modifications on user's current car")
-    
-    # Profile images
-    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True, help_text="User's profile picture")
-    cover_photo = models.ImageField(upload_to='cover_photos/', blank=True, null=True, help_text="User's cover photo")
-    
-    # Race statistics
+    bio = models.TextField(blank=True, help_text="User's bio or description")
+    location = models.CharField(max_length=200, blank=True, help_text="User's location")
+    car_make = models.CharField(max_length=50, blank=True, help_text="User's car make")
+    car_model = models.CharField(max_length=50, blank=True, help_text="User's car model")
+    car_year = models.IntegerField(blank=True, null=True, help_text="User's car year")
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    cover_photo = models.ImageField(upload_to='cover_photos/', blank=True, null=True)
     wins = models.IntegerField(default=0, help_text="Number of races won")
     losses = models.IntegerField(default=0, help_text="Number of races lost")
-    total_races = models.IntegerField(default=0, help_text="Total number of races participated in")
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True, help_text="When the profile was created")
-    updated_at = models.DateTimeField(auto_now=True, help_text="When the profile was last updated")
+    total_races = models.IntegerField(default=0, help_text="Total number of races")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        """String representation of the user profile."""
-        return f"{self.user.username}'s Profile"
+        return f"{self.user.username}'s profile"
 
     @property
     def win_rate(self):
-        """
-        Calculate the user's win rate as a percentage.
-        
-        Returns:
-            float: Win rate percentage (0-100), or 0 if no races completed
-        """
+        """Calculate win rate percentage."""
         if self.total_races == 0:
             return 0
         return (self.wins / self.total_races) * 100
 
+    class Meta:
+        ordering = ['-created_at']
+
 
 class Track(models.Model):
-    """
-    Racing tracks and facilities.
-    
-    This model stores information about racing tracks where events can be held,
-    including track type, surface, and location details.
-    """
-    # Basic information
-    name = models.CharField(max_length=100, help_text="Name of the racing track")
-    location = models.CharField(max_length=200, help_text="Location of the track (city, state)")
-    description = models.TextField(blank=True, help_text="Detailed description of the track")
-    
-    # Track specifications
+    """Racing track model."""
+    name = models.CharField(max_length=200, help_text="Track name")
+    location = models.CharField(max_length=200, help_text="Track location")
+    description = models.TextField(blank=True, help_text="Track description")
     track_type = models.CharField(max_length=50, choices=[
         ('drag', 'Drag Strip'),
-        ('road', 'Road Course'),
+        ('road_course', 'Road Course'),
         ('oval', 'Oval Track'),
-    ], help_text="Type of racing track")
-    
+        ('street', 'Street Circuit'),
+    ], help_text="Type of track")
     surface_type = models.CharField(max_length=50, choices=[
         ('asphalt', 'Asphalt'),
         ('concrete', 'Concrete'),
         ('dirt', 'Dirt'),
-    ], help_text="Surface material of the track")
-    
+        ('mixed', 'Mixed'),
+    ], help_text="Track surface type")
     length = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True, help_text="Track length in miles")
-    
-    # Status
-    is_active = models.BooleanField(default=True, help_text="Whether the track is currently active")
-    created_at = models.DateTimeField(auto_now_add=True, help_text="When the track was added")
+    is_active = models.BooleanField(default=True, help_text="Whether track is currently active")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        """String representation of the track."""
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 
 class Event(models.Model):
-    """
-    Racing events and competitions.
-    
-    This model represents racing events that users can participate in,
-    including races, car meets, shows, and test & tune sessions.
-    """
-    # Basic information
-    title = models.CharField(max_length=200, help_text="Title of the event")
-    description = models.TextField(help_text="Detailed description of the event")
-    
-    # Event details
-    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='events', help_text="Track where the event is held")
-    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organized_events', help_text="User organizing the event")
-    
+    """Racing event model."""
+    title = models.CharField(max_length=200, help_text="Event title")
+    description = models.TextField(help_text="Event description")
     event_type = models.CharField(max_length=50, choices=[
         ('race', 'Race Event'),
         ('meet', 'Car Meet'),
         ('show', 'Car Show'),
         ('test', 'Test & Tune'),
     ], help_text="Type of event")
-    
-    # Timing
-    start_date = models.DateTimeField(help_text="When the event starts")
-    end_date = models.DateTimeField(help_text="When the event ends")
-    
-    # Participation
-    max_participants = models.IntegerField(blank=True, null=True, help_text="Maximum number of participants allowed")
-    entry_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Entry fee for the event")
-    
-    # Visibility and status
-    is_public = models.BooleanField(default=True, help_text="Whether the event is public or private")
-    is_active = models.BooleanField(default=True, help_text="Whether the event is currently active")
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True, help_text="When the event was created")
-    updated_at = models.DateTimeField(auto_now=True, help_text="When the event was last updated")
+    start_date = models.DateTimeField(help_text="Event start date and time")
+    end_date = models.DateTimeField(help_text="Event end date and time")
+    max_participants = models.IntegerField(blank=True, null=True, help_text="Maximum number of participants")
+    entry_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Entry fee")
+    is_public = models.BooleanField(default=True, help_text="Whether event is public")
+    is_active = models.BooleanField(default=True, help_text="Whether event is active")
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organized_events')
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='events')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        """String representation of the event."""
         return self.title
 
-    @property
-    def is_upcoming(self):
-        """
-        Check if the event is in the future.
-        
-        Returns:
-            bool: True if event hasn't started yet
-        """
-        return self.start_date > timezone.now()
-
-    @property
-    def is_ongoing(self):
-        """
-        Check if the event is currently happening.
-        
-        Returns:
-            bool: True if event is currently in progress
-        """
-        now = timezone.now()
-        return self.start_date <= now <= self.end_date
-
-
-class HotSpot(models.Model):
-    """
-    Designated racing locations and meetup spots.
-    
-    This model represents official and user-designated locations where racers
-    gather, including tracks, street meet points, and popular parking lots.
-    """
-    name = models.CharField(max_length=200, help_text="Name of the hot spot")
-    description = models.TextField(blank=True, help_text="Description of the location")
-    
-    # Location details
-    address = models.CharField(max_length=500, help_text="Full address")
-    city = models.CharField(max_length=100, help_text="City")
-    state = models.CharField(max_length=50, help_text="State")
-    zip_code = models.CharField(max_length=20, help_text="ZIP code")
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Latitude coordinate")
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Longitude coordinate")
-    
-    # Hot spot details
-    spot_type = models.CharField(max_length=20, choices=[
-        ('track', 'Official Track'),
-        ('street_meet', 'Street Meet Point'),
-        ('parking_lot', 'Parking Lot'),
-        ('industrial', 'Industrial Area'),
-        ('other', 'Other'),
-    ], help_text="Type of racing location")
-    
-    # Rules and amenities
-    rules = models.TextField(blank=True, help_text="Specific rules for this location")
-    amenities = models.TextField(blank=True, help_text="Available amenities")
-    peak_hours = models.CharField(max_length=100, blank=True, help_text="Typical peak hours (e.g., 'Friday 8PM-12AM')")
-    
-    # Status and verification
-    is_verified = models.BooleanField(default=False, help_text="Whether this is a verified official location")
-    is_active = models.BooleanField(default=True, help_text="Whether this hot spot is currently active")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_hotspots')
-    
-    # Metrics
-    total_races = models.IntegerField(default=0, help_text="Total number of races held here")
-    last_activity = models.DateTimeField(blank=True, null=True, help_text="Last known activity at this location")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name} - {self.city}, {self.state}"
-
     class Meta:
-        ordering = ['-is_verified', '-total_races', 'name']
-
-
-class RacingCrew(models.Model):
-    """
-    Private racing groups and car clubs.
-    
-    This model allows users to create private groups for organizing
-    races with friends or club members.
-    """
-    name = models.CharField(max_length=200, help_text="Name of the crew/club")
-    description = models.TextField(blank=True, help_text="Description of the crew")
-    
-    # Crew details
-    crew_type = models.CharField(max_length=20, choices=[
-        ('car_club', 'Car Club'),
-        ('racing_crew', 'Racing Crew'),
-        ('friend_group', 'Friend Group'),
-        ('team', 'Racing Team'),
-    ], help_text="Type of crew")
-    
-    # Privacy settings
-    is_private = models.BooleanField(default=True, help_text="Whether this crew is private")
-    is_invite_only = models.BooleanField(default=True, help_text="Whether membership is by invitation only")
-    
-    # Crew stats
-    member_count = models.IntegerField(default=0, help_text="Number of members")
-    total_races = models.IntegerField(default=0, help_text="Total races organized by this crew")
-    
-    # Leadership
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_crews')
-    admins = models.ManyToManyField(User, related_name='admin_crews', blank=True)
-    members = models.ManyToManyField(User, related_name='member_crews', blank=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        ordering = ['-member_count', 'name']
-
-
-class CrewMembership(models.Model):
-    """
-    Membership details for racing crews.
-    """
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('active', 'Active'),
-        ('banned', 'Banned'),
-    ]
-    
-    crew = models.ForeignKey(RacingCrew, on_delete=models.CASCADE, related_name='memberships')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crew_memberships')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    joined_at = models.DateTimeField(auto_now_add=True)
-    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='crew_invites_sent')
-
-    class Meta:
-        unique_together = ['crew', 'user']
-        ordering = ['-joined_at']
-
-
-class LocationBroadcast(models.Model):
-    """
-    Real-time location broadcasting for "I'm Here, Who's There?" feature.
-    """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='location_broadcasts')
-    hot_spot = models.ForeignKey(HotSpot, on_delete=models.CASCADE, related_name='broadcasts', blank=True, null=True)
-    
-    # Location details
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
-    address = models.CharField(max_length=500, blank=True)
-    
-    # Broadcast details
-    message = models.CharField(max_length=200, blank=True, help_text="Optional message (e.g., 'Looking for a race!')")
-    is_active = models.BooleanField(default=True, help_text="Whether this broadcast is currently active")
-    
-    # Duration
-    expires_at = models.DateTimeField(help_text="When this broadcast expires")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username} at {self.address or 'Unknown location'}"
-
-    class Meta:
-        ordering = ['-created_at']
+        ordering = ['-start_date']
 
 
 class Callout(models.Model):
-    """
-    Race callouts between users.
-    
-    This model represents challenges between users for races, including
-    track or street races with optional wagers.
-    """
-    # Participants
-    challenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_callouts', help_text="User sending the challenge")
-    challenged = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_callouts', help_text="User receiving the challenge")
-    
-    # Event and location
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Associated event (optional)")
-    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Track for the race (optional)")
-    hot_spot = models.ForeignKey(HotSpot, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Hot spot for the race (optional)")
-    crew = models.ForeignKey(RacingCrew, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True, help_text="Associated crew (optional)")
-    
+    """Race callout model."""
+    challenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_callouts')
+    challenged = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_callouts')
     location_type = models.CharField(max_length=20, choices=[
         ('track', 'Track'),
         ('street', 'Street'),
-        ('hot_spot', 'Hot Spot'),
-    ], help_text="Type of location for the race")
-    
-    street_location = models.CharField(max_length=200, blank=True, help_text="Street location for street races")
-    
-    # Race details
+    ], help_text="Type of racing location")
+    street_location = models.CharField(max_length=200, blank=True, help_text="Street location if applicable")
     race_type = models.CharField(max_length=50, choices=[
         ('quarter_mile', 'Quarter Mile'),
         ('eighth_mile', 'Eighth Mile'),
         ('roll_race', 'Roll Race'),
         ('dig_race', 'Dig Race'),
-        ('heads_up', 'Heads Up'),
-        ('bracket', 'Bracket Race'),
     ], help_text="Type of race")
-    
-    # Performance requirements
-    max_horsepower = models.IntegerField(blank=True, null=True, help_text="Maximum horsepower allowed")
-    min_horsepower = models.IntegerField(blank=True, null=True, help_text="Minimum horsepower required")
-    tire_requirement = models.CharField(max_length=50, blank=True, help_text="Tire requirements")
-    
-    # Rules and experience
-    rules = models.TextField(blank=True, help_text="Specific rules for this race")
-    experience_level = models.CharField(max_length=20, choices=[
-        ('beginner', 'Beginner Friendly'),
-        ('intermediate', 'Intermediate'),
-        ('experienced', 'Experienced Only'),
-        ('pro', 'Professional'),
-    ], blank=True, help_text="Required experience level")
-    
-    # Privacy
-    is_private = models.BooleanField(default=False, help_text="Whether this is a private callout")
-    is_invite_only = models.BooleanField(default=False, help_text="Whether this requires an invitation")
-    
-    wager_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Amount wagered on the race")
-    message = models.TextField(blank=True, help_text="Message from challenger to challenged")
-    
+    wager_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Wager amount")
+    message = models.TextField(blank=True, help_text="Callout message")
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('declined', 'Declined'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
-    ], default='pending', help_text="Current status of the callout")
-    
-    scheduled_date = models.DateTimeField(blank=True, null=True, help_text="When the race is scheduled")
-    winner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='won_races', help_text="Winner of the race (if completed)")
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True, help_text="When the callout was created")
-    updated_at = models.DateTimeField(auto_now=True, help_text="When the callout was last updated")
-
-    def __str__(self):
-        return f"{self.challenger.username} vs {self.challenged.username} - {self.race_type}"
-
-    class Meta:
-        ordering = ['-created_at']  # Most recent first
-
-
-class ReputationRating(models.Model):
-    """
-    Sportsmanship and reputation ratings between users.
-    """
-    rater = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_given')
-    rated_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_received')
-    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, related_name='ratings', blank=True, null=True)
-    
-    # Rating categories
-    punctuality = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Punctuality rating (1-5)")
-    rule_adherence = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Rule adherence rating (1-5)")
-    sportsmanship = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Sportsmanship rating (1-5)")
-    overall = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Overall rating (1-5)")
-    
-    # Comments
-    comment = models.TextField(blank=True, help_text="Optional comment about the experience")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ['rater', 'rated_user', 'callout']
-        ordering = ['-created_at']
-
-
-class OpenChallenge(models.Model):
-    """
-    Public open challenges for racing.
-    """
-    challenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='open_challenges')
-    title = models.CharField(max_length=200, help_text="Challenge title")
-    description = models.TextField(help_text="Detailed description of the challenge")
-    
-    # Challenge details
-    challenge_type = models.CharField(max_length=20, choices=[
-        ('street', 'Street Race'),
-        ('track', 'Track Race'),
-        ('roll_race', 'Roll Race'),
-        ('dig_race', 'Dig Race'),
-        ('meetup', 'Meetup'),
-    ], help_text="Type of challenge")
-    
-    # Performance requirements
-    max_horsepower = models.IntegerField(blank=True, null=True, help_text="Maximum horsepower allowed")
-    min_horsepower = models.IntegerField(blank=True, null=True, help_text="Minimum horsepower required")
-    tire_requirement = models.CharField(max_length=50, blank=True, help_text="Tire requirements (e.g., 'street tires only')")
-    
-    # Location and timing
-    location = models.CharField(max_length=500, help_text="General location or area")
-    hot_spot = models.ForeignKey(HotSpot, on_delete=models.CASCADE, related_name='open_challenges', blank=True, null=True)
-    scheduled_date = models.DateTimeField(blank=True, null=True, help_text="When the challenge is scheduled")
-    
-    # Rules and stakes
-    rules = models.TextField(blank=True, help_text="Specific rules for this challenge")
-    stakes = models.CharField(max_length=200, blank=True, help_text="What's at stake (e.g., 'winner buys pizza')")
-    
-    # Status
-    is_active = models.BooleanField(default=True, help_text="Whether this challenge is still open")
-    max_participants = models.IntegerField(blank=True, null=True, help_text="Maximum number of participants")
-    
-    # Responses
-    responses = models.ManyToManyField(User, through='ChallengeResponse', related_name='responded_challenges')
-    
+    ], default='pending', help_text="Callout status")
+    scheduled_date = models.DateTimeField(blank=True, null=True, help_text="Scheduled race date")
+    winner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='won_races')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True)
+    track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.title} by {self.challenger.username}"
+        return f"{self.challenger.username} vs {self.challenged.username}"
 
     class Meta:
-        ordering = ['-created_at']
-
-
-class ChallengeResponse(models.Model):
-    """
-    Responses to open challenges.
-    """
-    STATUS_CHOICES = [
-        ('interested', 'Interested'),
-        ('accepted', 'Accepted'),
-        ('declined', 'Declined'),
-    ]
-    
-    challenge = models.ForeignKey(OpenChallenge, on_delete=models.CASCADE, related_name='challenge_responses')
-    responder = models.ForeignKey(User, on_delete=models.CASCADE, related_name='challenge_responses')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='interested')
-    message = models.TextField(blank=True, help_text="Response message")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ['challenge', 'responder']
         ordering = ['-created_at']
 
 
 class RaceResult(models.Model):
-    """
-    Results of completed races.
-    
-    This model stores detailed results from completed races, including
-    times, speeds, and other performance metrics.
-    """
-    # Race reference
-    callout = models.OneToOneField(Callout, on_delete=models.CASCADE, related_name='result', help_text="Associated callout")
-    
-    # Participants
-    winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='race_wins', help_text="Winner of the race")
-    loser = models.ForeignKey(User, on_delete=models.CASCADE, related_name='race_losses', help_text="Loser of the race")
-    
-    # Performance metrics
-    winner_time = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Winner's race time")
-    loser_time = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Loser's race time")
-    winner_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True, help_text="Winner's trap speed")
-    loser_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True, help_text="Loser's trap speed")
-    
-    # Additional information
-    notes = models.TextField(blank=True, help_text="Additional notes about the race")
-    completed_at = models.DateTimeField(auto_now_add=True, help_text="When the race was completed")
+    """Race result model."""
+    winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='race_wins')
+    loser = models.ForeignKey(User, on_delete=models.CASCADE, related_name='race_losses')
+    winner_time = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Winner's time")
+    loser_time = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Loser's time")
+    winner_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True, help_text="Winner's speed")
+    loser_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True, help_text="Loser's speed")
+    completed_at = models.DateTimeField(auto_now_add=True, help_text="When race was completed")
 
     def __str__(self):
-        """String representation of the race result."""
         return f"{self.winner.username} defeated {self.loser.username}"
+
+    class Meta:
+        ordering = ['-completed_at']
 
 
 class Marketplace(models.Model):
-    """
-    Marketplace for buying, selling, and trading.
-    
-    This model represents items listed for sale in the marketplace,
-    including cars, parts, tools, and other racing-related items.
-    """
-    # Seller information
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_items', help_text="User selling the item")
-    
-    # Item details
-    title = models.CharField(max_length=200, help_text="Title of the item")
-    description = models.TextField(help_text="Detailed description of the item")
-    
+    """Marketplace listing model."""
+    title = models.CharField(max_length=200, help_text="Listing title")
+    description = models.TextField(help_text="Listing description")
     category = models.CharField(max_length=50, choices=[
         ('car', 'Car'),
         ('parts', 'Parts'),
@@ -528,173 +169,148 @@ class Marketplace(models.Model):
         ('electronics', 'Electronics'),
         ('tools', 'Tools'),
         ('other', 'Other'),
-    ], help_text="Category of the item")
-    
+    ], help_text="Listing category")
     condition = models.CharField(max_length=20, choices=[
         ('new', 'New'),
         ('like_new', 'Like New'),
         ('good', 'Good'),
         ('fair', 'Fair'),
         ('poor', 'Poor'),
-    ], help_text="Condition of the item")
-    
-    # Pricing and negotiation
-    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of the item")
-    is_negotiable = models.BooleanField(default=True, help_text="Whether the price is negotiable")
-    trade_offered = models.BooleanField(default=False, help_text="Whether trade offers are accepted")
-    trade_description = models.TextField(blank=True, help_text="Description of what trades are accepted")
-    
-    # Location and contact
-    location = models.CharField(max_length=200, help_text="Location of the item")
-    contact_phone = models.CharField(max_length=20, blank=True, help_text="Contact phone number")
-    contact_email = models.EmailField(blank=True, help_text="Contact email address")
-    
-    # Status and metrics
-    is_active = models.BooleanField(default=True, help_text="Whether the listing is active")
-    views = models.IntegerField(default=0, help_text="Number of times the listing has been viewed")
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True, help_text="When the listing was created")
-    updated_at = models.DateTimeField(auto_now=True, help_text="When the listing was last updated")
+    ], help_text="Item condition")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Item price")
+    is_negotiable = models.BooleanField(default=True, help_text="Whether price is negotiable")
+    trade_offered = models.BooleanField(default=False, help_text="Whether trade is offered")
+    trade_description = models.TextField(blank=True, help_text="Trade description")
+    location = models.CharField(max_length=200, help_text="Item location")
+    contact_phone = models.CharField(max_length=20, blank=True, help_text="Contact phone")
+    contact_email = models.EmailField(blank=True, help_text="Contact email")
+    is_active = models.BooleanField(default=True, help_text="Whether listing is active")
+    views = models.IntegerField(default=0, help_text="Number of views")
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_items')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        """String representation of the marketplace item."""
         return self.title
 
     class Meta:
-        ordering = ['-created_at']  # Most recent first
+        ordering = ['-created_at']
 
 
 class MarketplaceImage(models.Model):
-    """
-    Images for marketplace items.
-    
-    This model stores images associated with marketplace listings,
-    with support for primary images and multiple images per item.
-    """
-    marketplace_item = models.ForeignKey(Marketplace, on_delete=models.CASCADE, related_name='images', help_text="Associated marketplace item")
-    image = models.ImageField(upload_to='marketplace_images/', help_text="Image file")
-    is_primary = models.BooleanField(default=False, help_text="Whether this is the primary image for the item")
-    created_at = models.DateTimeField(auto_now_add=True, help_text="When the image was uploaded")
+    """Marketplace image model."""
+    marketplace_item = models.ForeignKey(Marketplace, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='marketplace_images/', help_text="Item image")
+    caption = models.CharField(max_length=200, blank=True, help_text="Image caption")
+    is_primary = models.BooleanField(default=False, help_text="Whether this is the primary image")
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        """String representation of the marketplace image."""
         return f"Image for {self.marketplace_item.title}"
+
+    class Meta:
+        ordering = ['-is_primary', '-created_at']
 
 
 class EventParticipant(models.Model):
-    """
-    Participants in events.
-    
-    This model tracks which users are participating in which events,
-    including registration information and car details.
-    """
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='participants', help_text="Event being participated in")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_participations', help_text="User participating in the event")
-    car_info = models.TextField(blank=True, help_text="Information about the car being used")
-    registration_date = models.DateTimeField(auto_now_add=True, help_text="When the user registered for the event")
+    """Event participant model."""
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='participants')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_participations')
+    registration_date = models.DateTimeField(auto_now_add=True, help_text="When user registered")
     is_confirmed = models.BooleanField(default=False, help_text="Whether participation is confirmed")
+
+    def __str__(self):
+        return f"{self.user.username} in {self.event.title}"
 
     class Meta:
         unique_together = ['event', 'user']
-
-    def __str__(self):
-        return f"{self.user.username} - {self.event.title}"
+        ordering = ['registration_date']
 
 
 class Friendship(models.Model):
-    """Friendship between users"""
-    STATUS_CHOICES = [
+    """Friendship model."""
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friendship_requests_sent')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friendship_requests_received')
+    status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('accepted', 'Accepted'),
         ('declined', 'Declined'),
         ('blocked', 'Blocked'),
-    ]
-    
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_friend_requests')
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_friend_requests')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    ], default='pending', help_text="Friendship status")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.receiver.username} ({self.status})"
 
     class Meta:
         unique_together = ['sender', 'receiver']
         ordering = ['-created_at']
 
-    def __str__(self):
-        return f"{self.sender.username} -> {self.receiver.username} ({self.status})"
-
 
 class Message(models.Model):
-    """Direct messages between users"""
+    """Message model."""
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
-    content = models.TextField()
-    is_read = models.BooleanField(default=False)
+    content = models.TextField(help_text="Message content")
+    is_read = models.BooleanField(default=False, help_text="Whether message has been read")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.username} to {self.receiver.username}"
 
     class Meta:
         ordering = ['created_at']
 
-    def __str__(self):
-        return f"{self.sender.username} -> {self.receiver.username}: {self.content[:50]}"
-
 
 class CarProfile(models.Model):
-    """Detailed car profiles for users"""
+    """Car profile model."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cars')
-    name = models.CharField(max_length=100)  # e.g., "My Daily Driver", "Race Car"
-    make = models.CharField(max_length=50)
-    model = models.CharField(max_length=50)
-    year = models.IntegerField()
-    trim = models.CharField(max_length=100, blank=True)
-    color = models.CharField(max_length=50, blank=True)
-    vin = models.CharField(max_length=17, blank=True)
-    
-    # Engine specs
-    engine_size = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)  # in liters
-    engine_type = models.CharField(max_length=50, blank=True)  # e.g., "V8", "Inline-4", "V6"
+    name = models.CharField(max_length=100, help_text="Car name")
+    make = models.CharField(max_length=50, help_text="Car make")
+    model = models.CharField(max_length=50, help_text="Car model")
+    year = models.IntegerField(help_text="Car year")
+    trim = models.CharField(max_length=100, blank=True, help_text="Car trim")
+    color = models.CharField(max_length=50, blank=True, help_text="Car color")
+    vin = models.CharField(max_length=17, blank=True, help_text="Vehicle identification number")
+    engine_size = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True, help_text="Engine size in liters")
+    engine_type = models.CharField(max_length=50, blank=True, help_text="Engine type")
     fuel_type = models.CharField(max_length=20, choices=[
         ('gasoline', 'Gasoline'),
         ('diesel', 'Diesel'),
         ('electric', 'Electric'),
         ('hybrid', 'Hybrid'),
-    ], default='gasoline')
-    
-    # Performance specs
-    horsepower = models.IntegerField(blank=True, null=True)
-    torque = models.IntegerField(blank=True, null=True)  # lb-ft
-    weight = models.IntegerField(blank=True, null=True)  # lbs
-    transmission = models.CharField(max_length=50, blank=True)
+    ], default='gasoline', help_text="Fuel type")
+    horsepower = models.IntegerField(blank=True, null=True, help_text="Horsepower")
+    torque = models.IntegerField(blank=True, null=True, help_text="Torque")
+    weight = models.IntegerField(blank=True, null=True, help_text="Weight in pounds")
+    transmission = models.CharField(max_length=50, blank=True, help_text="Transmission type")
     drivetrain = models.CharField(max_length=20, choices=[
         ('fwd', 'Front-Wheel Drive'),
         ('rwd', 'Rear-Wheel Drive'),
         ('awd', 'All-Wheel Drive'),
         ('4wd', 'Four-Wheel Drive'),
-    ], blank=True)
-    
-    # Racing stats
-    best_quarter_mile = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True)
-    best_eighth_mile = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True)
-    best_trap_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
-    
-    # Description and photos
-    description = models.TextField(blank=True)
-    is_primary = models.BooleanField(default=False)  # User's main car
-    is_active = models.BooleanField(default=True)
+    ], blank=True, help_text="Drivetrain type")
+    best_quarter_mile = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Best quarter mile time")
+    best_eighth_mile = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True, help_text="Best eighth mile time")
+    best_trap_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True, help_text="Best trap speed")
+    description = models.TextField(blank=True, help_text="Car description")
+    is_primary = models.BooleanField(default=False, help_text="Whether this is the primary car")
+    is_active = models.BooleanField(default=True, help_text="Whether car profile is active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.year} {self.make} {self.model} - {self.user.username}"
 
     class Meta:
         ordering = ['-is_primary', '-created_at']
 
-    def __str__(self):
-        return f"{self.user.username}'s {self.year} {self.make} {self.model}"
-
 
 class CarModification(models.Model):
-    """Modifications for car profiles"""
-    CATEGORY_CHOICES = [
+    """Car modification model."""
+    car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, related_name='modifications')
+    category = models.CharField(max_length=20, choices=[
         ('engine', 'Engine'),
         ('exhaust', 'Exhaust'),
         ('intake', 'Intake'),
@@ -706,554 +322,733 @@ class CarModification(models.Model):
         ('exterior', 'Exterior'),
         ('electronics', 'Electronics'),
         ('other', 'Other'),
-    ]
-    
-    car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, related_name='modifications')
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    name = models.CharField(max_length=200)
-    brand = models.CharField(max_length=100, blank=True)
-    part_number = models.CharField(max_length=100, blank=True)
-    description = models.TextField(blank=True)
-    cost = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
-    installed_date = models.DateField(blank=True, null=True)
-    is_installed = models.BooleanField(default=True)
+    ], help_text="Modification category")
+    name = models.CharField(max_length=200, help_text="Modification name")
+    brand = models.CharField(max_length=100, blank=True, help_text="Brand name")
+    part_number = models.CharField(max_length=100, blank=True, help_text="Part number")
+    description = models.TextField(blank=True, help_text="Modification description")
+    cost = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, help_text="Modification cost")
+    installed_date = models.DateField(blank=True, null=True, help_text="Installation date")
+    is_installed = models.BooleanField(default=True, help_text="Whether modification is installed")
     created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-installed_date', '-created_at']
 
     def __str__(self):
         return f"{self.car} - {self.name}"
 
+    class Meta:
+        ordering = ['-installed_date', '-created_at']
+
 
 class CarImage(models.Model):
-    """Images for car profiles"""
+    """Car image model."""
     car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='car_images/')
-    caption = models.CharField(max_length=200, blank=True)
-    is_primary = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='car_images/', help_text="Car image")
+    caption = models.CharField(max_length=200, blank=True, help_text="Image caption")
+    is_primary = models.BooleanField(default=False, help_text="Whether this is the primary image")
     created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-is_primary', '-created_at']
 
     def __str__(self):
         return f"Image for {self.car}"
 
+    class Meta:
+        ordering = ['-is_primary', '-created_at']
+
 
 class UserPost(models.Model):
-    """User posts/status updates"""
+    """User post model."""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
-    content = models.TextField()
-    image = models.ImageField(upload_to='post_images/', blank=True, null=True)
-    car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, blank=True, null=True, related_name='posts')
+    content = models.TextField(help_text="Post content")
+    image = models.ImageField(upload_to='post_images/', blank=True, null=True, help_text="Post image")
+    car = models.ForeignKey(CarProfile, on_delete=models.CASCADE, related_name='posts', blank=True, null=True)
     likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ['-created_at']
-
     def __str__(self):
-        return f"{self.user.username}: {self.content[:50]}"
+        return f"Post by {self.user.username}"
 
     @property
     def like_count(self):
         return self.likes.count()
 
+    class Meta:
+        ordering = ['-created_at']
+
 
 class PostComment(models.Model):
-    """Comments on user posts"""
+    """Post comment model."""
     post = models.ForeignKey(UserPost, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_comments')
-    content = models.TextField()
+    content = models.TextField(help_text="Comment content")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.post}"
 
     class Meta:
         ordering = ['created_at']
 
-    def __str__(self):
-        return f"Comment by {self.user.username} on {self.post.id}"
-
-
-# ============================================================================
-# PAYMENT & SUBSCRIPTION MODELS
-# ============================================================================
 
 class Subscription(models.Model):
-    """
-    User subscription plans for premium features.
-    
-    This model manages subscription plans and user subscriptions,
-    including different tiers and payment processing.
-    """
-    SUBSCRIPTION_TYPES = [
+    """Subscription model."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
+    subscription_type = models.CharField(max_length=20, choices=[
         ('basic', 'Basic'),
         ('premium', 'Premium'),
         ('pro', 'Pro'),
-        ('enterprise', 'Enterprise'),
-    ]
-    
-    STATUS_CHOICES = [
+    ], help_text="Subscription type")
+    status = models.CharField(max_length=20, choices=[
         ('active', 'Active'),
         ('cancelled', 'Cancelled'),
         ('expired', 'Expired'),
-        ('pending', 'Pending'),
-        ('failed', 'Failed'),
-    ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriptions')
-    subscription_type = models.CharField(max_length=20, choices=SUBSCRIPTION_TYPES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # Pricing
-    amount = models.DecimalField(max_digits=8, decimal_places=2, help_text="Monthly subscription amount")
-    currency = models.CharField(max_length=3, default='USD', help_text="Currency code")
-    
-    # Billing cycle
-    start_date = models.DateTimeField(auto_now_add=True)
-    end_date = models.DateTimeField(blank=True, null=True)
-    next_billing_date = models.DateTimeField(blank=True, null=True)
-    
-    # Payment provider info
-    payment_provider = models.CharField(max_length=50, default='stripe', help_text="Payment provider (stripe, paypal, etc.)")
-    provider_subscription_id = models.CharField(max_length=255, blank=True, help_text="External subscription ID")
-    
-    # Features included
-    features = models.JSONField(default=dict, help_text="Features included in this subscription")
-    
+    ], default='active', help_text="Subscription status")
+    start_date = models.DateTimeField(auto_now_add=True, help_text="Subscription start date")
+    end_date = models.DateTimeField(blank=True, null=True, help_text="Subscription end date")
+    next_billing_date = models.DateTimeField(blank=True, null=True, help_text="Next billing date")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.subscription_type} ({self.status})"
+        return f"{self.user.username} - {self.subscription_type}"
 
-    @property
-    def is_active(self):
-        """Check if subscription is currently active."""
-        return self.status == 'active' and (self.end_date is None or self.end_date > timezone.now())
+    class Meta:
+        ordering = ['-created_at']
 
 
 class Payment(models.Model):
-    """
-    Payment transactions for subscriptions, marketplace purchases, and betting.
-    
-    This model tracks all payment transactions including subscriptions,
-    marketplace purchases, race wagers, and other financial transactions.
-    """
-    PAYMENT_TYPES = [
+    """Payment model."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    payment_type = models.CharField(max_length=20, choices=[
         ('subscription', 'Subscription'),
-        ('marketplace', 'Marketplace Purchase'),
-        ('wager', 'Race Wager'),
-        ('event_fee', 'Event Entry Fee'),
-        ('refund', 'Refund'),
-        ('withdrawal', 'Withdrawal'),
-    ]
-    
-    STATUS_CHOICES = [
+        ('marketplace', 'Marketplace'),
+        ('betting', 'Betting'),
+        ('other', 'Other'),
+    ], help_text="Payment type")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Payment amount")
+    status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('completed', 'Completed'),
         ('failed', 'Failed'),
-        ('cancelled', 'Cancelled'),
         ('refunded', 'Refunded'),
-    ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
-    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # Amount and currency
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    currency = models.CharField(max_length=3, default='USD')
-    
-    # Payment provider info
-    payment_provider = models.CharField(max_length=50, default='stripe')
-    provider_payment_id = models.CharField(max_length=255, blank=True)
-    provider_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    
-    # Related objects
-    subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
-    marketplace_item = models.ForeignKey(Marketplace, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
-    callout = models.ForeignKey(Callout, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
-    event = models.ForeignKey(Event, on_delete=models.SET_NULL, blank=True, null=True, related_name='payments')
-    
-    # Description and metadata
-    description = models.TextField(blank=True)
-    metadata = models.JSONField(default=dict, help_text="Additional payment metadata")
-    
+    ], default='pending', help_text="Payment status")
+    payment_provider = models.CharField(max_length=50, blank=True, help_text="Payment provider")
+    transaction_id = models.CharField(max_length=100, blank=True, help_text="Transaction ID")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.payment_type} - ${self.amount} ({self.status})"
+        return f"{self.user.username} - {self.amount} ({self.status})"
+
+    class Meta:
+        ordering = ['-created_at']
 
 
 class UserWallet(models.Model):
-    """
-    User wallet for managing account balance and transactions.
-    
-    This model tracks user account balances and provides a foundation
-    for betting, marketplace transactions, and other financial features.
-    """
+    """User wallet model."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    currency = models.CharField(max_length=3, default='USD')
-    
-    # Wallet settings
-    is_active = models.BooleanField(default=True)
-    daily_limit = models.DecimalField(max_digits=10, decimal_places=2, default=1000)
-    monthly_limit = models.DecimalField(max_digits=10, decimal_places=2, default=10000)
-    
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Wallet balance")
+    is_active = models.BooleanField(default=True, help_text="Whether wallet is active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.username}'s Wallet - ${self.balance}"
+        return f"{self.user.username}'s wallet"
 
-    def can_afford(self, amount):
-        """Check if user can afford a transaction."""
-        return self.balance >= amount
+    class Meta:
+        ordering = ['-updated_at']
 
-    def add_funds(self, amount, description="Deposit"):
-        """Add funds to wallet."""
-        self.balance += amount
-        self.save()
-        
-        # Create payment record
-        Payment.objects.create(
-            user=self.user,
-            payment_type='deposit',
-            status='completed',
-            amount=amount,
-            description=description
-        )
-
-    def deduct_funds(self, amount, description="Withdrawal"):
-        """Deduct funds from wallet."""
-        if self.can_afford(amount):
-            self.balance -= amount
-            self.save()
-            
-            # Create payment record
-            Payment.objects.create(
-                user=self.user,
-                payment_type='withdrawal',
-                status='completed',
-                amount=amount,
-                description=description
-            )
-            return True
-        return False
-
-
-# ============================================================================
-# ENHANCED MARKETPLACE MODELS
-# ============================================================================
 
 class MarketplaceOrder(models.Model):
-    """
-    Orders for marketplace purchases.
-    
-    This model tracks marketplace orders including buyer/seller info,
-    payment status, shipping details, and order history.
-    """
-    STATUS_CHOICES = [
+    """Marketplace order model."""
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sales')
+    item = models.ForeignKey(Marketplace, on_delete=models.CASCADE, related_name='orders')
+    quantity = models.IntegerField(default=1, help_text="Order quantity")
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Total order amount")
+    status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('paid', 'Paid'),
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
-        ('refunded', 'Refunded'),
-    ]
-    
-    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchases')
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sales')
-    item = models.ForeignKey(Marketplace, on_delete=models.CASCADE, related_name='orders')
-    
-    # Order details
-    quantity = models.IntegerField(default=1)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # Shipping information
-    shipping_address = models.TextField(blank=True)
-    shipping_method = models.CharField(max_length=50, blank=True)
-    tracking_number = models.CharField(max_length=100, blank=True)
-    
-    # Payment
-    payment = models.OneToOneField(Payment, on_delete=models.SET_NULL, blank=True, null=True, related_name='marketplace_order')
-    
-    # Timestamps
+    ], default='pending', help_text="Order status")
+    shipping_address = models.TextField(blank=True, help_text="Shipping address")
+    tracking_number = models.CharField(max_length=100, blank=True, help_text="Tracking number")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    paid_at = models.DateTimeField(blank=True, null=True)
-    shipped_at = models.DateTimeField(blank=True, null=True)
-    delivered_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return f"Order #{self.id} - {self.buyer.username} -> {self.seller.username}"
+        return f"Order {self.id} - {self.buyer.username} -> {self.seller.username}"
 
     class Meta:
         ordering = ['-created_at']
 
 
 class MarketplaceReview(models.Model):
-    """
-    Reviews for marketplace transactions.
-    
-    This model allows users to leave reviews for marketplace purchases,
-    helping build trust and reputation in the marketplace.
-    """
-    order = models.OneToOneField(MarketplaceOrder, on_delete=models.CASCADE, related_name='review')
+    """Marketplace review model."""
     reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='marketplace_reviews')
-    
-    # Review details
-    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
-    title = models.CharField(max_length=200)
-    comment = models.TextField()
-    
-    # Review metadata
-    is_verified_purchase = models.BooleanField(default=True)
-    helpful_votes = models.IntegerField(default=0)
-    
+    order = models.OneToOneField(MarketplaceOrder, on_delete=models.CASCADE, related_name='review')
+    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Review rating")
+    title = models.CharField(max_length=200, help_text="Review title")
+    comment = models.TextField(help_text="Review comment")
+    is_verified_purchase = models.BooleanField(default=True, help_text="Whether this is a verified purchase")
+    helpful_votes = models.IntegerField(default=0, help_text="Number of helpful votes")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Review by {self.reviewer.username} - {self.rating} stars"
+        return f"Review by {self.reviewer.username} for {self.order}"
 
     class Meta:
         ordering = ['-created_at']
 
 
-# ============================================================================
-# BETTING & WAGERING MODELS
-# ============================================================================
-
 class Bet(models.Model):
-    """
-    Betting system for races and events.
-    
-    This model manages betting on races, including odds, payouts,
-    and bet tracking for both callouts and events.
-    """
-    BET_TYPES = [
-        ('callout', 'Callout Race'),
-        ('event', 'Event Race'),
-        ('tournament', 'Tournament'),
-    ]
-    
-    STATUS_CHOICES = [
+    """Bet model."""
+    bettor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bets')
+    bet_type = models.CharField(max_length=20, choices=[
+        ('callout', 'Callout'),
+        ('event', 'Event'),
+        ('other', 'Other'),
+    ], help_text="Bet type")
+    bet_amount = models.DecimalField(max_digits=8, decimal_places=2, help_text="Bet amount")
+    odds = models.DecimalField(max_digits=5, decimal_places=2, help_text="Betting odds")
+    potential_payout = models.DecimalField(max_digits=8, decimal_places=2, help_text="Potential payout")
+    status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
-        ('active', 'Active'),
         ('won', 'Won'),
         ('lost', 'Lost'),
         ('cancelled', 'Cancelled'),
-        ('refunded', 'Refunded'),
-    ]
-    
-    bettor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bets')
-    bet_type = models.CharField(max_length=20, choices=BET_TYPES)
-    
-    # Related objects
-    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, blank=True, null=True, related_name='bets')
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True, related_name='bets')
-    
-    # Betting details
-    bet_amount = models.DecimalField(max_digits=8, decimal_places=2)
-    odds = models.DecimalField(max_digits=5, decimal_places=2, help_text="Odds ratio (e.g., 2.5 means 2.5x payout)")
-    potential_payout = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    # Selection
-    selected_winner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bets_for_winner')
-    
-    # Status and results
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    actual_winner = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='bets_won')
-    payout_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    
-    # Payment
-    payment = models.OneToOneField(Payment, on_delete=models.SET_NULL, blank=True, null=True, related_name='bet')
-    
+    ], default='pending', help_text="Bet status")
+    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, related_name='bets', blank=True, null=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='bets', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    settled_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return f"Bet by {self.bettor.username} - ${self.bet_amount} on {self.selected_winner.username}"
-
-    def calculate_payout(self):
-        """Calculate potential payout based on odds."""
-        self.potential_payout = self.bet_amount * self.odds
-        self.save()
-
-    def settle_bet(self, winner):
-        """Settle the bet when race is completed."""
-        self.actual_winner = winner
-        self.settled_at = timezone.now()
-        
-        if winner == self.selected_winner:
-            self.status = 'won'
-            self.payout_amount = self.potential_payout
-        else:
-            self.status = 'lost'
-            self.payout_amount = 0
-        
-        self.save()
-
-
-class BettingPool(models.Model):
-    """
-    Betting pools for events and tournaments.
-    
-    This model manages betting pools where multiple users can bet
-    on the same race or event, with odds calculated based on total bets.
-    """
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    
-    # Related objects
-    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, blank=True, null=True, related_name='betting_pools')
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, blank=True, null=True, related_name='betting_pools')
-    
-    # Pool details
-    total_pool = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    house_fee_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=5.0, help_text="House fee as percentage")
-    
-    # Status
-    is_active = models.BooleanField(default=True)
-    is_settled = models.BooleanField(default=False)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    closed_at = models.DateTimeField(blank=True, null=True)
-    settled_at = models.DateTimeField(blank=True, null=True)
-
-    def __str__(self):
-        return f"Betting Pool: {self.name} - ${self.total_pool}"
-
-    def calculate_odds(self, participant):
-        """Calculate odds for a participant based on total bets."""
-        participant_bets = self.bets.filter(selected_winner=participant).aggregate(
-            total=models.Sum('bet_amount')
-        )['total'] or 0
-        
-        if participant_bets == 0:
-            return 2.0  # Default odds if no bets
-        
-        return (self.total_pool * (1 - self.house_fee_percentage / 100)) / participant_bets
-
-    def close_pool(self):
-        """Close the betting pool before race starts."""
-        self.is_active = False
-        self.closed_at = timezone.now()
-        self.save()
-
-    def settle_pool(self, winner):
-        """Settle the betting pool after race completion."""
-        self.is_settled = True
-        self.settled_at = timezone.now()
-        
-        # Calculate payouts for winning bets
-        winning_bets = self.bets.filter(selected_winner=winner)
-        total_winning_amount = winning_bets.aggregate(
-            total=models.Sum('bet_amount')
-        )['total'] or 0
-        
-        if total_winning_amount > 0:
-            payout_per_dollar = (self.total_pool * (1 - self.house_fee_percentage / 100)) / total_winning_amount
-            
-            for bet in winning_bets:
-                bet.payout_amount = bet.bet_amount * payout_per_dollar
-                bet.status = 'won'
-                bet.actual_winner = winner
-                bet.settled_at = timezone.now()
-                bet.save()
-        
-        # Mark losing bets
-        losing_bets = self.bets.exclude(selected_winner=winner)
-        for bet in losing_bets:
-            bet.status = 'lost'
-            bet.payout_amount = 0
-            bet.actual_winner = winner
-            bet.settled_at = timezone.now()
-            bet.save()
-        
-        self.save()
-
-
-# ============================================================================
-# NOTIFICATION MODELS
-# ============================================================================
-
-class Notification(models.Model):
-    """
-    User notifications for various events.
-    
-    This model manages notifications for users including payment confirmations,
-    bet settlements, marketplace updates, and other important events.
-    """
-    NOTIFICATION_TYPES = [
-        ('payment', 'Payment'),
-        ('bet', 'Bet'),
-        ('marketplace', 'Marketplace'),
-        ('race', 'Race'),
-        ('subscription', 'Subscription'),
-        ('system', 'System'),
-    ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
-    
-    # Content
-    title = models.CharField(max_length=200)
-    message = models.TextField()
-    
-    # Related objects (optional)
-    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
-    bet = models.ForeignKey(Bet, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
-    marketplace_order = models.ForeignKey(MarketplaceOrder, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
-    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, blank=True, null=True, related_name='notifications')
-    
-    # Status
-    is_read = models.BooleanField(default=False)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Notification for {self.user.username}: {self.title}"
+        return f"{self.bettor.username} - {self.bet_amount} ({self.status})"
 
     class Meta:
         ordering = ['-created_at']
 
 
-# ============================================================================
-# CONTACT FORM MODEL
-# ============================================================================
+class BettingPool(models.Model):
+    """Betting pool model."""
+    name = models.CharField(max_length=200, help_text="Pool name")
+    description = models.TextField(blank=True, help_text="Pool description")
+    total_pool = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Total pool amount")
+    is_active = models.BooleanField(default=True, help_text="Whether pool is active")
+    is_settled = models.BooleanField(default=False, help_text="Whether pool is settled")
+    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, related_name='betting_pools', blank=True, null=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='betting_pools', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class Notification(models.Model):
+    """Notification model."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=20, choices=[
+        ('callout', 'Callout'),
+        ('friend_request', 'Friend Request'),
+        ('message', 'Message'),
+        ('event', 'Event'),
+        ('marketplace', 'Marketplace'),
+        ('other', 'Other'),
+    ], help_text="Notification type")
+    title = models.CharField(max_length=200, help_text="Notification title")
+    message = models.TextField(help_text="Notification message")
+    is_read = models.BooleanField(default=False, help_text="Whether notification is read")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+# --- Advanced Racing Features Models ---
+
+class HotSpot(models.Model):
+    """Racing hot spot model."""
+    name = models.CharField(max_length=200, help_text="Name of the hot spot")
+    description = models.TextField(blank=True, help_text="Description of the location")
+    address = models.CharField(max_length=500, help_text="Full address")
+    city = models.CharField(max_length=100, help_text="City")
+    state = models.CharField(max_length=50, help_text="State")
+    zip_code = models.CharField(max_length=20, help_text="ZIP code")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Latitude coordinate")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Longitude coordinate")
+    spot_type = models.CharField(max_length=20, choices=[
+        ('track', 'Official Track'),
+        ('street_meet', 'Street Meet Point'),
+        ('parking_lot', 'Parking Lot'),
+        ('industrial', 'Industrial Area'),
+        ('other', 'Other'),
+    ], help_text="Type of racing location")
+    rules = models.TextField(blank=True, help_text="Specific rules for this location")
+    amenities = models.TextField(blank=True, help_text="Available amenities")
+    peak_hours = models.CharField(max_length=100, blank=True, help_text="Typical peak hours (e.g., 'Friday 8PM-12AM')")
+    is_verified = models.BooleanField(default=False, help_text="Whether this is a verified official location")
+    is_active = models.BooleanField(default=True, help_text="Whether this hot spot is currently active")
+    total_races = models.IntegerField(default=0, help_text="Total number of races held here")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_hotspots')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class RacingCrew(models.Model):
+    """Racing crew model."""
+    name = models.CharField(max_length=200, help_text="Crew name")
+    description = models.TextField(help_text="Crew description")
+    logo = models.ImageField(upload_to='crew_logos/', blank=True, null=True, help_text="Crew logo")
+    location = models.CharField(max_length=200, help_text="Crew location")
+    founded_date = models.DateField(blank=True, null=True, help_text="When the crew was founded")
+    is_public = models.BooleanField(default=True, help_text="Whether crew is public")
+    is_verified = models.BooleanField(default=False, help_text="Whether crew is verified")
+    member_count = models.IntegerField(default=0, help_text="Number of members")
+    max_members = models.IntegerField(blank=True, null=True, help_text="Maximum number of members")
+    requirements = models.TextField(blank=True, help_text="Requirements to join")
+    rules = models.TextField(blank=True, help_text="Crew rules")
+    website = models.URLField(blank=True, help_text="Crew website")
+    social_media = models.JSONField(default=dict, blank=True, help_text="Social media links")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_crews')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class CrewMembership(models.Model):
+    """Crew membership model."""
+    crew = models.ForeignKey(RacingCrew, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='crew_memberships')
+    role = models.CharField(max_length=50, choices=[
+        ('member', 'Member'),
+        ('officer', 'Officer'),
+        ('leader', 'Leader'),
+        ('founder', 'Founder'),
+    ], default='member', help_text="Member role")
+    status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('banned', 'Banned'),
+    ], default='pending', help_text="Membership status")
+    joined_date = models.DateTimeField(auto_now_add=True, help_text="When member joined")
+    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='crew_invitations_sent')
+    notes = models.TextField(blank=True, help_text="Admin notes")
+
+    def __str__(self):
+        return f"{self.user.username} in {self.crew.name}"
+
+    class Meta:
+        unique_together = ['crew', 'user']
+        ordering = ['joined_date']
+
+
+class LocationBroadcast(models.Model):
+    """Location broadcast model."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='location_broadcasts')
+    location = models.CharField(max_length=200, help_text="Current location")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Latitude coordinate")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, help_text="Longitude coordinate")
+    message = models.TextField(blank=True, help_text="Optional message")
+    is_active = models.BooleanField(default=True, help_text="Whether broadcast is active")
+    expires_at = models.DateTimeField(help_text="When broadcast expires")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} at {self.location}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class ReputationRating(models.Model):
+    """Reputation rating model."""
+    rater = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_given')
+    rated_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings_received')
+    callout = models.ForeignKey(Callout, on_delete=models.CASCADE, related_name='ratings', blank=True, null=True)
+    punctuality = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Punctuality rating (1-5)")
+    rule_adherence = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Rule adherence rating (1-5)")
+    sportsmanship = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Sportsmanship rating (1-5)")
+    overall = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Overall rating (1-5)")
+    comment = models.TextField(blank=True, help_text="Optional comment about the experience")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.rater.username} rated {self.rated_user.username}"
+
+    class Meta:
+        unique_together = ['rater', 'rated_user', 'callout']
+        ordering = ['-created_at']
+
+
+class OpenChallenge(models.Model):
+    """Open challenge model."""
+    challenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='open_challenges_created')
+    title = models.CharField(max_length=200, help_text="Challenge title")
+    description = models.TextField(help_text="Challenge description")
+    location = models.CharField(max_length=200, help_text="Challenge location")
+    race_type = models.CharField(max_length=50, choices=[
+        ('quarter_mile', 'Quarter Mile'),
+        ('eighth_mile', 'Eighth Mile'),
+        ('roll_race', 'Roll Race'),
+        ('dig_race', 'Dig Race'),
+        ('other', 'Other'),
+    ], help_text="Type of race")
+    wager_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Wager amount")
+    max_respondents = models.IntegerField(blank=True, null=True, help_text="Maximum number of respondents")
+    expires_at = models.DateTimeField(help_text="When challenge expires")
+    is_active = models.BooleanField(default=True, help_text="Whether challenge is active")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.challenger.username} - {self.title}"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class ChallengeResponse(models.Model):
+    """Challenge response model."""
+    challenge = models.ForeignKey(OpenChallenge, on_delete=models.CASCADE, related_name='responses')
+    respondent = models.ForeignKey(User, on_delete=models.CASCADE, related_name='challenge_responses')
+    message = models.TextField(blank=True, help_text="Response message")
+    status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ], default='pending', help_text="Response status")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.respondent.username} responded to {self.challenge.title}"
+
+    class Meta:
+        unique_together = ['challenge', 'respondent']
+        ordering = ['created_at']
+
+
+# --- End Advanced Racing Features Models ---
+
+# --- Build Showcase Models ---
+
+class BuildLog(models.Model):
+    car = models.ForeignKey('CarProfile', on_delete=models.CASCADE, related_name='build_logs')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    is_complete = models.BooleanField(default=False)
+    start_date = models.DateField()
+    completion_date = models.DateField(blank=True, null=True)
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    target_horsepower = models.IntegerField(blank=True, null=True)
+    target_quarter_mile = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True)
+    is_public = models.BooleanField(default=True)
+    allow_comments = models.BooleanField(default=True)
+    allow_ratings = models.BooleanField(default=True)
+    views = models.IntegerField(default=0)
+    likes = models.ManyToManyField(User, related_name='liked_builds', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.car} - {self.title}"
+    
+    @property
+    def like_count(self):
+        return self.likes.count()
+    
+    @property
+    def progress_percentage(self):
+        milestones = self.milestones.all()
+        if not milestones:
+            return 0
+        completed = milestones.filter(is_complete=True).count()
+        return (completed / milestones.count()) * 100
+    
+    class Meta:
+        ordering = ['-updated_at']
+
+
+class BuildMilestone(models.Model):
+    build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='milestones')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    category = models.CharField(max_length=50)
+    is_complete = models.BooleanField(default=False)
+    start_date = models.DateField()
+    completion_date = models.DateField(blank=True, null=True)
+    cost = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    hours_spent = models.DecimalField(max_digits=6, decimal_places=1, blank=True, null=True)
+    horsepower_gain = models.IntegerField(blank=True, null=True)
+    torque_gain = models.IntegerField(blank=True, null=True)
+    weight_change = models.IntegerField(blank=True, null=True)
+    parts_used = models.TextField(blank=True)
+    part_numbers = models.TextField(blank=True)
+    difficulty_level = models.CharField(max_length=20, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.build_log.title} - {self.title}"
+    
+    class Meta:
+        ordering = ['start_date']
+
+
+class BuildMedia(models.Model):
+    MEDIA_TYPES = [
+        ('photo', 'Photo'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('document', 'Document'),
+    ]
+    build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='media', blank=True, null=True)
+    milestone = models.ForeignKey(BuildMilestone, on_delete=models.CASCADE, related_name='media', blank=True, null=True)
+    media_type = models.CharField(max_length=20, choices=MEDIA_TYPES)
+    file = models.FileField(upload_to='build_media/')
+    thumbnail = models.ImageField(upload_to='build_thumbnails/', blank=True, null=True)
+    title = models.CharField(max_length=200, blank=True)
+    caption = models.TextField(blank=True)
+    is_primary = models.BooleanField(default=False)
+    file_size = models.IntegerField(blank=True, null=True)
+    duration = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.get_media_type_display()} - {self.title or self.file.name}"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+
+class CarTour(models.Model):
+    car = models.ForeignKey('CarProfile', on_delete=models.CASCADE, related_name='tours')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    tour_type = models.CharField(max_length=20)
+    primary_media = models.FileField(upload_to='car_tours/')
+    thumbnail = models.ImageField(upload_to='tour_thumbnails/', blank=True, null=True)
+    is_public = models.BooleanField(default=True)
+    allow_comments = models.BooleanField(default=True)
+    views = models.IntegerField(default=0)
+    likes = models.ManyToManyField(User, related_name='liked_tours', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.car} - {self.title}"
+    
+    @property
+    def like_count(self):
+        return self.likes.count()
+    
+    class Meta:
+        ordering = ['-created_at']
+
+
+class PerformanceData(models.Model):
+    car = models.ForeignKey('CarProfile', on_delete=models.CASCADE, related_name='performance_data')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    test_type = models.CharField(max_length=20)
+    test_date = models.DateField()
+    track = models.CharField(max_length=200, blank=True)
+    weather_conditions = models.CharField(max_length=200, blank=True)
+    horsepower = models.IntegerField(blank=True, null=True)
+    torque = models.IntegerField(blank=True, null=True)
+    rpm_hp_peak = models.IntegerField(blank=True, null=True)
+    rpm_torque_peak = models.IntegerField(blank=True, null=True)
+    quarter_mile_time = models.DecimalField(max_digits=6, decimal_places=3, blank=True, null=True)
+    quarter_mile_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    sixty_foot_time = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    three_thirty_time = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    eighth_mile_time = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    eighth_mile_speed = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    weight = models.IntegerField(blank=True, null=True)
+    fuel_type = models.CharField(max_length=50, blank=True)
+    tire_type = models.CharField(max_length=100, blank=True)
+    dyno_sheet = models.ImageField(upload_to='dyno_sheets/', blank=True, null=True)
+    time_slip = models.ImageField(upload_to='time_slips/', blank=True, null=True)
+    video = models.FileField(upload_to='performance_videos/', blank=True, null=True)
+    notes = models.TextField(blank=True)
+    modifications = models.TextField(blank=True)
+    is_verified = models.BooleanField(default=False)
+    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='verified_performance_data')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.car} - {self.title} ({self.test_type})"
+    
+    class Meta:
+        ordering = ['-test_date']
+
+
+class BuildWishlist(models.Model):
+    build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='wishlist_items')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    category = models.CharField(max_length=50)
+    brand = models.CharField(max_length=100, blank=True)
+    part_number = models.CharField(max_length=100, blank=True)
+    estimated_cost = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    priority = models.CharField(max_length=20, default='medium')
+    is_public = models.BooleanField(default=True)
+    is_acquired = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.build_log.title} - {self.title}"
+    
+    class Meta:
+        ordering = ['priority', '-created_at']
+
+
+class WishlistSuggestion(models.Model):
+    wishlist_item = models.ForeignKey(BuildWishlist, on_delete=models.CASCADE, related_name='suggestions')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlist_suggestions_given')
+    suggestion = models.TextField()
+    alternative_part = models.CharField(max_length=200, blank=True)
+    price_info = models.CharField(max_length=200, blank=True)
+    source = models.CharField(max_length=200, blank=True)
+    is_helpful = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Suggestion for {self.wishlist_item.title} by {self.user.username}"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+
+class BuildRating(models.Model):
+    build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='ratings')
+    rater = models.ForeignKey(User, on_delete=models.CASCADE, related_name='build_ratings_given')
+    creativity = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    execution = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    documentation = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    performance = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    overall = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Rating for {self.build_log.title} by {self.rater.username}"
+    
+    class Meta:
+        unique_together = ['build_log', 'rater']
+        ordering = ['-created_at']
+
+
+class BuildComment(models.Model):
+    build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='comments', blank=True, null=True)
+    milestone = models.ForeignKey(BuildMilestone, on_delete=models.CASCADE, related_name='comments', blank=True, null=True)
+    tour = models.ForeignKey(CarTour, on_delete=models.CASCADE, related_name='comments', blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='build_comments')
+    content = models.TextField()
+    comment_type = models.CharField(max_length=20, default='general')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name='replies', blank=True, null=True)
+    is_approved = models.BooleanField(default=True)
+    is_flagged = models.BooleanField(default=False)
+    likes = models.ManyToManyField(User, related_name='liked_build_comments', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.get_content_object()}"
+    
+    def get_content_object(self):
+        if self.build_log:
+            return self.build_log.title
+        elif self.milestone:
+            return self.milestone.title
+        elif self.tour:
+            return self.tour.title
+        return "Unknown"
+    
+    @property
+    def like_count(self):
+        return self.likes.count()
+    
+    class Meta:
+        ordering = ['created_at']
+
+
+class BuildBadge(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    icon = models.ImageField(upload_to='badge_icons/')
+    criteria = models.TextField()
+    badge_type = models.CharField(max_length=20)
+    is_automatic = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+
+
+class BuildBadgeAward(models.Model):
+    build_log = models.ForeignKey(BuildLog, on_delete=models.CASCADE, related_name='badge_awards')
+    badge = models.ForeignKey(BuildBadge, on_delete=models.CASCADE, related_name='awards')
+    awarded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='badges_awarded')
+    awarded_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"{self.badge.name} awarded to {self.build_log.title}"
+    
+    class Meta:
+        unique_together = ['build_log', 'badge']
+        ordering = ['-awarded_at']
+
+
+# --- End Build Showcase Models ---
 
 class ContactSubmission(models.Model):
-    """
-    Contact form submissions for admin review.
-    
-    This model stores contact form submissions when email is not configured
-    or fails to send, allowing admins to review and respond to inquiries.
-    """
     name = models.CharField(max_length=100, help_text="Contact person's name")
     email = models.EmailField(help_text="Contact person's email")
     subject = models.CharField(max_length=200, help_text="Subject of the inquiry")
     message = models.TextField(help_text="Contact message content")
-    
-    # Status tracking
     is_reviewed = models.BooleanField(default=False, help_text="Whether admin has reviewed this submission")
     is_responded = models.BooleanField(default=False, help_text="Whether admin has responded to this submission")
     admin_notes = models.TextField(blank=True, help_text="Admin notes about this submission")
-    
     created_at = models.DateTimeField(auto_now_add=True, help_text="When the submission was received")
     reviewed_at = models.DateTimeField(blank=True, null=True, help_text="When admin reviewed this submission")
     responded_at = models.DateTimeField(blank=True, null=True, help_text="When admin responded to this submission")
-
+    
     def __str__(self):
         return f"Contact from {self.name} - {self.subject}"
-
+    
     class Meta:
         ordering = ['-created_at'] 

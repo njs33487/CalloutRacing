@@ -5,7 +5,14 @@ from .models import (
     Friendship, Message, CarProfile, CarModification, 
     CarImage, UserPost, PostComment,
     Subscription, Payment, UserWallet, MarketplaceOrder, 
-    MarketplaceReview, Bet, BettingPool, Notification, ContactSubmission
+    MarketplaceReview, Bet, BettingPool, Notification, ContactSubmission,
+    # Advanced racing features
+    HotSpot, RacingCrew, CrewMembership, LocationBroadcast,
+    ReputationRating, OpenChallenge, ChallengeResponse,
+    # Build showcase models
+    BuildLog, BuildMilestone, BuildMedia, CarTour, PerformanceData,
+    BuildWishlist, WishlistSuggestion, BuildRating, BuildComment,
+    BuildBadge, BuildBadgeAward
 )
 from django.utils import timezone
 
@@ -175,6 +182,140 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ['user', 'notification_type', 'title', 'is_read', 'created_at']
     list_filter = ['notification_type', 'is_read', 'created_at']
     search_fields = ['user__username', 'title']
+
+
+@admin.register(HotSpot)
+class HotSpotAdmin(admin.ModelAdmin):
+    list_display = ['name', 'spot_type', 'city', 'state', 'is_verified', 'is_active', 'total_races']
+    list_filter = ['spot_type', 'is_verified', 'is_active', 'state']
+    search_fields = ['name', 'description', 'address', 'city']
+    ordering = ['name']
+
+
+@admin.register(RacingCrew)
+class RacingCrewAdmin(admin.ModelAdmin):
+    list_display = ['name', 'location', 'member_count', 'is_public', 'is_verified', 'created_by']
+    list_filter = ['is_public', 'is_verified', 'founded_date']
+    search_fields = ['name', 'description', 'location']
+    ordering = ['name']
+
+
+@admin.register(CrewMembership)
+class CrewMembershipAdmin(admin.ModelAdmin):
+    list_display = ['crew', 'user', 'role', 'status', 'joined_date']
+    list_filter = ['role', 'status', 'joined_date']
+    search_fields = ['crew__name', 'user__username']
+    ordering = ['joined_date']
+
+
+@admin.register(LocationBroadcast)
+class LocationBroadcastAdmin(admin.ModelAdmin):
+    list_display = ['user', 'location', 'is_active', 'expires_at', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['user__username', 'location', 'message']
+    ordering = ['-created_at']
+
+
+@admin.register(ReputationRating)
+class ReputationRatingAdmin(admin.ModelAdmin):
+    list_display = ['rater', 'rated_user', 'overall', 'created_at']
+    list_filter = ['overall', 'created_at']
+    search_fields = ['rater__username', 'rated_user__username', 'comment']
+    ordering = ['-created_at']
+
+
+@admin.register(OpenChallenge)
+class OpenChallengeAdmin(admin.ModelAdmin):
+    list_display = ['challenger', 'title', 'race_type', 'wager_amount', 'is_active', 'expires_at']
+    list_filter = ['race_type', 'is_active', 'created_at']
+    search_fields = ['challenger__username', 'title', 'description', 'location']
+    ordering = ['-created_at']
+
+
+@admin.register(ChallengeResponse)
+class ChallengeResponseAdmin(admin.ModelAdmin):
+    list_display = ['challenge', 'respondent', 'status', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['challenge__title', 'respondent__username', 'message']
+    ordering = ['created_at']
+
+
+@admin.register(BuildLog)
+class BuildLogAdmin(admin.ModelAdmin):
+    list_display = ['car', 'title', 'is_complete', 'start_date', 'completion_date', 'total_cost']
+    list_filter = ['is_complete', 'start_date', 'completion_date']
+    search_fields = ['car__name', 'title', 'description']
+    date_hierarchy = 'start_date'
+
+
+@admin.register(BuildMilestone)
+class BuildMilestoneAdmin(admin.ModelAdmin):
+    list_display = ['build_log', 'title', 'category', 'is_complete', 'start_date', 'completion_date']
+    list_filter = ['category', 'is_complete', 'start_date', 'completion_date']
+    search_fields = ['build_log__title', 'title', 'description']
+
+
+@admin.register(BuildMedia)
+class BuildMediaAdmin(admin.ModelAdmin):
+    list_display = ['build_log', 'media_type', 'title', 'created_at']
+    list_filter = ['media_type', 'created_at']
+    search_fields = ['build_log__title', 'title', 'description']
+
+
+@admin.register(CarTour)
+class CarTourAdmin(admin.ModelAdmin):
+    list_display = ['car', 'tour_type', 'title', 'is_public', 'created_at']
+    list_filter = ['tour_type', 'is_public', 'created_at']
+    search_fields = ['car__name', 'title', 'description']
+
+
+@admin.register(PerformanceData)
+class PerformanceDataAdmin(admin.ModelAdmin):
+    list_display = ['car', 'test_type', 'test_date', 'horsepower', 'quarter_mile_time']
+    list_filter = ['test_type', 'test_date']
+    search_fields = ['car__name', 'title', 'notes']
+
+
+@admin.register(BuildWishlist)
+class BuildWishlistAdmin(admin.ModelAdmin):
+    list_display = ['build_log', 'title', 'priority', 'estimated_cost', 'is_public']
+    list_filter = ['priority', 'is_public', 'created_at']
+    search_fields = ['build_log__title', 'title', 'description']
+
+
+@admin.register(WishlistSuggestion)
+class WishlistSuggestionAdmin(admin.ModelAdmin):
+    list_display = ['wishlist_item', 'user', 'suggestion', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['wishlist_item__title', 'user__username', 'suggestion']
+
+
+@admin.register(BuildRating)
+class BuildRatingAdmin(admin.ModelAdmin):
+    list_display = ['build_log', 'rater', 'overall', 'created_at']
+    list_filter = ['overall', 'created_at']
+    search_fields = ['build_log__title', 'rater__username', 'comment']
+
+
+@admin.register(BuildComment)
+class BuildCommentAdmin(admin.ModelAdmin):
+    list_display = ['user', 'content', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['user__username', 'content']
+
+
+@admin.register(BuildBadge)
+class BuildBadgeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'badge_type', 'is_active']
+    list_filter = ['badge_type', 'is_active']
+    search_fields = ['name', 'description']
+
+
+@admin.register(BuildBadgeAward)
+class BuildBadgeAwardAdmin(admin.ModelAdmin):
+    list_display = ['build_log', 'badge', 'awarded_by', 'awarded_at']
+    list_filter = ['badge', 'awarded_at']
+    search_fields = ['build_log__title', 'badge__name', 'awarded_by__username']
 
 
 @admin.register(ContactSubmission)
