@@ -41,6 +41,9 @@ export const authAPI = {
   login: (data: any) => api.post('/auth/login/', data),
   logout: () => api.post('/auth/logout/'),
   profile: () => api.get('/auth/profile/'),
+  googleSSO: (idToken: string) => api.post('/auth/google/', { id_token: idToken }),
+  facebookSSO: (accessToken: string) => api.post('/auth/facebook/', { access_token: accessToken }),
+  getSSOConfig: () => api.get('/auth/sso-config/'),
 }
 
 // Contact form API

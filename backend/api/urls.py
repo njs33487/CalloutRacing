@@ -7,7 +7,8 @@ from .views import (
     CarImageViewSet, UserPostViewSet, PostCommentViewSet, UserProfileDetailViewSet,
     contact_form, login_view, register_view, logout_view, user_profile, stats_view,
     HotSpotViewSet, LocationBroadcastViewSet, RacingCrewViewSet, CrewMembershipViewSet,
-    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet, global_search
+    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet, global_search,
+    google_sso, facebook_sso, sso_config
 )
 
 router = DefaultRouter()
@@ -50,6 +51,9 @@ urlpatterns = [
     path('auth/register/', register_view, name='register'),
     path('auth/logout/', logout_view, name='logout'),
     path('auth/profile/', user_profile, name='user-profile'),
+    path('auth/google/', google_sso, name='google-sso'),
+    path('auth/facebook/', facebook_sso, name='facebook-sso'),
+    path('auth/sso-config/', sso_config, name='sso-config'),
     path('stats/', stats_view, name='stats'),
     path('search/', global_search, name='global-search'),
 ] 

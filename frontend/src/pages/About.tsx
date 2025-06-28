@@ -192,6 +192,18 @@ export default function About() {
               </p>
               <div className="text-purple-600 font-medium text-sm sm:text-base">Cutting Edge</div>
             </div>
+
+            {/* SSO Authentication */}
+            <div className="card text-center hover:shadow-lg transition-shadow p-6 sm:p-8">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <GlobeAltIcon className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Quick Sign-In</h3>
+              <p className="text-sm sm:text-base text-gray-600 mb-4">
+                Sign in instantly with Google or Facebook. No need to remember passwords - just click and go with secure SSO authentication.
+              </p>
+              <div className="text-orange-600 font-medium text-sm sm:text-base">One-Click Login</div>
+            </div>
           </div>
         </div>
       </section>

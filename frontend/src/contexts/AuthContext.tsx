@@ -17,6 +17,8 @@ interface AuthContextType {
   token: string | null
   login: (username: string, password: string) => Promise<void>
   register: (userData: any) => Promise<void>
+  googleLogin: (idToken: string) => Promise<void>
+  facebookLogin: (accessToken: string) => Promise<void>
   logout: () => void
   isLoading: boolean
   isAuthenticated: boolean
@@ -99,6 +101,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(newUser))
   }
 
+  // Google SSO login function
+  const googleLogin = async (idToken: string) => {
+    const response = await authAPI.googleSSO(idToken)
+    const { token: newToken, user: newUser } = response.data
+    
+    // Update state and store in localStorage
+    setToken(newToken)
+    setUser(newUser)
+    localStorage.setItem('token', newToken)
+    localStorage.setItem('user', JSON.stringify(newUser))
+  }
+
+  // Facebook SSO login function
+  const facebookLogin = async (accessToken: string) => {
+    const response = await authAPI.facebookSSO(accessToken)
+    const { token: newToken, user: newUser } = response.data
+    
+    // Update state and store in localStorage
+    setToken(newToken)
+    setUser(newUser)
+    localStorage.setItem('token', newToken)
+    localStorage.setItem('user', JSON.stringify(newUser))
+  }
+
   // Logout function - clears authentication data and notifies server
   const logout = async () => {
     try {
@@ -120,6 +146,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     login,
     register,
+    googleLogin,
+    facebookLogin,
     logout,
     isLoading,
     isAuthenticated: !!token && !!user
