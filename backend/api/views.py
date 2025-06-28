@@ -62,7 +62,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     ViewSet for UserProfile model.
     
     Handles CRUD operations for user profiles with filtering, searching, and ordering.
-    Includes custom actions for updating race statistics.
+    Includes custom actions for updating race statistics and profile images.
     """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
@@ -73,28 +73,133 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     ordering_fields = ['wins', 'losses', 'total_races', 'created_at']
 
     def get_queryset(self):
-        """
-        Optimize queryset for list view by using select_related to reduce database queries.
-        """
+        """Users can only see their own profile or public profiles."""
+        user = self.request.user
         if self.action == 'list':
-            return UserProfile.objects.select_related('user')
-        return UserProfile.objects.all()
+            # For list view, show all profiles (could be filtered by privacy settings later)
+            return UserProfile.objects.all()
+        return UserProfile.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        """Set the user when creating a profile."""
+        serializer.save(user=self.request.user)
 
     @action(detail=True, methods=['post'])
     def update_stats(self, request, pk=None):
-        """
-        Custom action to update race statistics for a user profile.
-        
-        Args:
-            request: HTTP request object
-            pk: Primary key of the user profile
-            
-        Returns:
-            Response with success message
-        """
+        """Update race statistics for a profile."""
         profile = self.get_object()
-        # TODO: Implement race statistics update logic
-        return Response({'message': 'Stats updated'})
+        
+        # Ensure user can only update their own stats
+        if profile.user != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        wins = request.data.get('wins', profile.wins)
+        losses = request.data.get('losses', profile.losses)
+        total_races = request.data.get('total_races', profile.total_races)
+        
+        profile.wins = wins
+        profile.losses = losses
+        profile.total_races = total_races
+        profile.save()
+        
+        return Response({
+            'wins': profile.wins,
+            'losses': profile.losses,
+            'total_races': profile.total_races,
+            'win_rate': profile.win_rate
+        })
+
+    @action(detail=True, methods=['post'])
+    def upload_profile_picture(self, request, pk=None):
+        """Upload a profile picture."""
+        profile = self.get_object()
+        
+        # Ensure user can only update their own profile
+        if profile.user != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if 'image' not in request.FILES:
+            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        image_file = request.FILES['image']
+        
+        # Validate file type
+        if not image_file.content_type.startswith('image/'):
+            return Response({'error': 'File must be an image'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate file size (max 5MB)
+        if image_file.size > 5 * 1024 * 1024:
+            return Response({'error': 'Image file too large (max 5MB)'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Save the image
+        profile.profile_picture = image_file
+        profile.save()
+        
+        return Response({
+            'profile_picture': profile.profile_picture.url if profile.profile_picture else None
+        })
+
+    @action(detail=True, methods=['post'])
+    def upload_cover_photo(self, request, pk=None):
+        """Upload a cover photo."""
+        profile = self.get_object()
+        
+        # Ensure user can only update their own profile
+        if profile.user != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if 'image' not in request.FILES:
+            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        image_file = request.FILES['image']
+        
+        # Validate file type
+        if not image_file.content_type.startswith('image/'):
+            return Response({'error': 'File must be an image'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate file size (max 10MB for cover photos)
+        if image_file.size > 10 * 1024 * 1024:
+            return Response({'error': 'Image file too large (max 10MB)'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Save the image
+        profile.cover_photo = image_file
+        profile.save()
+        
+        return Response({
+            'cover_photo': profile.cover_photo.url if profile.cover_photo else None
+        })
+
+    @action(detail=True, methods=['delete'])
+    def remove_profile_picture(self, request, pk=None):
+        """Remove profile picture."""
+        profile = self.get_object()
+        
+        # Ensure user can only update their own profile
+        if profile.user != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if profile.profile_picture:
+            profile.profile_picture.delete(save=False)
+            profile.profile_picture = None
+            profile.save()
+        
+        return Response({'message': 'Profile picture removed'})
+
+    @action(detail=True, methods=['delete'])
+    def remove_cover_photo(self, request, pk=None):
+        """Remove cover photo."""
+        profile = self.get_object()
+        
+        # Ensure user can only update their own profile
+        if profile.user != request.user:
+            return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if profile.cover_photo:
+            profile.cover_photo.delete(save=False)
+            profile.cover_photo = None
+            profile.save()
+        
+        return Response({'message': 'Cover photo removed'})
 
 
 class TrackViewSet(viewsets.ModelViewSet):

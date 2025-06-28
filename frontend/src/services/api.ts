@@ -52,6 +52,27 @@ export const userAPI = {
   list: () => api.get('/users/'),
   profile: (id: number) => api.get(`/profiles/${id}/`),
   updateProfile: (id: number, data: any) => api.patch(`/profiles/${id}/`, data),
+  uploadProfilePicture: (id: number, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    return api.post(`/profiles/${id}/upload_profile_picture/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  uploadCoverPhoto: (id: number, imageFile: File) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    return api.post(`/profiles/${id}/upload_cover_photo/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  removeProfilePicture: (id: number) => api.delete(`/profiles/${id}/remove_profile_picture/`),
+  removeCoverPhoto: (id: number) => api.delete(`/profiles/${id}/remove_cover_photo/`),
+  updateStats: (id: number, stats: any) => api.post(`/profiles/${id}/update_stats/`, stats),
 }
 
 // Callout (race challenge) API endpoints
