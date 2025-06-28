@@ -16,6 +16,10 @@ echo "Changed to root directory: $(pwd)"
 echo "=== Checking migration status ==="
 python manage.py showmigrations || echo "Failed to show migrations"
 
+# Create migrations if needed
+echo "=== Creating migrations ==="
+python manage.py makemigrations --noinput || echo "No new migrations needed"
+
 # Run migrations with enhanced logging and fallback
 echo "=== Running database migrations ==="
 if python manage.py migrate --noinput --verbosity=2; then
