@@ -245,6 +245,38 @@ def login_view(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+def check_user_exists(request):
+    """Check if a username or email already exists."""
+    username = request.data.get('username', '').strip()
+    email = request.data.get('email', '').strip()
+    
+    if not username and not email:
+        return Response({
+            'error': 'Username or email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    exists = False
+    field = None
+    
+    if username:
+        if User.objects.filter(username=username).exists():
+            exists = True
+            field = 'username'
+    
+    if email and not exists:
+        if User.objects.filter(email=email).exists():
+            exists = True
+            field = 'email'
+    
+    return Response({
+        'exists': exists,
+        'field': field,
+        'message': f'{field.capitalize()} already exists' if exists and field else f'{field.capitalize()} is available' if field else 'Available'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def register_view(request):
     """User registration endpoint with robust error logging."""
     username = request.data.get('username')
