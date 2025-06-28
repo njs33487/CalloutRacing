@@ -1,5 +1,9 @@
 #!/bin/bash
+
+# Exit on any error
 set -e
+
+echo "Starting CalloutRacing backend..."
 
 # Change to backend directory
 cd backend
@@ -15,10 +19,10 @@ python manage.py reset_migrations --noinput || echo "Migration reset not needed"
 echo "Running database migrations..."
 python manage.py migrate --noinput
 
-# Collect static files
+# Collect static files (in case they weren't collected during build)
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-# Run Django development server
+# Start the server
 echo "Starting Django server on port $PORT..."
 python manage.py runserver 0.0.0.0:$PORT 
