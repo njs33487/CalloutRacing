@@ -14,7 +14,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
-from .models import User
+from .models.auth import User
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ def send_email_verification(user):
     """
     try:
         # Generate new verification token and set expiration
-        user.email_verification_token = user.email_verification_token
+        user.email_verification_token = uuid.uuid4()
         user.email_verification_sent_at = timezone.now()
         user.email_verification_expires_at = timezone.now() + timedelta(hours=24)
         user.save()
