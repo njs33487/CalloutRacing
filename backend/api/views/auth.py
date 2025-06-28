@@ -22,7 +22,7 @@ from datetime import timedelta
 import uuid
 
 from core.models import User, UserProfile
-from core.email_service import send_verification_email, send_welcome_email
+from core.email_service import send_email_verification, send_welcome_email
 from .serializers import (
     UserSerializer, UserProfileSerializer, UserProfileDetailSerializer
 )
@@ -290,7 +290,7 @@ def register_view(request):
 
     # Send verification email
     try:
-        send_verification_email(user)
+        send_email_verification(user)
         user.email_verification_sent_at = timezone.now()
         user.save()
     except Exception as e:
@@ -411,7 +411,7 @@ def resend_verification_email(request):
         
         # Send verification email
         try:
-            send_verification_email(user)
+            send_email_verification(user)
             user.email_verification_sent_at = timezone.now()
             user.save()
             
