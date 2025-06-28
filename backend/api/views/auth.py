@@ -21,7 +21,7 @@ from django.utils import timezone
 from datetime import timedelta
 import uuid
 
-from core.models import User, UserProfile
+from core.models.auth import User, UserProfile
 from core.email_service import send_email_verification, send_welcome_email
 from ..serializers import (
     UserSerializer, UserProfileSerializer, UserProfileDetailSerializer

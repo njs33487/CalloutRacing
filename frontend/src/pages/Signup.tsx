@@ -462,13 +462,13 @@ export default function Signup() {
               <div className="ml-3 text-sm">
                 <label htmlFor="agreeToTerms" className="text-gray-700">
                   I agree to the{' '}
-                  <a href="#" className="text-primary-600 hover:text-primary-500">
+                  <Link to="/terms-of-service" className="text-primary-600 hover:text-primary-500">
                     Terms and Conditions
-                  </a>{' '}
+                  </Link>{' '}
                   and{' '}
-                  <a href="#" className="text-primary-600 hover:text-primary-500">
+                  <Link to="/privacy-policy" className="text-primary-600 hover:text-primary-500">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </label>
                 {errors.agreeToTerms && (
                   <p className="mt-1 text-sm text-red-600">{errors.agreeToTerms}</p>

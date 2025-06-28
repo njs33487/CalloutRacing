@@ -398,8 +398,8 @@ export default function Contact() {
               <ul className="space-y-2 text-gray-400">
                 <li><Link to="/about" className="hover:text-white">About</Link></li>
                 <li><Link to="/contact" className="hover:text-white">Contact</Link></li>
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white">Terms of Service</a></li>
+                <li><Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="hover:text-white">Terms of Service</Link></li>
               </ul>
             </div>
             <div>
