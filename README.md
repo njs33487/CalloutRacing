@@ -1,289 +1,233 @@
-# CalloutRacing - Drag Racing Social Network
+# CalloutRacing - Advanced Racing Community Platform
 
-A modern web application built with Django backend and React frontend for drag racing enthusiasts to challenge each other, join events, and trade parts.
+A comprehensive racing community platform that connects racers, tracks, events, and enthusiasts through callouts, marketplace, and social features.
 
-## 🚀 Project Overview
+## 🏁 Features
 
-CalloutRacing is a comprehensive drag racing social network that connects racers through challenges, events, and marketplace transactions. The platform combines the power of Django's robust backend framework with React's dynamic frontend capabilities.
+### Core Racing Features
+- **Race Callouts**: Challenge other racers to head-to-head competitions
+- **Event Management**: Create and join racing events, car meets, and shows
+- **Track Directory**: Discover and review racing tracks and locations
+- **Performance Tracking**: Log and share car performance data and build logs
 
-## 📁 Project Structure
+### Social & Community
+- **User Profiles**: Detailed racer profiles with stats and car information
+- **Friends System**: Connect with other racers and build your network
+- **Messaging**: Direct communication between users
+- **Posts & Content**: Share updates, builds, and racing content
+- **Racing Crews**: Join or create racing crews and car clubs
 
-```
-CalloutRacing/
-├── backend/                 # Django backend application
-│   ├── manage.py
-│   ├── requirements.txt
-│   ├── calloutracing/       # Django project settings
-│   ├── api/                 # Django REST API
-│   ├── core/                # Core Django apps & models
-│   └── static/              # Static files
-├── frontend/                # React frontend application
-│   ├── package.json
-│   ├── public/
-│   ├── src/
-│   └── README.md
-├── docs/                    # Documentation
-├── scripts/                 # Utility scripts
-└── README.md               # This file
-```
+### Marketplace & Commerce
+- **Parts Marketplace**: Buy and sell car parts, wheels, and accessories
+- **Car Sales**: List and browse cars for sale
+- **Reviews & Ratings**: Build trust through verified purchase reviews
+- **Payment Integration**: Secure payment processing and wallet system
 
-## 🛠️ Technology Stack
+### Advanced Features
+- **Location Broadcasting**: "I'm Here, Who's There?" real-time location sharing
+- **Hot Spots**: Discover popular racing locations and meet points
+- **Open Challenges**: Public challenges for any racer to respond to
+- **Betting System**: Place bets on races and events
+- **Build Logs**: Document and share car build progress
+- **Performance Data**: Track and verify quarter-mile times, dyno results
 
-### Backend (Django)
-- **Django 4.2.10** - Web framework
-- **Django REST Framework 3.14.0** - API framework
-- **PostgreSQL** - Database (production)
-- **SQLite** - Database (development)
-- **Django CORS Headers** - Cross-origin resource sharing
-- **Django Environment Variables** - Environment management
-- **Django Filter** - Advanced filtering
-- **DRF Simple JWT** - JWT authentication
-- **Celery & Redis** - Background tasks
-- **Gunicorn** - Production WSGI server
-- **Whitenoise** - Static file serving
+### Authentication & Security
+- **Email Verification**: Secure account creation with email verification
+- **SSO Integration**: Google and Facebook single sign-on
+- **Reputation System**: Rate other racers for sportsmanship and reliability
 
-### Frontend (React)
-- **React 18.2.0** - UI library
-- **TypeScript 4.9.3** - Type safety
-- **Vite 4.1.0** - Build tool and dev server
-- **React Router 6.8.1** - Client-side routing
-- **Axios 1.3.4** - HTTP client
-- **Tailwind CSS 3.2.7** - Styling framework
-- **React Query 4.29.5** - Data fetching
-- **React Hook Form 7.43.5** - Form handling
-- **Zustand 4.3.6** - State management
-- **Heroicons 2.0.16** - Icon library
-
-## ✅ Currently Implemented Features
+## 🏗️ Project Structure
 
 ### Backend (Django)
-- **Authentication System**
-  - User registration and login
-  - JWT token-based authentication
-  - Password reset functionality
-  - Email verification (configured)
 
-- **User Profiles**
-  - Extended user profiles with racing stats
-  - Car profiles with detailed specifications
-  - Car modifications tracking
-  - Profile pictures and cover photos
-  - Win/loss statistics
+```
+backend/
+├── api/
+│   ├── views/                    # Modular API views
+│   │   ├── auth.py              # Authentication & user management
+│   │   ├── racing.py            # Events, tracks, callouts
+│   │   ├── marketplace.py       # Marketplace functionality
+│   │   ├── social.py            # Friends, messages, posts
+│   │   ├── cars.py              # Car profiles & build logs
+│   │   ├── payments.py          # Subscriptions & payments
+│   │   ├── locations.py         # Hot spots & crews
+│   │   └── utils.py             # Search, SSO, utilities
+│   ├── serializers.py           # DRF serializers
+│   └── urls.py                  # API routing
+├── core/
+│   ├── models/                  # Modular database models
+│   │   ├── auth.py              # User & UserProfile
+│   │   ├── racing.py            # Track, Event, Callout, RaceResult
+│   │   ├── marketplace.py       # Marketplace, Orders, Reviews
+│   │   ├── social.py            # Friendship, Message, Post
+│   │   ├── cars.py              # CarProfile, BuildLog, Modifications
+│   │   ├── payments.py          # Subscription, Payment, Wallet
+│   │   └── locations.py         # HotSpot, RacingCrew, LocationBroadcast
+│   ├── email_service.py         # Email verification & notifications
+│   └── admin.py                 # Django admin configuration
+├── templates/                   # Email templates
+└── manage.py
+```
 
-- **Core Models**
-  - User profiles with racing statistics
-  - Track management (drag strips, road courses, ovals)
-  - Event system (races, meets, shows, test & tune)
-  - Callout system (race challenges)
-  - Race results tracking
-  - Marketplace for buying/selling
-  - Friendship system
-  - Direct messaging
-  - User posts and comments
-  - Car profiles with modifications
+### Frontend (React + TypeScript)
 
-- **API Endpoints**
-  - Complete REST API for all models
-  - Advanced filtering and search
-  - Pagination support
-  - Custom actions (accept/decline callouts, join events, etc.)
-  - File upload support for images
+```
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── search/              # Modular search components
+│   │   │   ├── SearchFilters.tsx
+│   │   │   ├── SearchResults.tsx
+│   │   │   └── SearchTabs.tsx
+│   │   ├── Layout.tsx           # Main app layout
+│   │   ├── ProtectedRoute.tsx   # Authentication wrapper
+│   │   ├── SSOButtons.tsx       # Social login buttons
+│   │   └── GlobalSearchBar.tsx  # Global search component
+│   ├── pages/                   # Page components
+│   │   ├── auth/                # Authentication pages
+│   │   ├── racing/              # Racing feature pages
+│   │   ├── marketplace/         # Marketplace pages
+│   │   └── social/              # Social feature pages
+│   ├── services/
+│   │   └── api.ts               # API service layer
+│   ├── contexts/
+│   │   └── AuthContext.tsx      # Authentication context
+│   └── types/
+│       └── index.ts             # TypeScript type definitions
+```
 
-- **Deployment Ready**
-  - Railway deployment configuration
-  - Production settings
-  - Static file serving
-  - CORS configuration
-  - Environment variable management
-
-### Frontend (React)
-- **Authentication**
-  - Login and signup forms
-  - Protected routes
-  - Token management
-  - Automatic logout on token expiry
-
-- **User Interface**
-  - Modern, responsive design
-  - Red, white, and yellow racing theme
-  - Mobile-friendly layout
-  - Loading states and error handling
-
-- **Pages Implemented**
-  - Landing page (About)
-  - Login/Signup forms
-  - Contact form
-  - Dashboard (Home)
-  - User profiles
-  - Callouts listing (static data)
-  - Events listing (static data)
-  - Marketplace listing (static data)
-  - Create forms for callouts, events, marketplace
-
-- **Features**
-  - Real-time data fetching with React Query
-  - Form validation with React Hook Form
-  - Responsive navigation
-  - Toast notifications
-  - Image upload support
-
-## 🚧 Current Status & What Needs Work
-
-### Backend - ✅ Mostly Complete
-- **Models**: All core models implemented
-- **API**: Complete REST API with all endpoints
-- **Authentication**: Fully functional
-- **Deployment**: Railway deployment configured
-
-### Frontend - 🚧 Partially Complete
-- **Static Data**: Many pages still use hardcoded data instead of API calls
-- **API Integration**: Need to connect frontend components to backend API
-- **Real-time Features**: No real-time updates implemented
-- **Image Upload**: Frontend forms need file upload integration
-
-### Missing Features
-1. **Real-time Updates**
-   - WebSocket integration for live callout updates
-   - Real-time messaging
-   - Live event notifications
-
-2. **Advanced Search & Filtering**
-   - Frontend search functionality
-   - Advanced filters for marketplace
-   - Location-based search
-
-3. **Payment Integration**
-   - Stripe/PayPal integration for wagers
-   - Event entry fee payments
-   - Marketplace transactions
-
-4. **Social Features**
-   - User following system
-   - Activity feed
-   - Notifications system
-   - Social sharing
-
-5. **Mobile App**
-   - React Native mobile app
-   - Push notifications
-   - GPS tracking for street races
-
-6. **Advanced Racing Features**
-   - Race timing integration
-   - Performance tracking
-   - Leaderboards
-   - Season championships
-
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
-- npm or yarn
-- PostgreSQL (optional, SQLite for development)
+- PostgreSQL (recommended) or SQLite
+- Redis (for caching and sessions)
 
 ### Backend Setup
 
-1. **Navigate to backend directory:**
-   ```bash
-   cd backend
-   ```
+1. **Clone and setup environment**:
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-2. **Create virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+2. **Configure environment variables**:
+```bash
+cp env.example .env
+# Edit .env with your database, email, and SSO settings
+```
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+3. **Database setup**:
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
 
-4. **Set up environment variables:**
-   ```bash
-   cp env.example .env
-   # Edit .env with your configuration
-   ```
-
-5. **Run migrations:**
-   ```bash
-   python manage.py migrate
-   ```
-
-6. **Create superuser:**
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-7. **Start Django development server:**
-   ```bash
-   python manage.py runserver
-   ```
+4. **Run development server**:
+```bash
+python manage.py runserver
+```
 
 ### Frontend Setup
 
-1. **Navigate to frontend directory:**
-   ```bash
-   cd frontend
-   ```
+1. **Install dependencies**:
+```bash
+cd frontend
+npm install
+```
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+2. **Configure environment**:
+```bash
+cp env.example .env
+# Set your backend API URL
+```
 
-3. **Set up environment variables:**
-   ```bash
-   cp env.example .env
-   # Edit .env with your API configuration
-   ```
+3. **Run development server**:
+```bash
+npm run dev
+```
 
-4. **Start React development server:**
-   ```bash
-   npm run dev
-   ```
+## 🔧 Configuration
 
-## 🌐 Development Servers
+### Environment Variables
 
-- **Django Backend:** http://localhost:8000
-- **Django Admin:** http://localhost:8000/admin
-- **React Frontend:** http://localhost:5173
-- **API Documentation:** http://localhost:8000/api/docs/
+#### Backend (.env)
+```bash
+# Database
+DATABASE_URL=postgresql://user:pass@localhost/calloutracing
+
+# Email (Gmail recommended)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+
+# SSO
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+FACEBOOK_APP_ID=your-facebook-app-id
+FACEBOOK_APP_SECRET=your-facebook-app-secret
+
+# Security
+SECRET_KEY=your-django-secret-key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+#### Frontend (.env)
+```bash
+VITE_API_URL=http://localhost:8000/api
+VITE_GOOGLE_CLIENT_ID=your-google-client-id
+VITE_FACEBOOK_APP_ID=your-facebook-app-id
+```
 
 ## 📚 API Documentation
 
-The API documentation is available at `/api/docs/` when the Django server is running. This provides interactive documentation for all available endpoints.
+### Authentication Endpoints
+- `POST /api/auth/login/` - User login
+- `POST /api/auth/register/` - User registration
+- `POST /api/auth/logout/` - User logout
+- `GET /api/auth/verify-email/<token>/` - Email verification
+- `POST /api/auth/resend-verification/` - Resend verification email
 
-## 🔧 Development Workflow
+### SSO Endpoints
+- `POST /api/auth/google-sso/` - Google OAuth login
+- `POST /api/auth/facebook-sso/` - Facebook OAuth login
+- `GET /api/auth/sso-config/` - SSO configuration
 
-### Backend Development
-1. Make changes to Django models, views, or serializers
-2. Create and run migrations: `python manage.py makemigrations && python manage.py migrate`
-3. Test your changes with the Django development server
-4. Write tests for new functionality
+### Racing Endpoints
+- `GET /api/tracks/` - List racing tracks
+- `GET /api/events/` - List racing events
+- `POST /api/events/` - Create new event
+- `GET /api/callouts/` - List race callouts
+- `POST /api/callouts/` - Create new callout
 
-### Frontend Development
-1. Make changes to React components or pages
-2. The development server will hot-reload automatically
-3. Test your changes in the browser
-4. Write tests for new components
+### Marketplace Endpoints
+- `GET /api/marketplace/` - List marketplace items
+- `POST /api/marketplace/` - Create new listing
+- `GET /api/marketplace/orders/` - List orders
+- `POST /api/marketplace/orders/` - Create new order
 
-### Database Management
-- **Create migrations:** `python manage.py makemigrations`
-- **Apply migrations:** `python manage.py migrate`
-- **Reset database:** `python manage.py flush`
-- **Create fixtures:** `python manage.py dumpdata > fixtures/data.json`
+### Social Endpoints
+- `GET /api/friends/` - List friends
+- `POST /api/friends/send-request/` - Send friend request
+- `GET /api/messages/` - List messages
+- `POST /api/messages/` - Send message
+- `GET /api/posts/` - List posts
+- `POST /api/posts/` - Create new post
 
 ## 🧪 Testing
 
-### Backend Testing
+### Backend Tests
 ```bash
 cd backend
 python manage.py test
 ```
 
-### Frontend Testing
+### Frontend Tests
 ```bash
 cd frontend
 npm test
@@ -291,112 +235,79 @@ npm test
 
 ## 🚀 Deployment
 
-### Backend Deployment
-1. Set `DEBUG=False` in production settings
-2. Configure your production database
-3. Set up static file serving
-4. Use a production WSGI server (Gunicorn recommended)
+### Railway Deployment (Recommended)
+1. Connect your GitHub repository to Railway
+2. Set environment variables in Railway dashboard
+3. Deploy automatically on push to main branch
 
-### Frontend Deployment
-1. Build the production bundle: `npm run build`
-2. Serve the `dist` folder with a web server
-3. Configure environment variables for production
-
-## 📝 Environment Variables
-
-### Backend (.env)
-```
-DEBUG=True
-SECRET_KEY=your-secret-key
-DATABASE_URL=postgresql://user:password@localhost/dbname
-ALLOWED_HOSTS=localhost,127.0.0.1
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-```
-
-### Frontend (.env)
-```
-VITE_API_URL=http://localhost:8000/api
-VITE_APP_NAME=CalloutRacing
-```
-
-## 🎯 Next Steps & Priority Tasks
-
-### High Priority
-1. **Connect Frontend to API**
-   - Replace static data with API calls in Callouts, Events, Marketplace pages
-   - Implement proper error handling and loading states
-   - Add form submission to create pages
-
-2. **Image Upload Integration**
-   - Connect file upload forms to backend
-   - Add image preview functionality
-   - Implement drag-and-drop upload
-
-3. **Real-time Features**
-   - Add WebSocket support for live updates
-   - Implement real-time messaging
-   - Add push notifications
-
-### Medium Priority
-4. **Advanced Search**
-   - Implement search functionality
-   - Add filters for marketplace items
-   - Location-based search for events
-
-5. **Payment Integration**
-   - Add Stripe integration for wagers
-   - Implement event payment system
-   - Add marketplace escrow system
-
-6. **Social Features**
-   - User following system
-   - Activity feed
-   - Social sharing buttons
-
-### Low Priority
-7. **Mobile App**
-   - React Native development
-   - Push notifications
-   - GPS integration
-
-8. **Advanced Racing Features**
-   - Race timing system
-   - Performance analytics
-   - Championship system
+### Manual Deployment
+1. Build frontend: `npm run build`
+2. Collect static files: `python manage.py collectstatic`
+3. Set `DEBUG=False` in production
+4. Configure production database and email settings
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Write tests for new functionality
+3. Make your changes following the coding standards
+4. Add tests for new functionality
 5. Commit your changes: `git commit -m 'Add feature'`
 6. Push to the branch: `git push origin feature-name`
 7. Submit a pull request
+
+## 📝 Coding Standards
+
+### Backend (Python/Django)
+- Follow PEP 8 style guide
+- Use type hints where appropriate
+- Write docstrings for all functions and classes
+- Keep functions under 50 lines when possible
+- Use meaningful variable and function names
+
+### Frontend (TypeScript/React)
+- Use TypeScript for all new code
+- Follow React best practices and hooks
+- Use functional components with hooks
+- Implement proper error handling
+- Write unit tests for components
+
+### Database Models
+- Use descriptive field names
+- Add proper help_text for all fields
+- Implement proper relationships
+- Use appropriate field types and constraints
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Email not sending**: Check Gmail app password and SMTP settings
+2. **SSO not working**: Verify client IDs and secrets are correct
+3. **Database migrations**: Run `python manage.py makemigrations` and `python manage.py migrate`
+4. **Frontend build errors**: Clear node_modules and reinstall dependencies
+
+### Support
+- Check the documentation in `/docs/` directory
+- Review environment variable configuration
+- Ensure all dependencies are installed correctly
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+## 🙏 Acknowledgments
 
-If you encounter any issues or have questions:
-1. Check the documentation in the `docs/` folder
-2. Search existing issues
-3. Create a new issue with detailed information
-
-## 🔄 Updates and Maintenance
-
-- Keep dependencies updated regularly
-- Monitor for security vulnerabilities
-- Update documentation as features change
-- Maintain test coverage above 80%
+- Django REST Framework for the robust API framework
+- React and TypeScript for the modern frontend
+- Tailwind CSS for the beautiful UI components
+- Heroicons for the icon library
+- All contributors and racing community members
 
 ---
 
 **Happy Racing! 🏁**
 
-**Latest Update**: Fixed Django import linter errors and JSX children structure issues for Railway deployment. #   U p d a t e d   0 6 / 2 7 / 2 0 2 5   2 2 : 4 9 : 2 1  
+**Latest Update**: Fixed Django import linter errors and JSX children structure issues for Railway deployment. #   U p d a t e d   0 6 / 2 7 / 2 0 2 5   2 2 : 4 9 : 2 1 
+ 
  
