@@ -84,6 +84,8 @@ class Callout(models.Model):
         ('eighth_mile', 'Eighth Mile'),
         ('roll_race', 'Roll Race'),
         ('dig_race', 'Dig Race'),
+        ('heads_up', 'Heads Up'),
+        ('bracket', 'Bracket Racing'),
     ], help_text="Type of race")
     wager_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Wager amount")
     message = models.TextField(blank=True, help_text="Callout message")
@@ -98,6 +100,23 @@ class Callout(models.Model):
     winner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name='won_races')
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True)
     track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='callouts', blank=True, null=True)
+    
+    # New privacy and visibility fields
+    is_private = models.BooleanField(default=False, help_text="Whether callout is private (only visible to participants)")
+    is_invite_only = models.BooleanField(default=False, help_text="Whether callout requires invitation approval")
+    
+    # New racing requirements fields
+    max_horsepower = models.IntegerField(blank=True, null=True, help_text="Maximum horsepower requirement")
+    min_horsepower = models.IntegerField(blank=True, null=True, help_text="Minimum horsepower requirement")
+    tire_requirement = models.CharField(max_length=200, blank=True, help_text="Tire requirements for the race")
+    rules = models.TextField(blank=True, help_text="Special rules or conditions for the race")
+    experience_level = models.CharField(max_length=20, choices=[
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('experienced', 'Experienced'),
+        ('pro', 'Pro'),
+    ], default='intermediate', help_text="Required experience level")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
