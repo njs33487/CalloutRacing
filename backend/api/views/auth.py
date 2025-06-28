@@ -288,27 +288,33 @@ def register_view(request):
             'error': f'Failed to create user: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    email_sent = True
+    warning = None
     # Send verification email
     try:
         send_email_verification(user)
         user.email_verification_sent_at = timezone.now()
         user.save()
     except Exception as e:
-        # Log the error and return it in the response for debugging
         print(f"Failed to send verification email: {e}")
-        return Response({
-            'error': f'Failed to send verification email: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        email_sent = False
+        warning = f"Failed to send verification email: {str(e)}. Please contact support if you do not receive an email."
 
     # Send welcome email
     try:
         send_welcome_email(user)
     except Exception as e:
         print(f"Failed to send welcome email: {e}")
-        # Do not fail registration for welcome email issues
+        if not warning:
+            warning = f"Failed to send welcome email: {str(e)}. Please contact support if you do not receive an email."
 
-    return Response({
-        'message': 'Registration successful. Please check your email to verify your account.',
+    if email_sent:
+        message = "Account created successfully. A verification email has been sent to your address. Please check your inbox."
+    else:
+        message = "Account created successfully, but there was a problem sending the verification email. Please contact support if you do not receive an email."
+
+    response = {
+        'message': message,
         'user': {
             'id': user.id,
             'username': user.username,
@@ -317,7 +323,11 @@ def register_view(request):
             'last_name': user.last_name,
             'email_verified': user.email_verified
         }
-    }, status=status.HTTP_201_CREATED)
+    }
+    if warning:
+        response['warning'] = warning
+
+    return Response(response, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
