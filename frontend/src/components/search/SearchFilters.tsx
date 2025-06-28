@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { AdjustmentsHorizontalIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 
 interface SearchFilters {
   category: string;

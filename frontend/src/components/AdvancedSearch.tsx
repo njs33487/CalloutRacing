@@ -230,7 +230,6 @@ export default function AdvancedSearch() {
 
       // Horsepower range filter (for users with cars)
       if (filters.horsepowerRange && result.type === 'user') {
-        const user = result.data as User;
         // This would need to be implemented based on user's car profile
         // For now, we'll skip this filter
       }

@@ -18,30 +18,32 @@ from .auth import (
     login_view, register_view, logout_view, user_profile,
     verify_email, resend_verification_email
 )
-from .racing import (
-    TrackViewSet, EventViewSet, CalloutViewSet, RaceResultViewSet,
-    EventParticipantViewSet
-)
-from .marketplace import (
-    MarketplaceViewSet, MarketplaceOrderViewSet, MarketplaceReviewViewSet,
-    contact_form
-)
-from .social import (
-    FriendshipViewSet, MessageViewSet, UserPostViewSet, PostCommentViewSet,
-    NotificationViewSet
-)
-from .cars import (
-    CarProfileViewSet, CarModificationViewSet, CarImageViewSet
-)
-from .payments import (
-    SubscriptionViewSet, PaymentViewSet, UserWalletViewSet,
-    BetViewSet, BettingPoolViewSet, subscription_plans
-)
-from .locations import (
-    HotSpotViewSet, RacingCrewViewSet, CrewMembershipViewSet,
-    LocationBroadcastViewSet, ReputationRatingViewSet,
-    OpenChallengeViewSet, ChallengeResponseViewSet
-)
+
+# TODO: Import these when the modules are created
+# from .racing import (
+#     TrackViewSet, EventViewSet, CalloutViewSet, RaceResultViewSet,
+#     EventParticipantViewSet
+# )
+# from .marketplace import (
+#     MarketplaceViewSet, MarketplaceOrderViewSet, MarketplaceReviewViewSet,
+#     contact_form
+# )
+# from .social import (
+#     FriendshipViewSet, MessageViewSet, UserPostViewSet, PostCommentViewSet,
+#     NotificationViewSet
+# )
+# from .cars import (
+#     CarProfileViewSet, CarModificationViewSet, CarImageViewSet
+# )
+# from .payments import (
+#     SubscriptionViewSet, PaymentViewSet, UserWalletViewSet,
+#     BetViewSet, BettingPoolViewSet, subscription_plans
+# )
+# from .locations import (
+#     HotSpotViewSet, RacingCrewViewSet, CrewMembershipViewSet,
+#     LocationBroadcastViewSet, ReputationRatingViewSet,
+#     OpenChallengeViewSet, ChallengeResponseViewSet
+# )
 from .utils import (
     stats_view, global_search, google_sso, facebook_sso, sso_config
 )
@@ -52,29 +54,30 @@ __all__ = [
     'login_view', 'register_view', 'logout_view', 'user_profile',
     'verify_email', 'resend_verification_email',
     
+    # TODO: Add these when the modules are created
     # Racing views
-    'TrackViewSet', 'EventViewSet', 'CalloutViewSet', 'RaceResultViewSet',
-    'EventParticipantViewSet',
+    # 'TrackViewSet', 'EventViewSet', 'CalloutViewSet', 'RaceResultViewSet',
+    # 'EventParticipantViewSet',
     
     # Marketplace views
-    'MarketplaceViewSet', 'MarketplaceOrderViewSet', 'MarketplaceReviewViewSet',
-    'contact_form',
+    # 'MarketplaceViewSet', 'MarketplaceOrderViewSet', 'MarketplaceReviewViewSet',
+    # 'contact_form',
     
     # Social views
-    'FriendshipViewSet', 'MessageViewSet', 'UserPostViewSet', 'PostCommentViewSet',
-    'NotificationViewSet',
+    # 'FriendshipViewSet', 'MessageViewSet', 'UserPostViewSet', 'PostCommentViewSet',
+    # 'NotificationViewSet',
     
     # Car views
-    'CarProfileViewSet', 'CarModificationViewSet', 'CarImageViewSet',
+    # 'CarProfileViewSet', 'CarModificationViewSet', 'CarImageViewSet',
     
     # Payment views
-    'SubscriptionViewSet', 'PaymentViewSet', 'UserWalletViewSet',
-    'BetViewSet', 'BettingPoolViewSet', 'subscription_plans',
+    # 'SubscriptionViewSet', 'PaymentViewSet', 'UserWalletViewSet',
+    # 'BetViewSet', 'BettingPoolViewSet', 'subscription_plans',
     
     # Location views
-    'HotSpotViewSet', 'RacingCrewViewSet', 'CrewMembershipViewSet',
-    'LocationBroadcastViewSet', 'ReputationRatingViewSet',
-    'OpenChallengeViewSet', 'ChallengeResponseViewSet',
+    # 'HotSpotViewSet', 'RacingCrewViewSet', 'CrewMembershipViewSet',
+    # 'LocationBroadcastViewSet', 'ReputationRatingViewSet',
+    # 'OpenChallengeViewSet', 'ChallengeResponseViewSet',
     
     # Utility views
     'stats_view', 'global_search', 'google_sso', 'facebook_sso', 'sso_config',

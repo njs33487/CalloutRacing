@@ -98,7 +98,7 @@ export default function SearchResults({ results, isLoading, searchQuery }: Searc
   const getLocation = (result: SearchResult): string => {
     switch (result.type) {
       case 'user':
-        return (result.data as User).profile?.location || 'Location not specified';
+        return (result.data as any).location || 'Location not specified';
       case 'event':
         return (result.data as Event).track?.location || 'Location not specified';
       case 'marketplace':

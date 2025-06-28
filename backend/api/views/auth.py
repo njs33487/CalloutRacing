@@ -23,7 +23,7 @@ import uuid
 
 from core.models import User, UserProfile
 from core.email_service import send_email_verification, send_welcome_email
-from .serializers import (
+from ..serializers import (
     UserSerializer, UserProfileSerializer, UserProfileDetailSerializer
 )
 
@@ -244,7 +244,7 @@ def login_view(request):
 
 
 @api_view(['POST'])
-@permission_classes([permission_classes.AllowAny])
+@permission_classes([permissions.AllowAny])
 def register_view(request):
     """User registration endpoint with robust error logging."""
     username = request.data.get('username')
