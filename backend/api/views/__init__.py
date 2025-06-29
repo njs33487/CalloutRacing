@@ -17,7 +17,9 @@ from .auth import (
     UserViewSet, UserProfileViewSet, UserProfileDetailViewSet,
     login_view, register_view, logout_view, user_profile,
     verify_email, resend_verification_email, check_user_exists,
-    run_migrations
+    run_migrations, request_password_reset, reset_password,
+    setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
+    generate_backup_codes
 )
 
 # TODO: Import these when the modules are created
@@ -54,7 +56,9 @@ __all__ = [
     'UserViewSet', 'UserProfileViewSet', 'UserProfileDetailViewSet',
     'login_view', 'register_view', 'logout_view', 'user_profile',
     'verify_email', 'resend_verification_email', 'check_user_exists',
-    'run_migrations',
+    'run_migrations', 'request_password_reset', 'reset_password',
+    'setup_otp', 'verify_otp_setup', 'disable_otp', 'verify_otp_login',
+    'generate_backup_codes',
     
     # TODO: Add these when the modules are created
     # Racing views

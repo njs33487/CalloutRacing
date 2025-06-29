@@ -19,6 +19,16 @@ class User(AbstractUser):
     email_verification_sent_at = models.DateTimeField(blank=True, null=True, help_text="When verification email was sent")
     email_verification_expires_at = models.DateTimeField(blank=True, null=True, help_text="When verification token expires")
     
+    # OTP fields for enhanced security
+    otp_enabled = models.BooleanField(default=False, help_text="Whether OTP is enabled for this user")
+    otp_secret = models.CharField(max_length=32, blank=True, null=True, help_text="TOTP secret key")
+    otp_backup_codes = models.JSONField(default=list, blank=True, help_text="Backup codes for OTP")
+    
+    # Password reset fields
+    password_reset_token = models.UUIDField(null=True, blank=True, unique=True, help_text="Token for password reset")
+    password_reset_expires_at = models.DateTimeField(blank=True, null=True, help_text="When password reset token expires")
+    password_reset_sent_at = models.DateTimeField(blank=True, null=True, help_text="When password reset email was sent")
+    
     # Override email field to make it unique
     email = models.EmailField(unique=True, help_text="User's email address")
     

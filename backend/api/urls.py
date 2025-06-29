@@ -5,7 +5,9 @@ from .views import (
     login_view, register_view, logout_view, user_profile,
     verify_email, resend_verification_email, check_user_exists,
     google_sso, facebook_sso, sso_config, stats_view, global_search,
-    run_migrations
+    run_migrations, request_password_reset, reset_password,
+    setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
+    generate_backup_codes
 )
 
 # TODO: Import these when the view modules are created
@@ -65,6 +67,13 @@ urlpatterns = [
     path('auth/sso-config/', sso_config, name='sso-config'),
     path('auth/verify-email/<str:token>/', verify_email, name='verify-email'),
     path('auth/resend-verification/', resend_verification_email, name='resend-verification'),
+    path('auth/request-password-reset/', request_password_reset, name='request-password-reset'),
+    path('auth/reset-password/', reset_password, name='reset-password'),
+    path('auth/setup-otp/', setup_otp, name='setup-otp'),
+    path('auth/verify-otp-setup/', verify_otp_setup, name='verify-otp-setup'),
+    path('auth/disable-otp/', disable_otp, name='disable-otp'),
+    path('auth/verify-otp-login/', verify_otp_login, name='verify-otp-login'),
+    path('auth/generate-backup-codes/', generate_backup_codes, name='generate-backup-codes'),
     path('auth/run-migrations/', run_migrations, name='run-migrations'),
     path('stats/', stats_view, name='stats'),
     path('search/', global_search, name='global-search'),
