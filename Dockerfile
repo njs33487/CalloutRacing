@@ -20,6 +20,9 @@ RUN apt-get update \
 COPY start.sh .
 RUN chmod +x start.sh
 
+# Copy SQL script for creating core_user table
+COPY scripts/create_core_user_table.sql scripts/
+
 # Install Python dependencies
 COPY backend/requirements.txt backend/
 RUN pip install --no-cache-dir -r backend/requirements.txt
