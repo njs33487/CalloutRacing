@@ -24,16 +24,16 @@ from .views import (
     RaceResultCreateView, RaceResultDetailView,
     accept_callout, decline_callout, cancel_callout,
     search_users_for_callout, callout_statistics,
-    # New ViewSets
-    EventViewSet, ListingViewSet, HotspotViewSet
+    # New ViewSets - temporarily disabled
+    # EventViewSet, ListingViewSet, HotspotViewSet
 )
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'profiles', UserProfileViewSet, basename='profile')
-router.register(r'events', EventViewSet, basename='event')
-router.register(r'marketplace', ListingViewSet, basename='marketplace')
-router.register(r'hotspots', HotspotViewSet, basename='hotspot')
+# router.register(r'events', EventViewSet, basename='event')
+# router.register(r'marketplace', ListingViewSet, basename='marketplace')
+# router.register(r'hotspots', HotspotViewSet, basename='hotspot')
 
 # Authentication URLs
 auth_patterns = [
