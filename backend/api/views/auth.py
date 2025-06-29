@@ -361,14 +361,6 @@ def register_view(request):
         email_sent = False
         warning = f"Failed to send verification email: {str(e)}. Please contact support if you do not receive an email."
 
-    # Send welcome email
-    try:
-        send_welcome_email(user)
-    except Exception as e:
-        print(f"Failed to send welcome email: {e}")
-        if not warning:
-            warning = f"Failed to send welcome email: {str(e)}. Please contact support if you do not receive an email."
-
     if email_sent:
         message = "Account created successfully. A verification email has been sent to your address. Please check your inbox."
     else:
@@ -442,9 +434,16 @@ def verify_email(request, token):
         
         # Mark email as verified
         user.email_verified = True
-        user.email_verification_token = None
+        # Don't set token to None until migration is applied
+        # user.email_verification_token = None
         user.email_verification_expires_at = None
         user.save()
+        
+        # Send welcome email after successful verification
+        try:
+            send_welcome_email(user)
+        except Exception as e:
+            print(f"Failed to send welcome email: {e}")
         
         return Response({
             'message': 'Email verified successfully. You can now log in.'
