@@ -170,6 +170,9 @@ REST_FRAMEWORK = {
 # CORS settings
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173').split(',') if origin.strip()]  # type: ignore
 
+# Add production frontend domain
+CORS_ALLOWED_ORIGINS.append('https://calloutracing.up.railway.app')
+
 # Add Railway frontend domain to CORS if available
 if 'RAILWAY_STATIC_URL' in os.environ:
     try:
