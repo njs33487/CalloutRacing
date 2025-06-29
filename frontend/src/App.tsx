@@ -10,6 +10,8 @@ import EmailVerification from './pages/EmailVerification'
 import EmailVerificationRequired from './pages/EmailVerificationRequired'
 import TermsOfService from './pages/TermsOfService'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import SharedEvent from './pages/SharedEvent'
+import SharedCallout from './pages/SharedCallout'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import Callouts from './pages/Callouts'
@@ -38,6 +40,10 @@ function App() {
           <Route path="/email-verification-required" element={<EmailVerificationRequired />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          
+          {/* Shared content routes - public access for social sharing */}
+          <Route path="/share/event/:id" element={<SharedEvent />} />
+          <Route path="/share/callout/:id" element={<SharedCallout />} />
           
           {/* Protected routes - require authentication and use shared layout */}
           <Route path="/app" element={

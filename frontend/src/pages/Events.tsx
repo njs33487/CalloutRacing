@@ -5,6 +5,8 @@ import { CalendarIcon, PlusIcon, MapPinIcon, UserGroupIcon, TrashIcon, PencilIco
 import { eventAPI } from '../services/api'
 import { Event } from '../types'
 import { useAuth } from '../contexts/AuthContext'
+import { generateEventShareData } from '../utils/socialSharing'
+import ShareButton from '../components/ShareButton'
 
 export default function Events() {
   const { user: authUser } = useAuth();
@@ -340,6 +342,11 @@ export default function Events() {
                 </Link>
                 
                 <div className="flex space-x-2">
+                  <ShareButton 
+                    shareData={generateEventShareData(event)} 
+                    size="sm"
+                  />
+                  
                   {canJoinEvent(event) && (
                     <button
                       onClick={() => handleJoinEvent(event.id)}

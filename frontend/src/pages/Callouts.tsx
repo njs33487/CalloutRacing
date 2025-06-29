@@ -19,6 +19,8 @@ import {
 import { calloutAPI } from '../services/api'
 import { Callout } from '../types'
 import { useAuth } from '../contexts/AuthContext'
+import { generateCalloutShareData } from '../utils/socialSharing'
+import ShareButton from '../components/ShareButton'
 
 export default function Callouts() {
   const { user: authUser } = useAuth();
@@ -463,50 +465,57 @@ export default function Callouts() {
                     View Details
                   </Link>
                   
-                  {canManageCallout(callout) && (
-                    <div className="flex space-x-2">
-                      {canAcceptDecline(callout) && (
-                        <>
+                  <div className="flex space-x-2">
+                    <ShareButton 
+                      shareData={generateCalloutShareData(callout)} 
+                      size="sm"
+                    />
+                    
+                    {canManageCallout(callout) && (
+                      <>
+                        {canAcceptDecline(callout) && (
+                          <>
+                            <button
+                              onClick={() => handleAcceptCallout(callout.id)}
+                              disabled={acceptMutation.isPending}
+                              className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              title="Accept Callout"
+                            >
+                              <CheckIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeclineCallout(callout.id)}
+                              disabled={declineMutation.isPending}
+                              className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              title="Decline Callout"
+                            >
+                              <XMarkIcon className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                        
+                        {canDelete(callout) && (
                           <button
-                            onClick={() => handleAcceptCallout(callout.id)}
-                            disabled={acceptMutation.isPending}
-                            className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Accept Callout"
+                            onClick={() => setShowDeleteConfirm(callout.id)}
+                            className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
+                            title="Delete Callout"
                           >
-                            <CheckIcon className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                           </button>
-                          <button
-                            onClick={() => handleDeclineCallout(callout.id)}
-                            disabled={declineMutation.isPending}
-                            className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Decline Callout"
+                        )}
+                        
+                        {callout.challenger.id === authUser?.id && callout.status === 'pending' && (
+                          <Link
+                            to={`/app/callouts/${callout.id}/edit`}
+                            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            title="Edit Callout"
                           >
-                            <XMarkIcon className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
-                      
-                      {canDelete(callout) && (
-                        <button
-                          onClick={() => setShowDeleteConfirm(callout.id)}
-                          className="bg-gray-600 text-white p-2 rounded-lg hover:bg-gray-700 transition-colors"
-                          title="Delete Callout"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      )}
-                      
-                      {callout.challenger.id === authUser?.id && callout.status === 'pending' && (
-                        <Link
-                          to={`/app/callouts/${callout.id}/edit`}
-                          className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
-                          title="Edit Callout"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </Link>
-                      )}
-                    </div>
-                  )}
+                            <PencilIcon className="h-4 w-4" />
+                          </Link>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
