@@ -279,26 +279,42 @@ def check_user_exists(request):
 @permission_classes([permissions.AllowAny])
 def register_view(request):
     """User registration endpoint with robust error logging."""
+    # Add debugging
+    print(f"Register request data: {request.data}")
+    
     username = request.data.get('username')
     email = request.data.get('email')
     password = request.data.get('password')
     first_name = request.data.get('first_name', '')
     last_name = request.data.get('last_name', '')
 
+    print(f"Extracted data - username: {username}, email: {email}, first_name: {first_name}, last_name: {last_name}")
+
     if not username or not email or not password:
+        print("Missing required fields")
         return Response({
             'error': 'Username, email, and password are required'
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Check if user already exists
+    # Check for existing users and provide detailed feedback
+    existing_errors = {}
+    
+    # Check if username already exists
     if User.objects.filter(username=username).exists():
-        return Response({
-            'error': 'Username already exists'
-        }, status=status.HTTP_400_BAD_REQUEST)
-
+        print(f"Username {username} already exists")
+        existing_errors['username'] = f'The username "{username}" is already taken. Please choose a different username.'
+    
+    # Check if email already exists
     if User.objects.filter(email=email).exists():
+        print(f"Email {email} already exists")
+        existing_errors['email'] = f'The email "{email}" is already registered. Please use a different email or try logging in.'
+    
+    # If there are existing user errors, return them
+    if existing_errors:
         return Response({
-            'error': 'Email already exists'
+            'error': 'User already exists',
+            'details': existing_errors,
+            'suggestion': 'If you already have an account, please try logging in instead.'
         }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -315,7 +331,9 @@ def register_view(request):
         user.email_verification_token = uuid.uuid4()
         user.email_verification_expires_at = timezone.now() + timedelta(hours=24)
         user.save()
+        print(f"User created successfully: {user.username}")
     except Exception as e:
+        print(f"Failed to create user: {str(e)}")
         return Response({
             'error': f'Failed to create user: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

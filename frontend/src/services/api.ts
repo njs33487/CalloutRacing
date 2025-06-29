@@ -46,6 +46,7 @@ export const authAPI = {
   getSSOConfig: () => api.get('/auth/sso-config/'),
   verifyEmail: (token: string) => api.get(`/auth/verify-email/${token}/`),
   resendVerification: (email: string) => api.post('/auth/resend-verification/', { email }),
+  checkUserExists: (data: { username?: string; email?: string }) => api.post('/auth/check-user/', data),
 }
 
 // Contact form API

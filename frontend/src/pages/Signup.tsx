@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EyeIcon, EyeSlashIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
 import { SSOButtons } from '../components/SSOButtons'
+import { authAPI } from '../services/api'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -20,6 +21,50 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<{[key: string]: string}>({})
+  const [availability, setAvailability] = useState<{[key: string]: boolean}>({})
+  const [checkingAvailability, setCheckingAvailability] = useState<{[key: string]: boolean}>({})
+  const [userAlreadyExists, setUserAlreadyExists] = useState(false)
+
+  // Debounced function to check user availability
+  const checkUserAvailability = useCallback(async (field: 'username' | 'email', value: string) => {
+    if (!value || value.length < 3) {
+      setAvailability(prev => ({ ...prev, [field]: true }))
+      return
+    }
+
+    setCheckingAvailability(prev => ({ ...prev, [field]: true }))
+    
+    try {
+      const response = await authAPI.checkUserExists({ [field]: value })
+      setAvailability(prev => ({ ...prev, [field]: !response.data.exists }))
+    } catch (error) {
+      console.error(`Error checking ${field} availability:`, error)
+    } finally {
+      setCheckingAvailability(prev => ({ ...prev, [field]: false }))
+    }
+  }, [])
+
+  // Debounced effect for username checking
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.username) {
+        checkUserAvailability('username', formData.username)
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [formData.username, checkUserAvailability])
+
+  // Debounced effect for email checking
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (formData.email) {
+        checkUserAvailability('email', formData.email)
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [formData.email, checkUserAvailability])
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {}
@@ -131,21 +176,51 @@ export default function Signup() {
         agreeToTerms: false
       })
       
+      // Clear error states
+      setUserAlreadyExists(false)
+      setAvailability({})
+      setCheckingAvailability({})
     } catch (error: any) {
       console.error('Signup failed:', error)
       
       // Handle specific backend errors
       const errorData = error.response?.data
-      if (errorData?.username) {
-        setErrors({ username: errorData.username[0] })
-      } else if (errorData?.email) {
-        setErrors({ email: errorData.email[0] })
-      } else if (errorData?.password) {
-        setErrors({ password: errorData.password[0] })
-      } else if (errorData?.non_field_errors) {
-        setErrors({ general: errorData.non_field_errors[0] })
+      
+      // Handle detailed user already exists errors
+      if (errorData?.error === 'User already exists' && errorData?.details) {
+        const details = errorData.details
+        const newErrors: {[key: string]: string} = {}
+        
+        // Set specific field errors
+        if (details.username) {
+          newErrors.username = details.username
+        }
+        if (details.email) {
+          newErrors.email = details.email
+        }
+        
+        // Add general suggestion if provided
+        if (errorData.suggestion) {
+          newErrors.general = errorData.suggestion
+        }
+        
+        setUserAlreadyExists(true)
+        setErrors(newErrors)
       } else {
-        setErrors({ general: 'Registration failed. Please try again.' })
+        setUserAlreadyExists(false)
+        if (errorData?.username) {
+          setErrors({ username: errorData.username[0] })
+        } else if (errorData?.email) {
+          setErrors({ email: errorData.email[0] })
+        } else if (errorData?.password) {
+          setErrors({ password: errorData.password[0] })
+        } else if (errorData?.non_field_errors) {
+          setErrors({ general: errorData.non_field_errors[0] })
+        } else if (errorData?.error) {
+          setErrors({ general: errorData.error })
+        } else {
+          setErrors({ general: 'Registration failed. Please try again.' })
+        }
       }
     } finally {
       setIsLoading(false)
@@ -162,6 +237,11 @@ export default function Signup() {
     // Clear specific error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
+    }
+    
+    // Clear user already exists state when user starts typing
+    if (userAlreadyExists) {
+      setUserAlreadyExists(false)
     }
   }
 
@@ -211,10 +291,50 @@ export default function Signup() {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <div className="ml-3">
+                <div className="ml-3 flex-1">
                   <p className="text-sm text-red-800">
                     {errors.general}
                   </p>
+                  {/* Show login button if user already exists */}
+                  {errors.general.includes('already have an account') && (
+                    <div className="mt-3">
+                      <Link
+                        to="/login"
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                      >
+                        Login Instead
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Login suggestion when user already exists */}
+          {userAlreadyExists && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3 flex-1">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Account Already Exists
+                  </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>It looks like you already have an account with us. Would you like to sign in instead?</p>
+                  </div>
+                  <div className="mt-4">
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    >
+                      Sign In to Your Account
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -253,22 +373,6 @@ export default function Signup() {
               </div>
             </div>
           )}
-
-          {/* SSO Buttons */}
-          <SSOButtons 
-            onSuccess={handleSSOSuccess}
-            onError={handleSSOError}
-            className="mb-6"
-          />
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">Or sign up with email</span>
-            </div>
-          </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Name Fields */}
@@ -323,7 +427,7 @@ export default function Signup() {
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username or Email
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <input
                   id="username"
                   name="username"
@@ -332,15 +436,41 @@ export default function Signup() {
                   required
                   value={formData.username}
                   onChange={handleInputChange}
-                  className={`input-field ${errors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}`}
+                  className={`input-field pr-10 ${
+                    errors.username ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 
+                    formData.username && availability.username === false ? 'border-red-300 focus:ring-red-500 focus:border-red-500' :
+                    formData.username && availability.username === true ? 'border-green-300 focus:ring-green-500 focus:border-green-500' : ''
+                  }`}
                   placeholder="Choose a username or use your email"
                 />
+                {formData.username && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    {checkingAvailability.username ? (
+                      <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : availability.username === true ? (
+                      <CheckIcon className="h-5 w-5 text-green-500" />
+                    ) : availability.username === false ? (
+                      <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    ) : null}
+                  </div>
+                )}
               </div>
               <p className="mt-1 text-xs text-gray-500">
                 You can use your email address as your username
               </p>
               {errors.username && (
                 <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+              )}
+              {formData.username && !checkingAvailability.username && availability.username === true && (
+                <p className="mt-1 text-sm text-green-600">✓ Username is available</p>
+              )}
+              {formData.username && !checkingAvailability.username && availability.username === false && (
+                <p className="mt-1 text-sm text-red-600">✗ Username is already taken</p>
               )}
             </div>
 
@@ -349,7 +479,7 @@ export default function Signup() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <input
                   id="email"
                   name="email"
@@ -358,12 +488,38 @@ export default function Signup() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className={`input-field ${errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}`}
+                  className={`input-field pr-10 ${
+                    errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 
+                    formData.email && availability.email === false ? 'border-red-300 focus:ring-red-500 focus:border-red-500' :
+                    formData.email && availability.email === true ? 'border-green-300 focus:ring-green-500 focus:border-green-500' : ''
+                  }`}
                   placeholder="your@email.com"
                 />
+                {formData.email && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    {checkingAvailability.email ? (
+                      <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : availability.email === true ? (
+                      <CheckIcon className="h-5 w-5 text-green-500" />
+                    ) : availability.email === false ? (
+                      <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    ) : null}
+                  </div>
+                )}
               </div>
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
+              {formData.email && !checkingAvailability.email && availability.email === true && (
+                <p className="mt-1 text-sm text-green-600">✓ Email is available</p>
+              )}
+              {formData.email && !checkingAvailability.email && availability.email === false && (
+                <p className="mt-1 text-sm text-red-600">✗ Email is already registered</p>
               )}
             </div>
 
@@ -500,6 +656,26 @@ export default function Signup() {
               </button>
             </div>
           </form>
+
+          {/* SSO Buttons - Moved to bottom */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">Or sign up with</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <SSOButtons 
+                onSuccess={handleSSOSuccess}
+                onError={handleSSOError}
+                className="space-y-3"
+              />
+            </div>
+          </div>
 
           <div className="mt-6">
             <div className="relative">

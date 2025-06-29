@@ -88,22 +88,6 @@ export default function Login() {
             </div>
           )}
 
-          {/* SSO Buttons */}
-          <SSOButtons 
-            onSuccess={handleSSOSuccess}
-            onError={handleSSOError}
-            className="mb-6"
-          />
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">Or continue with email</span>
-            </div>
-          </div>
-
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
@@ -194,6 +178,26 @@ export default function Login() {
               </button>
             </div>
           </form>
+
+          {/* SSO Buttons - Moved to bottom */}
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-2 text-gray-500">Or sign in with</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <SSOButtons 
+                onSuccess={handleSSOSuccess}
+                onError={handleSSOError}
+                className="space-y-3"
+              />
+            </div>
+          </div>
 
           <div className="mt-6">
             <div className="relative">
