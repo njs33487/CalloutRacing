@@ -49,7 +49,7 @@ export default function About() {
             <img 
               src="/callourRacingLaunch.jpg" 
               alt="CalloutRacing Launch" 
-              className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mx-auto mb-4 object-cover rounded-lg"
+              className="h-40 w-40 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mx-auto mb-4 object-cover rounded-lg"
             />
           </div>
           
