@@ -31,10 +31,8 @@ from .events import EventViewSet
 from .marketplace import ListingViewSet, TransactionViewSet, ReviewViewSet
 from .hotspots import HotspotViewSet
 
-# Import utility views - temporarily disabled for deployment
-# from .utils import (
-#     google_sso, facebook_sso, sso_config, stats_view, global_search
-# )
+# Import utility views
+from .utils import sso_config
 
 __all__ = [
     # Auth views
@@ -55,6 +53,6 @@ __all__ = [
     # ViewSets
     'EventViewSet', 'ListingViewSet', 'TransactionViewSet', 'ReviewViewSet', 'HotspotViewSet',
     
-    # Utility views - temporarily disabled
-    # 'google_sso', 'facebook_sso', 'sso_config', 'stats_view', 'global_search',
+    # Utility views
+    'sso_config',
 ] 

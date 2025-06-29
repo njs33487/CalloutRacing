@@ -17,7 +17,7 @@ from .views import (
     verify_email, resend_verification_email, check_user_exists,
     run_migrations, request_password_reset, reset_password,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
-    generate_backup_codes, auth, racing,
+    generate_backup_codes, auth, racing, sso_config,
     # Racing views
     TrackListView, TrackDetailView,
     CalloutListView, CalloutCreateView, CalloutDetailView,
@@ -52,6 +52,7 @@ auth_patterns = [
     path('otp/verify-login/', verify_otp_login, name='otp-verify-login'),
     path('generate-backup-codes/', generate_backup_codes, name='generate-backup-codes'),
     path('run-migrations/', run_migrations, name='run-migrations'),
+    path('sso-config/', sso_config, name='sso-config'),
 ]
 
 # Racing URLs
