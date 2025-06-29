@@ -20,9 +20,6 @@ RUN apt-get update \
 COPY start.sh .
 RUN chmod +x start.sh
 
-# Copy scripts directory
-COPY scripts/ scripts/
-
 # Install Python dependencies
 COPY backend/requirements.txt backend/
 RUN pip install --no-cache-dir -r backend/requirements.txt
