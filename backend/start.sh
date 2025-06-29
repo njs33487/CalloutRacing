@@ -8,9 +8,9 @@ echo "Current directory: $(pwd)"
 echo "Python version: $(python --version)"
 echo "Django version: $(python -c 'import django; print(django.get_version())')"
 
-# Change to backend directory
-cd backend
-echo "Changed to backend directory: $(pwd)"
+# Change to root directory where manage.py is located
+cd ..
+echo "Changed to root directory: $(pwd)"
 
 # Use PORT environment variable or default to 8000
 PORT=${PORT:-8000}
