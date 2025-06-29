@@ -7,7 +7,7 @@ This module configures the Django admin interface for all models.
 from django.contrib import admin
 from django.utils.html import format_html
 from .models.auth import User, UserProfile
-from .models.racing import Track, Callout, RaceResult
+from .models.racing import Track, Callout, RaceResult, Event, EventParticipant
 from .models.social import (
     Follow, Block, Friendship, Message, UserPost, PostComment, 
     Notification, ReputationRating
@@ -169,4 +169,21 @@ class HotSpotAdmin(admin.ModelAdmin):
     list_display = ['name', 'city', 'state', 'is_verified', 'created_by', 'created_at']
     list_filter = ['is_verified', 'created_at']
     search_fields = ['name', 'city', 'state', 'created_by__username']
-    readonly_fields = ['created_at', 'updated_at'] 
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ['title', 'event_type', 'organizer', 'start_date', 'end_date', 'is_active', 'is_public']
+    list_filter = ['event_type', 'is_active', 'is_public', 'start_date']
+    search_fields = ['title', 'description', 'organizer__username']
+    readonly_fields = ['created_at', 'updated_at']
+    date_hierarchy = 'start_date'
+
+
+@admin.register(EventParticipant)
+class EventParticipantAdmin(admin.ModelAdmin):
+    list_display = ['event', 'user', 'is_confirmed', 'registration_date']
+    list_filter = ['is_confirmed', 'registration_date']
+    search_fields = ['event__title', 'user__username']
+    readonly_fields = ['registration_date'] 

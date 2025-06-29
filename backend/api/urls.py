@@ -24,16 +24,16 @@ from .views import (
     RaceResultCreateView, RaceResultDetailView,
     accept_callout, decline_callout, cancel_callout,
     search_users_for_callout, callout_statistics,
-    # New ViewSets - temporarily disabled
-    # EventViewSet, ListingViewSet, HotspotViewSet
+    # ViewSets
+    EventViewSet, ListingViewSet, HotspotViewSet
 )
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'profiles', UserProfileViewSet, basename='profile')
-# router.register(r'events', EventViewSet, basename='event')
-# router.register(r'marketplace', ListingViewSet, basename='marketplace')
-# router.register(r'hotspots', HotspotViewSet, basename='hotspot')
+router.register(r'events', EventViewSet, basename='event')
+router.register(r'marketplace', ListingViewSet, basename='marketplace')
+router.register(r'hotspots', HotspotViewSet, basename='hotspot')
 
 # Authentication URLs
 auth_patterns = [
@@ -68,6 +68,7 @@ racing_patterns = [
     path('race-results/<int:pk>/', RaceResultDetailView.as_view(), name='race-result-detail'),
     path('search-users/', search_users_for_callout, name='search-users'),
     path('callout-stats/', callout_statistics, name='callout-statistics'),
+    path('stats/', callout_statistics, name='stats'),  # Alias for stats
 ]
 
 # Combine all URL patterns
@@ -79,6 +80,7 @@ urlpatterns = [
     path('tracks/', TrackListView.as_view(), name='track-list-alias'),
     path('callouts/', CalloutListView.as_view(), name='callout-list-alias'),
     path('users/search/', search_users_for_callout, name='user-search-alias'),
+    path('stats/', callout_statistics, name='stats-alias'),  # Global stats endpoint
     # Username-based profile access (like Facebook)
     path('@<str:username>/', UserProfileViewSet.as_view({'get': 'by_username'}), name='profile-by-username'),
 ] 

@@ -26,10 +26,10 @@ from .racing import (
     search_users_for_callout, callout_statistics
 )
 
-# Import new ViewSets - temporarily disabled for deployment debugging
-# from .events import EventViewSet
-# from .marketplace import ListingViewSet, TransactionViewSet, ReviewViewSet
-# from .hotspots import HotspotViewSet
+# Import new ViewSets
+from .events import EventViewSet
+from .marketplace import ListingViewSet, TransactionViewSet, ReviewViewSet
+from .hotspots import HotspotViewSet
 
 # Import utility views - temporarily disabled for deployment
 # from .utils import (
@@ -52,8 +52,8 @@ __all__ = [
     'accept_callout', 'decline_callout', 'cancel_callout',
     'search_users_for_callout', 'callout_statistics',
     
-    # New ViewSets - temporarily disabled
-    # 'EventViewSet', 'ListingViewSet', 'TransactionViewSet', 'ReviewViewSet', 'HotspotViewSet',
+    # ViewSets
+    'EventViewSet', 'ListingViewSet', 'TransactionViewSet', 'ReviewViewSet', 'HotspotViewSet',
     
     # Utility views - temporarily disabled
     # 'google_sso', 'facebook_sso', 'sso_config', 'stats_view', 'global_search',
