@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { authAPI } from '../services/api'
 
 export default function EmailVerification() {
   const { token } = useParams<{ token: string }>()
-  const navigate = useNavigate()
   const [status, setStatus] = useState<'verifying' | 'success' | 'error' | 'expired'>('verifying')
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
