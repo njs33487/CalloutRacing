@@ -1,766 +1,306 @@
 """
-Django REST Framework Serializers for CalloutRacing Application
+API Serializers for CalloutRacing Application
 
-This module contains all the serializers for the CalloutRacing application, including:
-- User and profile serializers
-- Event and callout serializers
-- Marketplace serializers
-- Social feature serializers
-- Car profile serializers
-
-Serializers handle the conversion between Django model instances and JSON data,
-including nested relationships and computed fields.
+This module contains serializers for all API endpoints:
+- User authentication and profile
+- Racing models (Callout, Track, RaceResult)
+- Marketplace models
+- Social features
 """
 
 from rest_framework import serializers
-from django.contrib.auth.models import User
-from core.models import (
-    UserProfile, Track, Event, Callout, RaceResult, 
-    Marketplace, MarketplaceImage, EventParticipant,
-    Friendship, Message, CarProfile, CarModification, 
-    CarImage, UserPost, PostComment, Subscription, Payment,
-    UserWallet, MarketplaceOrder, MarketplaceReview, Bet, BettingPool,
-    Notification, HotSpot, RacingCrew, LocationBroadcast, ReputationRating,
-    OpenChallenge, ChallengeResponse, CrewMembership
-)
-from django.db import models
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from datetime import timedelta
+
+from core.models.auth import User, UserProfile
+from core.models.racing import Callout, Track, RaceResult
+from core.models.cars import CarProfile
+from core.models.marketplace import Marketplace
+from core.models.social import Friendship
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Django User model.
-    
-    Provides basic user information including ID, username, email,
-    name, and registration date. Used as nested serializer in other views.
-    """
+    """Basic user serializer for public information."""
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'date_joined']
+        fields = ['id', 'username', 'email', 'date_joined', 'is_verified']
+        read_only_fields = ['id', 'date_joined', 'is_verified']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """
-    Serializer for UserProfile model.
-    
-    Includes nested user data and computed win_rate field.
-    Used for basic profile information display.
-    """
+    """User profile serializer."""
     user = UserSerializer(read_only=True)
-    win_rate = serializers.ReadOnlyField()
-
+    
     class Meta:
         model = UserProfile
         fields = '__all__'
+        read_only_fields = ['user']
 
+
+class RegisterSerializer(serializers.ModelSerializer):
+    """User registration serializer."""
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    password_confirm = serializers.CharField(write_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password', 'password_confirm']
+    
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError("Passwords don't match")
+        return attrs
+    
+    def create(self, validated_data):
+        validated_data.pop('password_confirm')
+        user = User.objects.create_user(**validated_data)
+        return user
+
+
+class LoginSerializer(serializers.Serializer):
+    """User login serializer."""
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Password reset request serializer."""
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Password reset confirmation serializer."""
+    token = serializers.CharField()
+    new_password = serializers.CharField(validators=[validate_password])
+    new_password_confirm = serializers.CharField()
+    
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError("Passwords don't match")
+        return attrs
+
+
+class OTPVerifySerializer(serializers.Serializer):
+    """OTP verification serializer."""
+    otp_code = serializers.CharField(max_length=6, min_length=6)
+
+
+class OTPEnableSerializer(serializers.Serializer):
+    """OTP enable/disable serializer."""
+    enable = serializers.BooleanField()
+
+
+# Racing Serializers
 
 class TrackSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Track model.
-    
-    Provides complete track information including name, location,
-    type, surface, and specifications.
-    """
+    """Track serializer."""
     class Meta:
         model = Track
         fields = '__all__'
-
-
-class EventSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Event model.
-    
-    Includes nested track and organizer data, plus computed
-    participant count for event listings.
-    """
-    track = TrackSerializer(read_only=True)
-    organizer = UserSerializer(read_only=True)
-    participant_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Event
-        fields = '__all__'
-
-    def get_participant_count(self, obj):
-        """
-        Get the number of participants for an event.
-        
-        Args:
-            obj: Event instance
-            
-        Returns:
-            int: Number of participants
-        """
-        return obj.participants.count()
-
-
-class HotSpotSerializer(serializers.ModelSerializer):
-    """Serializer for HotSpot model."""
-    created_by = UserSerializer(read_only=True)
-    total_races = serializers.ReadOnlyField()
-    last_activity = serializers.ReadOnlyField()
-    
-    class Meta:
-        model = HotSpot
-        fields = [
-            'id', 'name', 'description', 'address', 'city', 'state', 'zip_code',
-            'latitude', 'longitude', 'spot_type', 'rules', 'amenities', 'peak_hours',
-            'is_verified', 'is_active', 'created_by', 'total_races', 'last_activity',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['created_by', 'total_races', 'last_activity', 'created_at', 'updated_at']
-
-
-class RacingCrewSerializer(serializers.ModelSerializer):
-    """Serializer for RacingCrew model."""
-    owner = UserSerializer(read_only=True)
-    admins = UserSerializer(many=True, read_only=True)
-    members = UserSerializer(many=True, read_only=True)
-    member_count = serializers.ReadOnlyField()
-    total_races = serializers.ReadOnlyField()
-    
-    class Meta:
-        model = RacingCrew
-        fields = [
-            'id', 'name', 'description', 'crew_type', 'is_private', 'is_invite_only',
-            'owner', 'admins', 'members', 'member_count', 'total_races',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['owner', 'admins', 'members', 'member_count', 'total_races', 'created_at', 'updated_at']
-
-
-class CrewMembershipSerializer(serializers.ModelSerializer):
-    """Serializer for CrewMembership model."""
-    crew = RacingCrewSerializer(read_only=True)
-    user = UserSerializer(read_only=True)
-    invited_by = UserSerializer(read_only=True)
-    
-    class Meta:
-        model = CrewMembership
-        fields = ['id', 'crew', 'user', 'status', 'joined_at', 'invited_by']
-        read_only_fields = ['joined_at', 'invited_by']
-
-
-class LocationBroadcastSerializer(serializers.ModelSerializer):
-    """Serializer for LocationBroadcast model."""
-    user = UserSerializer(read_only=True)
-    hot_spot = HotSpotSerializer(read_only=True)
-    
-    class Meta:
-        model = LocationBroadcast
-        fields = [
-            'id', 'user', 'hot_spot', 'latitude', 'longitude', 'address',
-            'message', 'is_active', 'expires_at', 'created_at'
-        ]
-        read_only_fields = ['user', 'created_at']
-
-
-class ReputationRatingSerializer(serializers.ModelSerializer):
-    """Serializer for ReputationRating model."""
-    rater = UserSerializer(read_only=True)
-    rated_user = UserSerializer(read_only=True)
-    
-    class Meta:
-        model = ReputationRating
-        fields = [
-            'id', 'rater', 'rated_user', 'punctuality', 'rule_adherence',
-            'sportsmanship', 'overall', 'comment', 'created_at'
-        ]
-        read_only_fields = ['rater', 'created_at']
-
-
-class OpenChallengeSerializer(serializers.ModelSerializer):
-    """Serializer for OpenChallenge model."""
-    challenger = UserSerializer(read_only=True)
-    hot_spot = HotSpotSerializer(read_only=True)
-    responses_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = OpenChallenge
-        fields = [
-            'id', 'challenger', 'title', 'description', 'challenge_type',
-            'max_horsepower', 'min_horsepower', 'tire_requirement', 'location',
-            'hot_spot', 'scheduled_date', 'rules', 'stakes', 'is_active',
-            'max_participants', 'responses_count', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['challenger', 'responses_count', 'created_at', 'updated_at']
-    
-    def get_responses_count(self, obj):
-        return obj.challenge_responses.count()
-
-
-class ChallengeResponseSerializer(serializers.ModelSerializer):
-    """Serializer for ChallengeResponse model."""
-    responder = UserSerializer(read_only=True)
-    
-    class Meta:
-        model = ChallengeResponse
-        fields = ['id', 'responder', 'status', 'message', 'created_at']
-        read_only_fields = ['responder', 'created_at']
+        read_only_fields = ['created_at', 'updated_at']
 
 
 class CalloutSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Callout model.
-    
-    Includes nested data for challenger, challenged, event, and track.
-    Protects challenger and timestamp fields from modification.
-    """
+    """Basic callout serializer for list views."""
     challenger = UserSerializer(read_only=True)
     challenged = UserSerializer(read_only=True)
-    event = EventSerializer(read_only=True)
     track = TrackSerializer(read_only=True)
-    hot_spot = HotSpotSerializer(read_only=True)
-    crew = RacingCrewSerializer(read_only=True)
     winner = UserSerializer(read_only=True)
-
+    location_display = serializers.CharField(read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
+    
     class Meta:
         model = Callout
         fields = [
-            'id', 'challenger', 'challenged', 'event', 'track', 'hot_spot', 'crew',
-            'location_type', 'street_location', 'race_type', 'max_horsepower',
-            'min_horsepower', 'tire_requirement', 'rules', 'experience_level',
-            'is_private', 'is_invite_only', 'wager_amount', 'message', 'status',
-            'scheduled_date', 'winner', 'created_at', 'updated_at'
+            'id', 'challenger', 'challenged', 'location_type', 'track', 
+            'street_location', 'city', 'state', 'race_type', 'wager_amount',
+            'message', 'experience_level', 'min_horsepower', 'max_horsepower',
+            'tire_requirement', 'rules', 'is_private', 'is_invite_only',
+            'status', 'scheduled_date', 'winner', 'location_display',
+            'is_expired', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['challenger', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'challenger', 'created_at', 'updated_at']
+
+
+class CalloutCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating callouts."""
+    challenged_username = serializers.CharField(write_only=True)
+    
+    class Meta:
+        model = Callout
+        fields = [
+            'challenged_username', 'location_type', 'track', 'street_location',
+            'city', 'state', 'race_type', 'wager_amount', 'message',
+            'experience_level', 'min_horsepower', 'max_horsepower',
+            'tire_requirement', 'rules', 'is_private', 'is_invite_only',
+            'scheduled_date'
+        ]
+    
+    def validate(self, attrs):
+        # Validate challenged user exists
+        challenged_username = attrs.get('challenged_username')
+        try:
+            challenged_user = User.objects.get(username=challenged_username)
+            attrs['challenged'] = challenged_user
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Challenged user not found")
+        
+        # Validate location requirements
+        location_type = attrs.get('location_type')
+        if location_type == 'track':
+            if not attrs.get('track'):
+                raise serializers.ValidationError("Track is required when location_type is 'track'")
+        elif location_type == 'street':
+            if not attrs.get('street_location') or not attrs.get('city') or not attrs.get('state'):
+                raise serializers.ValidationError("Street location, city, and state are required when location_type is 'street'")
+        
+        # Validate scheduled date is in the future
+        scheduled_date = attrs.get('scheduled_date')
+        if scheduled_date and scheduled_date <= timezone.now():
+            raise serializers.ValidationError("Scheduled date must be in the future")
+        
+        # Validate horsepower range
+        min_hp = attrs.get('min_horsepower')
+        max_hp = attrs.get('max_horsepower')
+        if min_hp and max_hp and min_hp > max_hp:
+            raise serializers.ValidationError("Minimum horsepower cannot be greater than maximum horsepower")
+        
+        return attrs
+    
+    def create(self, validated_data):
+        validated_data.pop('challenged_username')
+        return super().create(validated_data)
+
+
+class CalloutDetailSerializer(CalloutSerializer):
+    """Detailed callout serializer with race result."""
+    race_result = serializers.SerializerMethodField()
+    
+    class Meta(CalloutSerializer.Meta):
+        fields = CalloutSerializer.Meta.fields + ['race_result']
+    
+    def get_race_result(self, obj):
+        if hasattr(obj, 'race_result') and obj.race_result:
+            return RaceResultSerializer(obj.race_result).data
+        return None
 
 
 class RaceResultSerializer(serializers.ModelSerializer):
-    """
-    Serializer for RaceResult model.
-    
-    Includes nested data for callout, winner, and loser.
-    Used for displaying race results and statistics.
-    """
+    """Race result serializer."""
     callout = CalloutSerializer(read_only=True)
-    winner = UserSerializer(read_only=True)
-    loser = UserSerializer(read_only=True)
-
+    verified_by = UserSerializer(read_only=True)
+    winner = serializers.SerializerMethodField()
+    
     class Meta:
         model = RaceResult
-        fields = '__all__'
-
-
-class MarketplaceImageSerializer(serializers.ModelSerializer):
-    """
-    Serializer for MarketplaceImage model.
+        fields = [
+            'id', 'callout', 'challenger_time', 'challenged_time',
+            'challenger_speed', 'challenged_speed', 'challenger_reaction',
+            'challenged_reaction', 'weather_conditions', 'track_conditions',
+            'notes', 'is_verified', 'verified_by', 'winner', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'callout', 'is_verified', 'verified_by', 'created_at', 'updated_at']
     
-    Handles image uploads and metadata for marketplace items.
-    """
-    class Meta:
-        model = MarketplaceImage
-        fields = '__all__'
-
-
-class MarketplaceSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Marketplace model.
-    
-    Includes nested seller data, images, and computed primary image.
-    Protects seller and metric fields from modification.
-    """
-    seller = UserSerializer(read_only=True)
-    images = MarketplaceImageSerializer(many=True, read_only=True)
-    primary_image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Marketplace
-        fields = '__all__'
-        read_only_fields = ['seller', 'views', 'created_at', 'updated_at']
-
-    def get_primary_image(self, obj):
-        """
-        Get the primary image for a marketplace item.
-        
-        Args:
-            obj: Marketplace instance
-            
-        Returns:
-            dict: Primary image data or None
-        """
-        primary_image = obj.images.filter(is_primary=True).first()
-        if primary_image:
-            return MarketplaceImageSerializer(primary_image).data
+    def get_winner(self, obj):
+        winner = obj.winner
+        if winner:
+            return UserSerializer(winner).data
         return None
-
-
-class EventParticipantSerializer(serializers.ModelSerializer):
-    """
-    Serializer for EventParticipant model.
     
-    Includes nested event and user data.
-    Protects user and registration date from modification.
-    """
-    event = EventSerializer(read_only=True)
-    user = UserSerializer(read_only=True)
-
-    class Meta:
-        model = EventParticipant
-        fields = '__all__'
-        read_only_fields = ['user', 'registration_date']
-
-
-# Nested serializers for detailed views
-class CalloutDetailSerializer(CalloutSerializer):
-    """
-    Detailed serializer for Callout model.
-    
-    Extends CalloutSerializer to include race result data
-    for comprehensive callout information.
-    """
-    result = RaceResultSerializer(read_only=True)
-
-
-class EventDetailSerializer(EventSerializer):
-    """
-    Detailed serializer for Event model.
-    
-    Extends EventSerializer to include participants and callouts
-    for comprehensive event information.
-    """
-    participants = EventParticipantSerializer(many=True, read_only=True)
-    callouts = CalloutSerializer(many=True, read_only=True)
+    def validate(self, attrs):
+        # Validate that at least one time is provided
+        challenger_time = attrs.get('challenger_time')
+        challenged_time = attrs.get('challenged_time')
+        
+        if not challenger_time and not challenged_time:
+            raise serializers.ValidationError("At least one race time must be provided")
+        
+        # Validate times are positive
+        if challenger_time and challenger_time <= 0:
+            raise serializers.ValidationError("Challenger time must be positive")
+        if challenged_time and challenged_time <= 0:
+            raise serializers.ValidationError("Challenged time must be positive")
+        
+        # Validate speeds are positive
+        challenger_speed = attrs.get('challenger_speed')
+        challenged_speed = attrs.get('challenged_speed')
+        if challenger_speed and challenger_speed <= 0:
+            raise serializers.ValidationError("Challenger speed must be positive")
+        if challenged_speed and challenged_speed <= 0:
+            raise serializers.ValidationError("Challenged speed must be positive")
+        
+        return attrs
 
 
-class MarketplaceDetailSerializer(MarketplaceSerializer):
-    """
-    Detailed serializer for Marketplace model.
-    
-    Currently identical to MarketplaceSerializer but can be extended
-    for additional detailed marketplace information.
-    """
-    pass
-
-
-# Social feature serializers
-class FriendshipSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Friendship model.
-    
-    Includes nested sender and receiver data.
-    Protects sender and timestamp fields from modification.
-    """
-    sender = UserSerializer(read_only=True)
-    receiver = UserSerializer(read_only=True)
-
-    class Meta:
-        model = Friendship
-        fields = '__all__'
-        read_only_fields = ['sender', 'created_at', 'updated_at']
-
-
-class MessageSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Message model.
-    
-    Includes nested sender and receiver data.
-    Protects sender and timestamp fields from modification.
-    """
-    sender = UserSerializer(read_only=True)
-    receiver = UserSerializer(read_only=True)
-
-    class Meta:
-        model = Message
-        fields = '__all__'
-        read_only_fields = ['sender', 'created_at']
-
-
-class CarModificationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for CarModification model.
-    
-    Handles car modification data including category, brand,
-    cost, and installation information.
-    """
-    class Meta:
-        model = CarModification
-        fields = '__all__'
-
-
-class CarImageSerializer(serializers.ModelSerializer):
-    """
-    Serializer for CarImage model.
-    
-    Handles car image uploads and metadata.
-    """
-    class Meta:
-        model = CarImage
-        fields = '__all__'
-
+# Car Serializers
 
 class CarProfileSerializer(serializers.ModelSerializer):
-    """
-    Serializer for CarProfile model.
+    """Car profile serializer."""
+    owner = UserSerializer(read_only=True)
     
-    Includes nested user data, modifications, images, and computed primary image.
-    Protects user and timestamp fields from modification.
-    """
-    user = UserSerializer(read_only=True)
-    modifications = CarModificationSerializer(many=True, read_only=True)
-    images = CarImageSerializer(many=True, read_only=True)
-    primary_image = serializers.SerializerMethodField()
-
     class Meta:
         model = CarProfile
         fields = '__all__'
-        read_only_fields = ['user', 'created_at', 'updated_at']
-
-    def get_primary_image(self, obj):
-        """
-        Get the primary image for a car profile.
-        
-        Args:
-            obj: CarProfile instance
-            
-        Returns:
-            dict: Primary image data or None
-        """
-        primary_image = obj.images.filter(is_primary=True).first()
-        if primary_image:
-            return CarImageSerializer(primary_image).data
-        return None
+        read_only_fields = ['owner', 'created_at', 'updated_at']
 
 
-class PostCommentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for PostComment model.
-    
-    Includes nested user data.
-    Protects user and timestamp fields from modification.
-    """
-    user = UserSerializer(read_only=True)
+# Marketplace Serializers
 
-    class Meta:
-        model = PostComment
-        fields = '__all__'
-        read_only_fields = ['user', 'created_at']
-
-
-class UserPostSerializer(serializers.ModelSerializer):
-    """
-    Serializer for UserPost model.
-    
-    Includes nested user, car, and comments data.
-    Provides computed like_count and is_liked fields.
-    Protects user, likes, and timestamp fields from modification.
-    """
-    user = UserSerializer(read_only=True)
-    car = CarProfileSerializer(read_only=True)
-    comments = PostCommentSerializer(many=True, read_only=True)
-    like_count = serializers.ReadOnlyField()
-    is_liked = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserPost
-        fields = '__all__'
-        read_only_fields = ['user', 'likes', 'created_at', 'updated_at']
-
-    def get_is_liked(self, obj):
-        """
-        Check if the current user has liked this post.
-        
-        Args:
-            obj: UserPost instance
-            
-        Returns:
-            bool: True if current user has liked the post
-        """
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.likes.filter(id=request.user.id).exists()
-        return False
-
-
-class UserProfileDetailSerializer(UserProfileSerializer):
-    """
-    Enhanced user profile serializer with social features.
-    
-    Extends UserProfileSerializer to include cars, posts, and
-    friendship information for comprehensive profile views.
-    """
-    cars = CarProfileSerializer(many=True, read_only=True)
-    posts = UserPostSerializer(many=True, read_only=True)
-    friends_count = serializers.SerializerMethodField()
-    is_friend = serializers.SerializerMethodField()
-    friendship_status = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserProfile
-        fields = '__all__'
-
-    def get_friends_count(self, obj):
-        """
-        Get the number of friends for a user.
-        
-        Args:
-            obj: UserProfile instance
-            
-        Returns:
-            int: Number of accepted friends
-        """
-        return Friendship.objects.filter(
-            models.Q(sender=obj.user) | models.Q(receiver=obj.user),
-            status='accepted'
-        ).count()
-
-    def get_is_friend(self, obj):
-        """
-        Check if the current user is friends with the profile user.
-        
-        Args:
-            obj: UserProfile instance
-            
-        Returns:
-            bool: True if users are friends
-        """
-        request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return False
-        
-        return Friendship.objects.filter(
-            models.Q(sender=request.user, receiver=obj.user) |
-            models.Q(sender=obj.user, receiver=request.user),
-            status='accepted'
-        ).exists()
-
-    def get_friendship_status(self, obj):
-        """
-        Get the friendship status between the current user and profile user.
-        
-        Args:
-            obj: UserProfile instance
-            
-        Returns:
-            str: Friendship status or None
-        """
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            if request.user == obj.user:
-                return 'self'
-            
-            friendship = Friendship.objects.filter(
-                models.Q(sender=request.user, receiver=obj.user) |
-                models.Q(sender=obj.user, receiver=request.user)
-            ).first()
-            
-            if friendship:
-                return friendship.status
-        return None
-
-
-# ============================================================================
-# PAYMENT & SUBSCRIPTION SERIALIZERS
-# ============================================================================
-
-class SubscriptionSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Subscription model.
-    
-    Includes nested user data and computed is_active field.
-    Protects user and timestamp fields from modification.
-    """
-    user = UserSerializer(read_only=True)
-    is_active = serializers.ReadOnlyField()
-
-    class Meta:
-        model = Subscription
-        fields = '__all__'
-        read_only_fields = ['user', 'created_at', 'updated_at']
-
-
-class PaymentSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Payment model.
-    
-    Includes nested user data and related object information.
-    Protects user and timestamp fields from modification.
-    """
-    user = UserSerializer(read_only=True)
-    subscription = SubscriptionSerializer(read_only=True)
-    marketplace_item = MarketplaceSerializer(read_only=True)
-    callout = CalloutSerializer(read_only=True)
-    event = EventSerializer(read_only=True)
-
-    class Meta:
-        model = Payment
-        fields = '__all__'
-        read_only_fields = ['user', 'created_at', 'updated_at']
-
-
-class UserWalletSerializer(serializers.ModelSerializer):
-    """
-    Serializer for UserWallet model.
-    
-    Includes nested user data and computed can_afford method.
-    Protects user and timestamp fields from modification.
-    """
-    user = UserSerializer(read_only=True)
-
-    class Meta:
-        model = UserWallet
-        fields = '__all__'
-        read_only_fields = ['user', 'created_at', 'updated_at']
-
-
-# ============================================================================
-# ENHANCED MARKETPLACE SERIALIZERS
-# ============================================================================
-
-class MarketplaceOrderSerializer(serializers.ModelSerializer):
-    """
-    Serializer for MarketplaceOrder model.
-    
-    Includes nested buyer, seller, item, and payment data.
-    Protects buyer and timestamp fields from modification.
-    """
-    buyer = UserSerializer(read_only=True)
+class MarketplaceSerializer(serializers.ModelSerializer):
+    """Marketplace serializer."""
     seller = UserSerializer(read_only=True)
-    item = MarketplaceSerializer(read_only=True)
-    payment = PaymentSerializer(read_only=True)
-
-    class Meta:
-        model = MarketplaceOrder
-        fields = '__all__'
-        read_only_fields = ['buyer', 'created_at', 'updated_at']
-
-
-class MarketplaceReviewSerializer(serializers.ModelSerializer):
-    """
-    Serializer for MarketplaceReview model.
+    car = CarProfileSerializer(read_only=True)
     
-    Includes nested order and reviewer data.
-    Protects reviewer and timestamp fields from modification.
-    """
-    order = MarketplaceOrderSerializer(read_only=True)
-    reviewer = UserSerializer(read_only=True)
-
     class Meta:
-        model = MarketplaceReview
+        model = Marketplace
         fields = '__all__'
-        read_only_fields = ['reviewer', 'created_at', 'updated_at']
+        read_only_fields = ['seller', 'created_at', 'updated_at']
 
 
-# ============================================================================
-# BETTING SERIALIZERS
-# ============================================================================
+# Social Serializers
 
-class BetSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Bet model.
+class FriendshipSerializer(serializers.ModelSerializer):
+    """Friendship serializer."""
+    from_user = UserSerializer(read_only=True)
+    to_user = UserSerializer(read_only=True)
     
-    Includes nested bettor, callout, event, and payment data.
-    Protects bettor and timestamp fields from modification.
-    """
-    bettor = UserSerializer(read_only=True)
-    callout = CalloutSerializer(read_only=True)
-    event = EventSerializer(read_only=True)
-    selected_winner = UserSerializer(read_only=True)
-    actual_winner = UserSerializer(read_only=True)
-    payment = PaymentSerializer(read_only=True)
-
     class Meta:
-        model = Bet
+        model = Friendship
         fields = '__all__'
-        read_only_fields = ['bettor', 'created_at', 'updated_at']
+        read_only_fields = ['from_user', 'created_at']
 
 
-class BettingPoolSerializer(serializers.ModelSerializer):
-    """
-    Serializer for BettingPool model.
+class FriendshipCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating friend requests."""
+    to_username = serializers.CharField(write_only=True)
     
-    Includes nested callout and event data, plus computed bet count.
-    """
-    callout = CalloutSerializer(read_only=True)
-    event = EventSerializer(read_only=True)
-    bet_count = serializers.SerializerMethodField()
-
     class Meta:
-        model = BettingPool
-        fields = '__all__'
-
-    def get_bet_count(self, obj):
-        """
-        Get the number of bets in the pool.
+        model = Friendship
+        fields = ['to_username']
+    
+    def validate(self, attrs):
+        to_username = attrs.get('to_username')
+        try:
+            to_user = User.objects.get(username=to_username)
+            attrs['to_user'] = to_user
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found")
         
-        Args:
-            obj: BettingPool instance
-            
-        Returns:
-            int: Number of bets
-        """
-        return obj.bets.count()
-
-
-# ============================================================================
-# NOTIFICATION SERIALIZERS
-# ============================================================================
-
-class NotificationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Notification model.
+        # Check if friend request already exists
+        from_user = self.context['request'].user
+        if Friendship.objects.filter(from_user=from_user, to_user=to_user).exists():
+            raise serializers.ValidationError("Friend request already sent")
+        if Friendship.objects.filter(from_user=to_user, to_user=from_user).exists():
+            raise serializers.ValidationError("Friend request already received from this user")
+        
+        return attrs
     
-    Includes nested user and related object data.
-    Protects user and timestamp fields from modification.
-    """
-    user = UserSerializer(read_only=True)
-    payment = PaymentSerializer(read_only=True)
-    bet = BetSerializer(read_only=True)
-    marketplace_order = MarketplaceOrderSerializer(read_only=True)
-    callout = CalloutSerializer(read_only=True)
-
-    class Meta:
-        model = Notification
-        fields = '__all__'
-        read_only_fields = ['user', 'created_at']
-
-
-# ============================================================================
-# SPECIALIZED SERIALIZERS FOR FRONTEND
-# ============================================================================
-
-class WalletTransactionSerializer(serializers.ModelSerializer):
-    """
-    Serializer for wallet transactions (deposits/withdrawals).
-    
-    Simplified serializer for wallet transaction history.
-    """
-    payment_type_display = serializers.CharField(source='get_payment_type_display', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-
-    class Meta:
-        model = Payment
-        fields = ['id', 'payment_type', 'payment_type_display', 'amount', 'currency', 
-                 'status', 'status_display', 'description', 'created_at']
-
-
-class BettingHistorySerializer(serializers.ModelSerializer):
-    """
-    Serializer for user betting history.
-    
-    Simplified serializer for displaying user's betting history.
-    """
-    bet_type_display = serializers.CharField(source='get_bet_type_display', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    selected_winner_name = serializers.CharField(source='selected_winner.username', read_only=True)
-    actual_winner_name = serializers.CharField(source='actual_winner.username', read_only=True)
-
-    class Meta:
-        model = Bet
-        fields = ['id', 'bet_type', 'bet_type_display', 'bet_amount', 'odds', 
-                 'potential_payout', 'selected_winner_name', 'status', 'status_display',
-                 'actual_winner_name', 'payout_amount', 'created_at', 'settled_at']
-
-
-class SubscriptionPlanSerializer(serializers.Serializer):
-    """
-    Serializer for subscription plan information.
-    
-    Used for displaying available subscription plans and their features.
-    """
-    plan_type = serializers.CharField()
-    name = serializers.CharField()
-    price = serializers.DecimalField(max_digits=8, decimal_places=2)
-    currency = serializers.CharField()
-    features = serializers.ListField(child=serializers.CharField())
-    is_popular = serializers.BooleanField(default=False)
-    is_current = serializers.BooleanField(default=False) 
+    def create(self, validated_data):
+        validated_data.pop('to_username')
+        validated_data['from_user'] = self.context['request'].user
+        return super().create(validated_data) 

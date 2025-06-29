@@ -35,8 +35,8 @@ from .serializers import (
     MarketplaceSerializer, MarketplaceDetailSerializer, EventParticipantSerializer,
     EventDetailSerializer, FriendshipSerializer, MessageSerializer,
     CarProfileSerializer, CarModificationSerializer, CarImageSerializer,
-    UserPostSerializer, PostCommentSerializer, UserProfileDetailSerializer,
-    SubscriptionSerializer, PaymentSerializer, UserWalletSerializer,
+    UserPostSerializer, PostCommentSerializer, SubscriptionSerializer,
+    PaymentSerializer, UserWalletSerializer,
     MarketplaceOrderSerializer, MarketplaceReviewSerializer, BetSerializer,
     BettingPoolSerializer, NotificationSerializer, SubscriptionPlanSerializer,
     HotSpotSerializer, RacingCrewSerializer, CrewMembershipSerializer,
@@ -1173,24 +1173,6 @@ class PostCommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-# Enhanced user profile viewset
-class UserProfileDetailViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['location', 'car_make', 'car_model']
-    search_fields = ['user__username', 'bio', 'location']
-
-    def get_queryset(self):
-        """
-        Optimize queryset for detail view by using select_related and prefetch_related.
-        """
-        return UserProfile.objects.select_related('user').prefetch_related(
-            'cars', 'cars__modifications', 'cars__images', 'posts', 'posts__comments'
-        )
 
 
 # ============================================================================

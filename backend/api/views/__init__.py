@@ -14,12 +14,12 @@ This package contains all API views organized by domain:
 
 # Import all views to maintain backward compatibility
 from .auth import (
-    UserViewSet, UserProfileViewSet, UserProfileDetailViewSet,
+    UserViewSet, UserProfileViewSet,
     login_view, register_view, logout_view, user_profile,
     verify_email, resend_verification_email, check_user_exists,
-    run_migrations, request_password_reset, reset_password,
+    request_password_reset, reset_password,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
-    generate_backup_codes
+    generate_backup_codes, run_migrations
 )
 
 # TODO: Import these when the modules are created
@@ -51,19 +51,28 @@ from .utils import (
     stats_view, global_search, google_sso, facebook_sso, sso_config
 )
 
+from .racing import (
+    TrackListView, TrackDetailView,
+    CalloutListView, CalloutCreateView, CalloutDetailView,
+    RaceResultCreateView, RaceResultDetailView,
+    accept_callout, decline_callout, cancel_callout,
+    search_users_for_callout, callout_statistics
+)
+
 __all__ = [
     # Auth views
-    'UserViewSet', 'UserProfileViewSet', 'UserProfileDetailViewSet',
+    'UserViewSet', 'UserProfileViewSet',
     'login_view', 'register_view', 'logout_view', 'user_profile',
     'verify_email', 'resend_verification_email', 'check_user_exists',
-    'run_migrations', 'request_password_reset', 'reset_password',
+    'request_password_reset', 'reset_password',
     'setup_otp', 'verify_otp_setup', 'disable_otp', 'verify_otp_login',
-    'generate_backup_codes',
-    
-    # TODO: Add these when the modules are created
+    'generate_backup_codes', 'run_migrations',
     # Racing views
-    # 'TrackViewSet', 'EventViewSet', 'CalloutViewSet', 'RaceResultViewSet',
-    # 'EventParticipantViewSet',
+    'TrackListView', 'TrackDetailView',
+    'CalloutListView', 'CalloutCreateView', 'CalloutDetailView',
+    'RaceResultCreateView', 'RaceResultDetailView',
+    'accept_callout', 'decline_callout', 'cancel_callout',
+    'search_users_for_callout', 'callout_statistics',
     
     # Marketplace views
     # 'MarketplaceViewSet', 'MarketplaceOrderViewSet', 'MarketplaceReviewViewSet',

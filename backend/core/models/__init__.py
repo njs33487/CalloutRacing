@@ -19,7 +19,7 @@ from .marketplace import (
     MarketplaceReview, ContactSubmission
 )
 from .social import (
-    Friendship, Message, UserPost, PostComment, 
+    Follow, Block, Friendship, Message, UserPost, PostComment, 
     Notification, ReputationRating
 )
 from .cars import (
@@ -48,7 +48,7 @@ __all__ = [
     'MarketplaceReview', 'ContactSubmission',
     
     # Social models
-    'Friendship', 'Message', 'UserPost', 'PostComment', 
+    'Follow', 'Block', 'Friendship', 'Message', 'UserPost', 'PostComment', 
     'Notification', 'ReputationRating',
     
     # Car models

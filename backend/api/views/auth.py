@@ -30,9 +30,10 @@ import secrets
 from django.template.loader import render_to_string
 
 from core.models.auth import User, UserProfile
+from core.models.social import Follow, Block
 from core.email_service import send_email_verification, send_welcome_email
 from ..serializers import (
-    UserSerializer, UserProfileSerializer, UserProfileDetailSerializer
+    UserSerializer, UserProfileSerializer
 )
 
 
@@ -76,6 +77,195 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Set the user when creating a profile."""
         serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def me(self, request):
+        """Get current user's profile."""
+        try:
+            profile = UserProfile.objects.get(user=request.user)
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'], url_path='username/(?P<username>[^/.]+)', permission_classes=[permissions.AllowAny])
+    def by_username(self, request, username=None):
+        """Get profile by username (public access)."""
+        try:
+            user = User.objects.get(username=username)
+            profile = UserProfile.objects.get(user=user)
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        except (User.DoesNotExist, UserProfile.DoesNotExist):
+            return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'], url_path='username/(?P<username>[^/.]+)/edit', permission_classes=[permissions.IsAuthenticated])
+    def edit_by_username(self, request, username=None):
+        """Get profile for editing (only if owner)."""
+        try:
+            user = User.objects.get(username=username)
+            if user != request.user:
+                return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
+            
+            profile = UserProfile.objects.get(user=user)
+            serializer = self.get_serializer(profile)
+            return Response(serializer.data)
+        except (User.DoesNotExist, UserProfile.DoesNotExist):
+            return Response({'error': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def follow(self, request, pk=None):
+        """Follow a user."""
+        profile = self.get_object()
+        if profile.user == request.user:
+            return Response({'error': 'Cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if already following
+        if Follow.objects.filter(follower=request.user, following=profile.user).exists():
+            return Response({'error': 'Already following this user'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if blocked
+        if Block.objects.filter(blocker=request.user, blocked=profile.user).exists():
+            return Response({'error': 'Cannot follow blocked user'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if Block.objects.filter(blocker=profile.user, blocked=request.user).exists():
+            return Response({'error': 'Cannot follow user who has blocked you'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create follow relationship
+        Follow.objects.create(follower=request.user, following=profile.user)
+        
+        # Create notification
+        from core.models.social import Notification
+        Notification.objects.create(
+            recipient=profile.user,
+            sender=request.user,
+            notification_type='follow',
+            title='New Follower',
+            message=f'{request.user.username} started following you'
+        )
+        
+        return Response({
+            'message': f'Successfully followed {profile.user.username}',
+            'following': True
+        })
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def unfollow(self, request, pk=None):
+        """Unfollow a user."""
+        profile = self.get_object()
+        if profile.user == request.user:
+            return Response({'error': 'Cannot unfollow yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if following
+        follow_obj = Follow.objects.filter(follower=request.user, following=profile.user).first()
+        if not follow_obj:
+            return Response({'error': 'Not following this user'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Remove follow relationship
+        follow_obj.delete()
+        
+        return Response({
+            'message': f'Successfully unfollowed {profile.user.username}',
+            'following': False
+        })
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def block(self, request, pk=None):
+        """Block a user."""
+        profile = self.get_object()
+        if profile.user == request.user:
+            return Response({'error': 'Cannot block yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if already blocked
+        if Block.objects.filter(blocker=request.user, blocked=profile.user).exists():
+            return Response({'error': 'Already blocking this user'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Remove any existing follow relationships
+        Follow.objects.filter(follower=request.user, following=profile.user).delete()
+        Follow.objects.filter(follower=profile.user, following=request.user).delete()
+        
+        # Create block relationship
+        reason = request.data.get('reason', '')
+        Block.objects.create(blocker=request.user, blocked=profile.user, reason=reason)
+        
+        return Response({
+            'message': f'Successfully blocked {profile.user.username}',
+            'blocked': True
+        })
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def unblock(self, request, pk=None):
+        """Unblock a user."""
+        profile = self.get_object()
+        if profile.user == request.user:
+            return Response({'error': 'Cannot unblock yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if blocking
+        block_obj = Block.objects.filter(blocker=request.user, blocked=profile.user).first()
+        if not block_obj:
+            return Response({'error': 'Not blocking this user'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Remove block relationship
+        block_obj.delete()
+        
+        return Response({
+            'message': f'Successfully unblocked {profile.user.username}',
+            'blocked': False
+        })
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def followers(self, request, pk=None):
+        """Get list of followers for a profile."""
+        profile = self.get_object()
+        followers = Follow.objects.filter(following=profile.user).select_related('follower')
+        
+        data = []
+        for follow in followers:
+            data.append({
+                'id': follow.follower.id,
+                'username': follow.follower.username,
+                'followed_at': follow.created_at
+            })
+        
+        return Response({'followers': data})
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def following(self, request, pk=None):
+        """Get list of users that this profile is following."""
+        profile = self.get_object()
+        following = Follow.objects.filter(follower=profile.user).select_related('following')
+        
+        data = []
+        for follow in following:
+            data.append({
+                'id': follow.following.id,
+                'username': follow.following.username,
+                'followed_at': follow.created_at
+            })
+        
+        return Response({'following': data})
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def is_following(self, request, pk=None):
+        """Check if current user is following this profile."""
+        profile = self.get_object()
+        is_following = Follow.objects.filter(
+            follower=request.user, 
+            following=profile.user
+        ).exists()
+        
+        return Response({'is_following': is_following})
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def is_blocked(self, request, pk=None):
+        """Check if current user is blocked by this profile."""
+        profile = self.get_object()
+        is_blocked = Block.objects.filter(
+            blocker=profile.user, 
+            blocked=request.user
+        ).exists()
+        
+        return Response({'is_blocked': is_blocked})
 
     @action(detail=True, methods=['post'])
     def update_stats(self, request, pk=None):
@@ -193,20 +383,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             profile.save()
         
         return Response({'message': 'Cover photo removed'})
-
-
-class UserProfileDetailViewSet(viewsets.ReadOnlyModelViewSet):
-    """Detailed user profile viewset for public profile viewing."""
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['location', 'car_make', 'car_model']
-    search_fields = ['user__username', 'bio', 'location']
-
-    def get_queryset(self):
-        """Show all public profiles for detailed viewing."""
-        return UserProfile.objects.all()
 
 
 @api_view(['POST'])
