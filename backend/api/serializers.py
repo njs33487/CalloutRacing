@@ -16,10 +16,11 @@ from django.utils import timezone
 from datetime import timedelta
 
 from core.models.auth import User, UserProfile
-from core.models.racing import Callout, Track, RaceResult
+from core.models.racing import Callout, Track, RaceResult, Event, EventParticipant
 from core.models.cars import CarProfile
-from core.models.marketplace import Marketplace
+from core.models.marketplace import Marketplace, MarketplaceImage, MarketplaceOrder, MarketplaceReview
 from core.models.social import Friendship
+from core.models.locations import HotSpot
 
 User = get_user_model()
 
@@ -255,11 +256,58 @@ class MarketplaceSerializer(serializers.ModelSerializer):
     """Marketplace serializer."""
     seller = UserSerializer(read_only=True)
     car = CarProfileSerializer(read_only=True)
+    images = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
     
     class Meta:
         model = Marketplace
         fields = '__all__'
         read_only_fields = ['seller', 'created_at', 'updated_at']
+    
+    def get_images(self, obj):
+        return MarketplaceImageSerializer(obj.images.all(), many=True).data
+    
+    def get_reviews_count(self, obj):
+        return obj.reviews.count()
+    
+    def get_average_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews:
+            return sum(review.rating for review in reviews) / reviews.count()
+        return 0
+
+
+class MarketplaceCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Marketplace
+        fields = ['title', 'description', 'category', 'brand', 'model', 'year',
+                 'condition', 'price', 'location', 'contact_info']
+
+
+class MarketplaceImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarketplaceImage
+        fields = '__all__'
+
+
+class MarketplaceOrderSerializer(serializers.ModelSerializer):
+    buyer = UserSerializer(read_only=True)
+    seller = UserSerializer(read_only=True)
+    listing = MarketplaceSerializer(read_only=True)
+    
+    class Meta:
+        model = MarketplaceOrder
+        fields = '__all__'
+
+
+class MarketplaceReviewSerializer(serializers.ModelSerializer):
+    reviewer = UserSerializer(read_only=True)
+    listing = MarketplaceSerializer(read_only=True)
+    
+    class Meta:
+        model = MarketplaceReview
+        fields = '__all__'
 
 
 # Social Serializers
@@ -303,4 +351,55 @@ class FriendshipCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('to_username')
         validated_data['from_user'] = self.context['request'].user
-        return super().create(validated_data) 
+        return super().create(validated_data)
+
+
+# Event Serializers
+class EventSerializer(serializers.ModelSerializer):
+    organizer = UserSerializer(read_only=True)
+    track = TrackSerializer(read_only=True)
+    participants_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Event
+        fields = '__all__'
+    
+    def get_participants_count(self, obj):
+        return obj.participants.count()
+
+
+class EventCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['title', 'description', 'event_type', 'start_date', 'end_date', 
+                 'max_participants', 'entry_fee', 'is_public', 'track']
+
+
+class EventParticipantSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    event = EventSerializer(read_only=True)
+    
+    class Meta:
+        model = EventParticipant
+        fields = '__all__'
+
+
+# HotSpot Serializers
+class HotSpotSerializer(serializers.ModelSerializer):
+    created_by = UserSerializer(read_only=True)
+    distance = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = HotSpot
+        fields = '__all__'
+    
+    def get_distance(self, obj):
+        # This will be populated by the ViewSet when using location-based queries
+        return getattr(obj, 'distance', None)
+
+
+class HotSpotCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HotSpot
+        fields = ['name', 'description', 'address', 'city', 'state', 'zip_code',
+                 'latitude', 'longitude', 'spot_type', 'rules', 'amenities', 'peak_hours'] 

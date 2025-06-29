@@ -1,54 +1,23 @@
 """
-API Views Package for CalloutRacing Application
+API Views for CalloutRacing Application
 
-This package contains all API views organized by domain:
-- auth: Authentication and user management views
-- racing: Racing events, tracks, callouts, and race results
-- marketplace: Marketplace listings and transactions
-- social: Friends, messages, posts, and social features
-- cars: Car profiles, modifications, and build logs
-- payments: Subscriptions, payments, and wallets
-- locations: Hot spots, crews, and location broadcasting
-- utils: Utility views like search and SSO
+This module contains all API views organized by functionality:
+- Authentication and user management
+- Racing features (callouts, tracks, events)
+- Social features (friends, messages, posts)
+- Marketplace and commerce
+- Location-based features (hotspots)
 """
 
-# Import all views to maintain backward compatibility
+# Import all views
 from .auth import (
     UserViewSet, UserProfileViewSet,
     login_view, register_view, logout_view, user_profile,
     verify_email, resend_verification_email, check_user_exists,
-    request_password_reset, reset_password,
+    google_sso, facebook_sso, sso_config, stats_view, global_search,
+    run_migrations, request_password_reset, reset_password,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
-    generate_backup_codes, run_migrations
-)
-
-# TODO: Import these when the modules are created
-# from .racing import (
-#     TrackViewSet, EventViewSet, CalloutViewSet, RaceResultViewSet,
-#     EventParticipantViewSet
-# )
-# from .marketplace import (
-#     MarketplaceViewSet, MarketplaceOrderViewSet, MarketplaceReviewViewSet,
-#     contact_form
-# )
-# from .social import (
-#     FriendshipViewSet, MessageViewSet, UserPostViewSet, PostCommentViewSet,
-#     NotificationViewSet
-# )
-# from .cars import (
-#     CarProfileViewSet, CarModificationViewSet, CarImageViewSet
-# )
-# from .payments import (
-#     SubscriptionViewSet, PaymentViewSet, UserWalletViewSet,
-#     BetViewSet, BettingPoolViewSet, subscription_plans
-# )
-# from .locations import (
-#     HotSpotViewSet, RacingCrewViewSet, CrewMembershipViewSet,
-#     LocationBroadcastViewSet, ReputationRatingViewSet,
-#     OpenChallengeViewSet, ChallengeResponseViewSet
-# )
-from .utils import (
-    stats_view, global_search, google_sso, facebook_sso, sso_config
+    generate_backup_codes
 )
 
 from .racing import (
@@ -59,14 +28,49 @@ from .racing import (
     search_users_for_callout, callout_statistics
 )
 
+# Import new ViewSets
+from .events import EventViewSet
+from .marketplace import MarketplaceViewSet
+from .hotspots import HotSpotViewSet
+
+# Import social views
+from .social import (
+    FollowViewSet, BlockViewSet, FriendshipViewSet,
+    MessageViewSet, UserPostViewSet, PostCommentViewSet,
+    NotificationViewSet, ReputationRatingViewSet
+)
+
+# Import car views
+from .cars import (
+    CarProfileViewSet, CarModificationViewSet, CarImageViewSet,
+    BuildLogViewSet, BuildMilestoneViewSet, BuildMediaViewSet,
+    CarTourViewSet, PerformanceDataViewSet, BuildWishlistViewSet,
+    WishlistSuggestionViewSet, BuildRatingViewSet, BuildCommentViewSet,
+    BuildBadgeViewSet, BuildBadgeAwardViewSet
+)
+
+# Import payment views
+from .payments import (
+    SubscriptionViewSet, PaymentViewSet, UserWalletViewSet,
+    BetViewSet, BettingPoolViewSet
+)
+
+# Import location views
+from .locations import (
+    RacingCrewViewSet, CrewMembershipViewSet, LocationBroadcastViewSet,
+    OpenChallengeViewSet, ChallengeResponseViewSet
+)
+
 __all__ = [
     # Auth views
     'UserViewSet', 'UserProfileViewSet',
     'login_view', 'register_view', 'logout_view', 'user_profile',
     'verify_email', 'resend_verification_email', 'check_user_exists',
-    'request_password_reset', 'reset_password',
+    'google_sso', 'facebook_sso', 'sso_config', 'stats_view', 'global_search',
+    'run_migrations', 'request_password_reset', 'reset_password',
     'setup_otp', 'verify_otp_setup', 'disable_otp', 'verify_otp_login',
-    'generate_backup_codes', 'run_migrations',
+    'generate_backup_codes',
+    
     # Racing views
     'TrackListView', 'TrackDetailView',
     'CalloutListView', 'CalloutCreateView', 'CalloutDetailView',
@@ -74,26 +78,26 @@ __all__ = [
     'accept_callout', 'decline_callout', 'cancel_callout',
     'search_users_for_callout', 'callout_statistics',
     
-    # Marketplace views
-    # 'MarketplaceViewSet', 'MarketplaceOrderViewSet', 'MarketplaceReviewViewSet',
-    # 'contact_form',
+    # New ViewSets
+    'EventViewSet', 'MarketplaceViewSet', 'HotSpotViewSet',
     
     # Social views
-    # 'FriendshipViewSet', 'MessageViewSet', 'UserPostViewSet', 'PostCommentViewSet',
-    # 'NotificationViewSet',
+    'FollowViewSet', 'BlockViewSet', 'FriendshipViewSet',
+    'MessageViewSet', 'UserPostViewSet', 'PostCommentViewSet',
+    'NotificationViewSet', 'ReputationRatingViewSet',
     
     # Car views
-    # 'CarProfileViewSet', 'CarModificationViewSet', 'CarImageViewSet',
+    'CarProfileViewSet', 'CarModificationViewSet', 'CarImageViewSet',
+    'BuildLogViewSet', 'BuildMilestoneViewSet', 'BuildMediaViewSet',
+    'CarTourViewSet', 'PerformanceDataViewSet', 'BuildWishlistViewSet',
+    'WishlistSuggestionViewSet', 'BuildRatingViewSet', 'BuildCommentViewSet',
+    'BuildBadgeViewSet', 'BuildBadgeAwardViewSet',
     
     # Payment views
-    # 'SubscriptionViewSet', 'PaymentViewSet', 'UserWalletViewSet',
-    # 'BetViewSet', 'BettingPoolViewSet', 'subscription_plans',
+    'SubscriptionViewSet', 'PaymentViewSet', 'UserWalletViewSet',
+    'BetViewSet', 'BettingPoolViewSet',
     
     # Location views
-    # 'HotSpotViewSet', 'RacingCrewViewSet', 'CrewMembershipViewSet',
-    # 'LocationBroadcastViewSet', 'ReputationRatingViewSet',
-    # 'OpenChallengeViewSet', 'ChallengeResponseViewSet',
-    
-    # Utility views
-    'stats_view', 'global_search', 'google_sso', 'facebook_sso', 'sso_config',
+    'RacingCrewViewSet', 'CrewMembershipViewSet', 'LocationBroadcastViewSet',
+    'OpenChallengeViewSet', 'ChallengeResponseViewSet',
 ] 
