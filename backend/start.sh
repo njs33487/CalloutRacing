@@ -24,9 +24,11 @@ python manage.py makemigrations --noinput || echo "No new migrations needed"
 echo "=== Running database migrations ==="
 if python manage.py migrate --noinput --verbosity=2; then
     echo "=== Migrations completed successfully ==="
+    echo "=== Migration status ==="
+    python manage.py showmigrations
 else
-    echo "=== Standard migration failed, trying alternative method ==="
-    python backend/migrate_db.py
+    echo "=== Standard migration failed, trying database fix script ==="
+    python scripts/fix_database.py
 fi
 
 # Collect static files (in case they weren't collected during build)
