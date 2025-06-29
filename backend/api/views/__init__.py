@@ -16,7 +16,8 @@ This package contains all API views organized by domain:
 from .auth import (
     UserViewSet, UserProfileViewSet, UserProfileDetailViewSet,
     login_view, register_view, logout_view, user_profile,
-    verify_email, resend_verification_email, check_user_exists
+    verify_email, resend_verification_email, check_user_exists,
+    run_migrations
 )
 
 # TODO: Import these when the modules are created
@@ -53,6 +54,7 @@ __all__ = [
     'UserViewSet', 'UserProfileViewSet', 'UserProfileDetailViewSet',
     'login_view', 'register_view', 'logout_view', 'user_profile',
     'verify_email', 'resend_verification_email', 'check_user_exists',
+    'run_migrations',
     
     # TODO: Add these when the modules are created
     # Racing views
