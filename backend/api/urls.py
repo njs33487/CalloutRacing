@@ -25,15 +25,15 @@ from .views import (
     accept_callout, decline_callout, cancel_callout,
     search_users_for_callout, callout_statistics,
     # New ViewSets
-    EventViewSet, MarketplaceViewSet, HotSpotViewSet
+    EventViewSet, ListingViewSet, HotspotViewSet
 )
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'profiles', UserProfileViewSet, basename='profile')
 router.register(r'events', EventViewSet, basename='event')
-router.register(r'marketplace', MarketplaceViewSet, basename='marketplace')
-router.register(r'hotspots', HotSpotViewSet, basename='hotspot')
+router.register(r'marketplace', ListingViewSet, basename='marketplace')
+router.register(r'hotspots', HotspotViewSet, basename='hotspot')
 
 # Authentication URLs
 auth_patterns = [
