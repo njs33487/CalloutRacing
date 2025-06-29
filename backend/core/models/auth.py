@@ -15,7 +15,7 @@ import uuid
 class User(AbstractUser):
     """Custom User model with email verification."""
     email_verified = models.BooleanField(default=False, help_text="Whether email has been verified")
-    email_verification_token = models.UUIDField(default=uuid.uuid4, editable=False, help_text="Token for email verification")
+    email_verification_token = models.UUIDField(null=True, blank=True, unique=True, help_text="Token for email verification")
     email_verification_sent_at = models.DateTimeField(blank=True, null=True, help_text="When verification email was sent")
     email_verification_expires_at = models.DateTimeField(blank=True, null=True, help_text="When verification token expires")
     

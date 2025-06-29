@@ -85,7 +85,7 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
                 ('email_verified', models.BooleanField(default=False, help_text='Whether email has been verified')),
-                ('email_verification_token', models.UUIDField(default=uuid.uuid4, editable=False, help_text='Token for email verification')),
+                ('email_verification_token', models.UUIDField(null=True, blank=True, unique=True, help_text='Token for email verification')),
                 ('email_verification_sent_at', models.DateTimeField(blank=True, help_text='When verification email was sent', null=True)),
                 ('email_verification_expires_at', models.DateTimeField(blank=True, help_text='When verification token expires', null=True)),
                 ('email', models.EmailField(help_text="User's email address", max_length=254, unique=True)),
