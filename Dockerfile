@@ -20,8 +20,8 @@ RUN apt-get update \
 COPY start.sh .
 RUN chmod +x start.sh
 
-# Copy SQL script for creating core_user table
-COPY scripts/create_core_user_table.sql scripts/
+# Copy scripts directory
+COPY scripts/ scripts/
 
 # Install Python dependencies
 COPY backend/requirements.txt backend/
