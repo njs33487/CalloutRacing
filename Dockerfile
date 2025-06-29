@@ -17,7 +17,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy start script first
-COPY start.sh .
+COPY backend/start.sh .
 RUN chmod +x start.sh
 
 # Install Python dependencies
