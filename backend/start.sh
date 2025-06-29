@@ -27,8 +27,23 @@ if python manage.py migrate --noinput --verbosity=2; then
     echo "=== Migration status ==="
     python manage.py showmigrations
 else
-    echo "=== Standard migration failed, trying database fix script ==="
-    python scripts/fix_database.py
+    echo "=== Standard migration failed, trying alternative method ==="
+    echo "=== Checking if core_user table exists ==="
+    python -c "
+import os
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calloutracing.settings')
+django.setup()
+from django.db import connection
+with connection.cursor() as cursor:
+    cursor.execute('SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = \'public\' AND table_name = \'core_user\');')
+    exists = cursor.fetchone()[0]
+    print(f'core_user table exists: {exists}')
+    if not exists:
+        print('Table missing, forcing migration...')
+        from django.core.management import execute_from_command_line
+        execute_from_command_line(['manage.py', 'migrate', '--noinput', '--verbosity=2'])
+"
 fi
 
 # Collect static files (in case they weren't collected during build)
