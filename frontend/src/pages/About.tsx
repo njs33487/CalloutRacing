@@ -46,11 +46,13 @@ export default function About() {
         <div className="max-w-7xl mx-auto text-center">
           {/* Logo */}
           <div className="mb-6 sm:mb-8">
-            <img 
-              src="/callourRacingLaunch.jpg" 
-              alt="CalloutRacing Launch" 
-              className="h-40 w-40 sm:h-24 sm:w-24 lg:h-32 lg:w-32 mx-auto mb-4 object-cover rounded-lg"
-            />
+            <div className="relative mx-auto mb-4">
+              <img 
+                src="/callourRacingLaunch.jpg" 
+                alt="CalloutRacing Launch" 
+                className="w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] lg:w-[800px] lg:h-[800px] xl:w-[1000px] xl:h-[1000px] 2xl:w-[1440px] 2xl:h-[1440px] mx-auto object-cover rounded-lg shadow-lg transition-all duration-300 ease-in-out"
+              />
+            </div>
           </div>
           
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6">
