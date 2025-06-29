@@ -3,10 +3,11 @@ import { useAuth } from '../contexts/AuthContext'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
+  requireEmailVerification?: boolean
 }
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth()
+export default function ProtectedRoute({ children, requireEmailVerification = true }: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading, isEmailVerified } = useAuth()
 
   if (isLoading) {
     return (
@@ -18,6 +19,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  // Check email verification if required
+  if (requireEmailVerification && !isEmailVerified) {
+    return <Navigate to="/email-verification-required" replace />
   }
 
   return <>{children}</>

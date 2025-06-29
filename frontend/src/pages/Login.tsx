@@ -26,7 +26,13 @@ export default function Login() {
       navigate('/app')
     } catch (error: any) {
       console.error('Login failed:', error)
-      setError(error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || 'Invalid username or password')
+      
+      // Handle email verification error specifically
+      if (error.response?.data?.email_verification_required) {
+        setError('Please verify your email before logging in. Check your inbox for a verification link, or use the resend verification feature.')
+      } else {
+        setError(error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || 'Invalid username or password')
+      }
     } finally {
       setIsLoading(false)
     }

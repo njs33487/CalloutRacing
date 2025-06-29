@@ -9,6 +9,7 @@ interface User {
   email: string
   first_name: string
   last_name: string
+  email_verified: boolean
 }
 
 // Authentication context interface - defines available methods and state
@@ -22,6 +23,7 @@ interface AuthContextType {
   logout: () => void
   isLoading: boolean
   isAuthenticated: boolean
+  isEmailVerified: boolean
 }
 
 // Create the authentication context
@@ -144,7 +146,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     facebookLogin,
     logout,
     isLoading,
-    isAuthenticated: !!token && !!user
+    isAuthenticated: !!token && !!user,
+    isEmailVerified: !!user?.email_verified
   }
 
   return (

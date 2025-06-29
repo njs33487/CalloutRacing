@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Contact from './pages/Contact'
 import EmailVerification from './pages/EmailVerification'
+import EmailVerificationRequired from './pages/EmailVerificationRequired'
 import TermsOfService from './pages/TermsOfService'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import Layout from './components/Layout'
@@ -34,6 +35,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/verify-email/:token" element={<EmailVerification />} />
+          <Route path="/email-verification-required" element={<EmailVerificationRequired />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           
