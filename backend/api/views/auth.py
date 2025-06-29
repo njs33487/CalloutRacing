@@ -20,6 +20,8 @@ from rest_framework.authtoken.models import Token
 from django.utils import timezone
 from datetime import timedelta
 import uuid
+from django.core.management import call_command
+from django.http import JsonResponse
 
 from core.models.auth import User, UserProfile
 from core.email_service import send_email_verification, send_welcome_email
@@ -497,4 +499,19 @@ def resend_verification_email(request):
     except User.DoesNotExist:
         return Response({
             'error': 'User with this email does not exist'
-        }, status=status.HTTP_400_BAD_REQUEST) 
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def run_migrations(request):
+    """Temporary endpoint to run migrations (for development only)."""
+    try:
+        call_command('migrate')
+        return Response({
+            'message': 'Migrations applied successfully'
+        })
+    except Exception as e:
+        return Response({
+            'error': f'Migration failed: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

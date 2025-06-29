@@ -4,7 +4,8 @@ from .views import (
     UserViewSet, UserProfileViewSet, UserProfileDetailViewSet,
     login_view, register_view, logout_view, user_profile,
     verify_email, resend_verification_email, check_user_exists,
-    google_sso, facebook_sso, sso_config, stats_view, global_search
+    google_sso, facebook_sso, sso_config, stats_view, global_search,
+    run_migrations
 )
 
 # TODO: Import these when the view modules are created
@@ -64,6 +65,7 @@ urlpatterns = [
     path('auth/sso-config/', sso_config, name='sso-config'),
     path('auth/verify-email/<str:token>/', verify_email, name='verify-email'),
     path('auth/resend-verification/', resend_verification_email, name='resend-verification'),
+    path('auth/run-migrations/', run_migrations, name='run-migrations'),
     path('stats/', stats_view, name='stats'),
     path('search/', global_search, name='global-search'),
 ] 
