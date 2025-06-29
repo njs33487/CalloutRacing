@@ -331,19 +331,17 @@ def register_view(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        # Create user
+        # Create user with verification token
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password,
             first_name=first_name,
             last_name=last_name,
-            email_verified=False
+            email_verified=False,
+            email_verification_token=uuid.uuid4(),
+            email_verification_expires_at=timezone.now() + timedelta(hours=24)
         )
-        # Generate verification token
-        user.email_verification_token = uuid.uuid4()
-        user.email_verification_expires_at = timezone.now() + timedelta(hours=24)
-        user.save()
         print(f"User created successfully: {user.username}")
     except Exception as e:
         print(f"Failed to create user: {str(e)}")
