@@ -105,14 +105,18 @@ export default function Signup() {
         last_name: formData.lastName,
       })
       
-      // Check if email was sent successfully
-      if (response.data.email_sent) {
+      // Check if email was sent successfully based on backend response
+      if (response.data.message && response.data.message.includes('verification email has been sent')) {
         setErrors({ 
           success: 'Registration successful! Please check your email to verify your account before logging in.' 
         })
+      } else if (response.data.warning) {
+        setErrors({ 
+          warning: response.data.warning
+        })
       } else {
         setErrors({ 
-          warning: 'Registration successful! However, we could not send the verification email. Please contact support.' 
+          success: 'Registration successful! Please check your email to verify your account before logging in.' 
         })
       }
       
