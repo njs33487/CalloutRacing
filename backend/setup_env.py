@@ -54,7 +54,7 @@ def main():
         if not secret_key:
             import secrets
             secret_key = secrets.token_urlsafe(50)
-            print(f"Generated secret key: {secret_key[:20]}...")
+            print("A new secret key has been successfully generated.")
     
     debug = os.getenv('DEBUG', 'True')
     if debug == 'True':
