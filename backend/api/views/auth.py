@@ -427,7 +427,9 @@ def login_view(request):
     token, created = Token.objects.get_or_create(user=user)
     print(f"Login successful - user: {user.username}, token created: {created}")
     
-    return Response({
+    # Add debugging for response creation
+    print(f"Token key: {token.key}")
+    response_data = {
         'token': token.key,
         'user': {
             'id': user.id,
@@ -437,7 +439,10 @@ def login_view(request):
             'last_name': user.last_name,
             'email_verified': user.email_verified
         }
-    })
+    }
+    print(f"Response data: {response_data}")
+    
+    return Response(response_data)
 
 
 @api_view(['POST'])
@@ -585,21 +590,14 @@ def logout_view(request):
 def user_profile(request):
     """Get current user's profile."""
     user = request.user
-    try:
-        profile = user.profile
-    except UserProfile.DoesNotExist:
-        profile = None
-    
+    print(f"User profile request - user: {user.username}, authenticated: {request.user.is_authenticated}")
     return Response({
-        'user': {
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email_verified': user.email_verified
-        },
-        'profile': UserProfileSerializer(profile).data if profile else None
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'email_verified': user.email_verified
     })
 
 
@@ -985,4 +983,16 @@ def run_migrations(request):
     except Exception as e:
         return Response({
             'error': f'Migration failed: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def test_auth(request):
+    """Test endpoint to verify authentication is working."""
+    print(f"Test auth request - user: {request.user.username}, authenticated: {request.user.is_authenticated}")
+    return Response({
+        'message': 'Authentication working',
+        'user': request.user.username,
+        'authenticated': request.user.is_authenticated
+    }) 

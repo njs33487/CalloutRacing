@@ -27,6 +27,7 @@ from .views import (
     # ViewSets
     EventViewSet, ListingViewSet, HotspotViewSet
 )
+from .views.auth import test_auth
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -41,6 +42,7 @@ auth_patterns = [
     path('register/', register_view, name='register'),
     path('logout/', logout_view, name='logout'),
     path('profile/', user_profile, name='user-profile'),
+    path('test-auth/', test_auth, name='test-auth'),
     path('verify-email/<str:token>/', verify_email, name='verify-email'),
     path('resend-verification/', resend_verification_email, name='resend-verification'),
     path('check-user/', check_user_exists, name='check-user'),
