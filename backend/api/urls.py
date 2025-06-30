@@ -27,26 +27,13 @@ from .views import (
     # ViewSets from other files
     ListingViewSet
 )
-# Import ViewSets directly from main views.py to avoid circular imports
-from api.views import (
-    TrackViewSet, EventViewSet, CalloutViewSet, RaceResultViewSet,
-    MarketplaceViewSet, EventParticipantViewSet, FriendshipViewSet,
-    MessageViewSet, CarProfileViewSet, CarModificationViewSet,
-    CarImageViewSet, UserPostViewSet, PostCommentViewSet,
-    SubscriptionViewSet, PaymentViewSet, UserWalletViewSet,
-    MarketplaceOrderViewSet, MarketplaceReviewViewSet, BetViewSet,
-    BettingPoolViewSet, NotificationViewSet, HotSpotViewSet,
-    RacingCrewViewSet, CrewMembershipViewSet, LocationBroadcastViewSet,
-    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet
-)
 from .views.auth import test_auth
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'profiles', UserProfileViewSet, basename='profile')
-router.register(r'events', EventViewSet, basename='event')
 router.register(r'marketplace', ListingViewSet, basename='marketplace')
-router.register(r'hotspots', HotSpotViewSet, basename='hotspot')
+
 # Add missing ViewSets
 router.register(r'posts', UserPostViewSet, basename='post')
 router.register(r'comments', PostCommentViewSet, basename='comment')
