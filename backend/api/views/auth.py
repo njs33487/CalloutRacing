@@ -535,7 +535,7 @@ def register_view(request):
     except Exception as e:
         print(f"Failed to create user: {str(e)}")
         return Response({
-            'error': f'Failed to create user: {str(e)}'
+            'error': 'Failed to create user'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     email_sent = True
@@ -982,7 +982,7 @@ def run_migrations(request):
         })
     except Exception as e:
         return Response({
-            'error': f'Migration failed: {str(e)}'
+            'error': 'Migration failed'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
