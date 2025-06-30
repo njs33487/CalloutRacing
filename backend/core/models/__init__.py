@@ -16,11 +16,13 @@ from .auth import User, UserProfile
 from .racing import Track, Event, Callout, RaceResult, EventParticipant
 from .marketplace import (
     Marketplace, MarketplaceImage, MarketplaceOrder, 
-    MarketplaceReview, ContactSubmission
+    MarketplaceReview, ContactSubmission, ListingCategory, MarketplaceListing,
+    ListingImage, CarListing, Review, Rating, PaymentTransaction,
+    Order, OrderItem, ShippingAddress
 )
 from .social import (
     Follow, Block, Friendship, Message, UserPost, PostComment, 
-    Notification, ReputationRating
+    Notification, ReputationRating, RacingCrew, CrewMembership
 )
 from .cars import (
     CarProfile, CarModification, CarImage, BuildLog, 
@@ -32,8 +34,7 @@ from .payments import (
     Subscription, Payment, UserWallet, Bet, BettingPool
 )
 from .locations import (
-    HotSpot, RacingCrew, CrewMembership, LocationBroadcast,
-    OpenChallenge, ChallengeResponse
+    HotSpot, LocationBroadcast, OpenChallenge, ChallengeResponse
 )
 
 __all__ = [
@@ -45,11 +46,13 @@ __all__ = [
     
     # Marketplace models
     'Marketplace', 'MarketplaceImage', 'MarketplaceOrder', 
-    'MarketplaceReview', 'ContactSubmission',
+    'MarketplaceReview', 'ContactSubmission', 'ListingCategory', 'MarketplaceListing',
+    'ListingImage', 'CarListing', 'Review', 'Rating', 'PaymentTransaction',
+    'Order', 'OrderItem', 'ShippingAddress',
     
     # Social models
     'Follow', 'Block', 'Friendship', 'Message', 'UserPost', 'PostComment', 
-    'Notification', 'ReputationRating',
+    'Notification', 'ReputationRating', 'RacingCrew', 'CrewMembership',
     
     # Car models
     'CarProfile', 'CarModification', 'CarImage', 'BuildLog', 
@@ -61,6 +64,5 @@ __all__ = [
     'Subscription', 'Payment', 'UserWallet', 'Bet', 'BettingPool',
     
     # Location models
-    'HotSpot', 'RacingCrew', 'CrewMembership', 'LocationBroadcast',
-    'OpenChallenge', 'ChallengeResponse',
+    'HotSpot', 'LocationBroadcast', 'OpenChallenge', 'ChallengeResponse',
 ] 
