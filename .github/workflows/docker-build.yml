@@ -42,7 +42,7 @@ jobs:
           type=ref,event=pr
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
-          type=sha,prefix={{branch}}-
+          type=sha
 
     - name: Build and push Backend Docker image
       uses: docker/build-push-action@v5
@@ -85,7 +85,7 @@ jobs:
           type=ref,event=pr
           type=semver,pattern={{version}}
           type=semver,pattern={{major}}.{{minor}}
-          type=sha,prefix={{branch}}-
+          type=sha
 
     - name: Build and push Frontend Docker image
       uses: docker/build-push-action@v5
