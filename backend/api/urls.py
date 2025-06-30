@@ -29,6 +29,9 @@ from .views import (
 )
 from .views.auth import test_auth
 
+# Import ViewSets directly from views.py
+from . import views
+
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'profiles', UserProfileViewSet, basename='profile')
