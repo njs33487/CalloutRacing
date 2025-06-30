@@ -29,8 +29,8 @@ class UserSerializer(serializers.ModelSerializer):
     """Basic user serializer for public information."""
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'date_joined', 'is_verified']
-        read_only_fields = ['id', 'date_joined', 'is_verified']
+        fields = ['id', 'username', 'email', 'date_joined', 'email_verified']
+        read_only_fields = ['id', 'date_joined', 'email_verified']
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -193,19 +193,20 @@ class CalloutDetailSerializer(CalloutSerializer):
 
 class RaceResultSerializer(serializers.ModelSerializer):
     """Race result serializer."""
-    callout = CalloutSerializer(read_only=True)
+    callout = serializers.PrimaryKeyRelatedField(queryset=Callout.objects.all(), write_only=True)
+    callout_detail = CalloutSerializer(source='callout', read_only=True)
     verified_by = UserSerializer(read_only=True)
     winner = serializers.SerializerMethodField()
     
     class Meta:
         model = RaceResult
         fields = [
-            'id', 'callout', 'challenger_time', 'challenged_time',
+            'id', 'callout', 'callout_detail', 'challenger_time', 'challenged_time',
             'challenger_speed', 'challenged_speed', 'challenger_reaction',
             'challenged_reaction', 'weather_conditions', 'track_conditions',
             'notes', 'is_verified', 'verified_by', 'winner', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'callout', 'is_verified', 'verified_by', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'callout_detail', 'is_verified', 'verified_by', 'created_at', 'updated_at']
     
     def get_winner(self, obj):
         winner = obj.winner
