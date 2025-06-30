@@ -290,6 +290,12 @@ fi
 echo "=== Collecting static files ==="
 python manage.py collectstatic --noinput
 
+# Populate sample data if environment variable is set
+if [ "$POPULATE_DATA" = "true" ]; then
+    echo "=== Populating sample data ==="
+    python manage.py populate_sample_data --noinput || echo "Data population failed or already exists"
+fi
+
 # Start the server
 echo "=== Starting Django server on port $PORT ==="
 python manage.py runserver 0.0.0.0:$PORT 
