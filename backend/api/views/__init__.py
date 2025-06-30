@@ -34,8 +34,8 @@ from .hotspots import HotspotViewSet
 # Import utility views
 from .utils import sso_config
 
-# Import ViewSets from main views.py
-from ..views import (
+# Import ViewSets from main views.py (using absolute import)
+from api.views import (
     TrackViewSet, CalloutViewSet, RaceResultViewSet, MarketplaceViewSet,
     EventParticipantViewSet, FriendshipViewSet, MessageViewSet,
     CarProfileViewSet, CarModificationViewSet, CarImageViewSet,
