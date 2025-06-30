@@ -2132,7 +2132,7 @@ def global_search(request):
         
     except Exception as e:
         return Response(
-            {'error': 'Search failed', 'details': str(e)},
+            {'error': 'Search failed'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
