@@ -34,29 +34,6 @@ router.register(r'users', UserViewSet)
 router.register(r'profiles', UserProfileViewSet, basename='profile')
 router.register(r'marketplace', ListingViewSet, basename='marketplace')
 
-# Add missing ViewSets
-router.register(r'posts', UserPostViewSet, basename='post')
-router.register(r'comments', PostCommentViewSet, basename='comment')
-router.register(r'cars', CarProfileViewSet, basename='car')
-router.register(r'car-modifications', CarModificationViewSet, basename='car-modification')
-router.register(r'car-images', CarImageViewSet, basename='car-image')
-router.register(r'friendships', FriendshipViewSet, basename='friendship')
-router.register(r'messages', MessageViewSet, basename='message')
-router.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
-router.register(r'payments', PaymentViewSet, basename='payment')
-router.register(r'wallets', UserWalletViewSet, basename='wallet')
-router.register(r'orders', MarketplaceOrderViewSet, basename='order')
-router.register(r'reviews', MarketplaceReviewViewSet, basename='review')
-router.register(r'bets', BetViewSet, basename='bet')
-router.register(r'betting-pools', BettingPoolViewSet, basename='betting-pool')
-router.register(r'notifications', NotificationViewSet, basename='notification')
-router.register(r'racing-crews', RacingCrewViewSet, basename='racing-crew')
-router.register(r'crew-memberships', CrewMembershipViewSet, basename='crew-membership')
-router.register(r'location-broadcasts', LocationBroadcastViewSet, basename='location-broadcast')
-router.register(r'reputation-ratings', ReputationRatingViewSet, basename='reputation-rating')
-router.register(r'open-challenges', OpenChallengeViewSet, basename='open-challenge')
-router.register(r'challenge-responses', ChallengeResponseViewSet, basename='challenge-response')
-
 # Authentication URLs
 auth_patterns = [
     path('login/', login_view, name='login'),
