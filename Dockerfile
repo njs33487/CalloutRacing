@@ -16,16 +16,16 @@ RUN apt-get update \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy start script first
-COPY backend/start.sh .
-RUN chmod +x start.sh
-
 # Install Python dependencies
 COPY backend/requirements.txt backend/
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
 # Copy project
 COPY backend/ backend/
+
+# Copy start script to the correct location and make it executable
+COPY backend/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Collect static files
 RUN cd backend && python manage.py collectstatic --noinput
@@ -34,4 +34,4 @@ RUN cd backend && python manage.py collectstatic --noinput
 EXPOSE 8080
 
 # Run the application
-CMD ["./start.sh"] 
+CMD ["/app/start.sh"] 
