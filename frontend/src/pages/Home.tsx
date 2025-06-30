@@ -160,10 +160,14 @@ export default function Dashboard() {
   const loadPosts = async () => {
     try {
       const response = await postAPI.list()
-      setPosts(response.data.results || response.data)
+      // Ensure posts is always an array
+      const postsData = response.data?.results || response.data || []
+      setPosts(Array.isArray(postsData) ? postsData : [])
     } catch (error) {
       console.error('Error loading posts:', error)
       setError('Failed to load posts. Please try again.')
+      // Set empty array on error to prevent map errors
+      setPosts([])
     }
   }
 

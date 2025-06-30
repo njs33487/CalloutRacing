@@ -33,34 +33,49 @@ def main():
     print("\nPlease provide the following information:")
     print("(Press Enter to use default values where available)\n")
     
-    # Staff credentials
-    staff_email = input("Staff Email (for sample data): ").strip()
+    # Staff credentials - use environment variables or prompt securely
+    staff_email = os.getenv('STAFF_EMAIL')
     if not staff_email:
-        staff_email = "admin@calloutracing.com"
+        staff_email = input("Staff Email (for sample data): ").strip()
+        if not staff_email:
+            staff_email = "admin@calloutracing.com"
     
-    staff_password = getpass.getpass("Staff Password (for sample data): ").strip()
+    staff_password = os.getenv('STAFF_PASSWORD')
     if not staff_password:
-        staff_password = "admin123"
-        print("Warning: Using default password 'admin123'. Please change this in production!")
+        staff_password = getpass.getpass("Staff Password (for sample data): ").strip()
+        if not staff_password:
+            print("Warning: No staff password provided. Please set STAFF_PASSWORD environment variable.")
+            staff_password = "CHANGE_ME_IN_PRODUCTION"
     
     # Django settings
-    secret_key = input("Django Secret Key (leave empty to generate): ").strip()
+    secret_key = os.getenv('DJANGO_SECRET_KEY')
     if not secret_key:
-        import secrets
-        secret_key = secrets.token_urlsafe(50)
-        print(f"Generated secret key: {secret_key[:20]}...")
+        secret_key = input("Django Secret Key (leave empty to generate): ").strip()
+        if not secret_key:
+            import secrets
+            secret_key = secrets.token_urlsafe(50)
+            print("A new secret key has been successfully generated.")
     
-    debug = input("Debug mode (True/False) [True]: ").strip()
-    if not debug:
-        debug = "True"
+    debug = os.getenv('DEBUG', 'True')
+    if debug == 'True':
+        debug_input = input("Debug mode (True/False) [True]: ").strip()
+        if debug_input:
+            debug = debug_input
     
-    allowed_hosts = input("Allowed Hosts (comma-separated) [localhost,127.0.0.1]: ").strip()
-    if not allowed_hosts:
-        allowed_hosts = "localhost,127.0.0.1"
+    allowed_hosts = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+    if allowed_hosts == 'localhost,127.0.0.1':
+        allowed_hosts_input = input("Allowed Hosts (comma-separated) [localhost,127.0.0.1]: ").strip()
+        if allowed_hosts_input:
+            allowed_hosts = allowed_hosts_input
     
     # Email settings
-    email_host_user = input("Email Host User (for sending emails): ").strip()
-    email_host_password = getpass.getpass("Email Host Password: ").strip()
+    email_host_user = os.getenv('EMAIL_HOST_USER')
+    if not email_host_user:
+        email_host_user = input("Email Host User (for sending emails): ").strip()
+    
+    email_host_password = os.getenv('EMAIL_HOST_PASSWORD')
+    if not email_host_password:
+        email_host_password = getpass.getpass("Email Host Password: ").strip()
     
     # Replace placeholders in content
     replacements = {
@@ -89,6 +104,7 @@ def main():
     print("- Never commit the .env file to version control")
     print("- Use strong passwords in production")
     print("- Keep your secret keys secure")
+    print("- Set STAFF_PASSWORD environment variable for production")
 
 if __name__ == "__main__":
     main() 
