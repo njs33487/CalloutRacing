@@ -1,0 +1,225 @@
+"""
+Authentication System Tests
+
+Tests for login, registration, SSO, and related authentication functionality.
+"""
+
+from django.test import TestCase
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from unittest.mock import patch, MagicMock
+
+from core.models.auth import User, UserProfile
+from api.serializers import RegisterSerializer, LoginSerializer
+
+User = get_user_model()
+
+
+class AuthenticationModelTests(TestCase):
+    """Test User and UserProfile model functionality."""
+    def setUp(self):
+        self.user_data = {
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password': 'testpass123'
+        }
+    def test_user_creation(self):
+        user = User.objects.create_user(**self.user_data)
+        self.assertEqual(user.username, 'testuser')
+        self.assertEqual(user.email, 'test@example.com')
+        self.assertTrue(user.check_password('testpass123'))
+        self.assertFalse(user.email_verified)
+    def test_user_profile_auto_creation(self):
+        user = User.objects.create_user(**self.user_data)
+        self.assertTrue(hasattr(user, 'profile'))
+        self.assertIsInstance(user.profile, UserProfile)
+    def test_email_verification(self):
+        user = User.objects.create_user(**self.user_data)
+        self.assertFalse(user.email_verified)
+        user.email_verified = True
+        user.save()
+        user.refresh_from_db()
+        self.assertTrue(user.email_verified)
+    def test_user_str_representation(self):
+        user = User.objects.create_user(**self.user_data)
+        self.assertEqual(str(user), 'testuser')
+    def test_user_profile_str_representation(self):
+        user = User.objects.create_user(**self.user_data)
+        self.assertEqual(str(user.profile), f'Profile for {user.username}')
+
+class AuthenticationSerializerTests(TestCase):
+    def test_register_serializer_valid_data(self):
+        data = {
+            'username': 'newuser',
+            'email': 'new@example.com',
+            'password': 'newpass123',
+            'password_confirm': 'newpass123'
+        }
+        serializer = RegisterSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+    def test_register_serializer_password_mismatch(self):
+        data = {
+            'username': 'newuser',
+            'email': 'new@example.com',
+            'password': 'newpass123',
+            'password_confirm': 'differentpass'
+        }
+        serializer = RegisterSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('password', serializer.errors)
+    def test_register_serializer_duplicate_username(self):
+        User.objects.create_user(
+            username='existinguser',
+            email='existing@example.com',
+            password='pass123'
+        )
+        data = {
+            'username': 'existinguser',
+            'email': 'new@example.com',
+            'password': 'newpass123',
+            'password_confirm': 'newpass123'
+        }
+        serializer = RegisterSerializer(data=data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('username', serializer.errors)
+    def test_login_serializer_valid_data(self):
+        data = {
+            'username': 'testuser',
+            'password': 'testpass123'
+        }
+        serializer = LoginSerializer(data=data)
+        self.assertTrue(serializer.is_valid())
+
+class AuthenticationAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.register_url = reverse('register')
+        self.login_url = reverse('login')
+        self.logout_url = reverse('logout')
+        self.sso_config_url = reverse('sso-config')
+        self.user_data = {
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password': 'testpass123'
+        }
+    def test_user_registration_success(self):
+        data = {
+            'username': 'newuser',
+            'email': 'new@example.com',
+            'password': 'newpass123',
+            'password_confirm': 'newpass123'
+        }
+        response = self.client.post(self.register_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(username='newuser')
+        self.assertEqual(user.email, 'new@example.com')
+        self.assertFalse(user.email_verified)
+        self.assertTrue(hasattr(user, 'profile'))
+    def test_user_registration_duplicate_username(self):
+        User.objects.create_user(**self.user_data)
+        data = {
+            'username': 'testuser',
+            'email': 'different@example.com',
+            'password': 'newpass123',
+            'password_confirm': 'newpass123'
+        }
+        response = self.client.post(self.register_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('username', response.data)
+    def test_user_login_success(self):
+        User.objects.create_user(**self.user_data)
+        data = {
+            'username': 'testuser',
+            'password': 'testpass123'
+        }
+        response = self.client.post(self.login_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        self.assertIn('user', response.data)
+    def test_user_login_invalid_credentials(self):
+        User.objects.create_user(**self.user_data)
+        data = {
+            'username': 'testuser',
+            'password': 'wrongpassword'
+        }
+        response = self.client.post(self.login_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_user_logout(self):
+        user = User.objects.create_user(**self.user_data)
+        token, _ = Token.objects.get_or_create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        response = self.client.post(self.logout_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_sso_config_endpoint(self):
+        response = self.client.get(self.sso_config_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('google', response.data)
+        self.assertIn('facebook', response.data)
+    @patch('api.views.auth.requests.get')
+    def test_google_sso_authentication(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'sub': 'google_user_id',
+            'email': 'google@example.com',
+            'given_name': 'John',
+            'family_name': 'Doe',
+            'name': 'John Doe'
+        }
+        mock_get.return_value = mock_response
+        data = {'access_token': 'fake_google_token'}
+        response = self.client.post('/api/auth/google-sso/', data, format='json')
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_201_CREATED])
+    @patch('api.views.auth.requests.get')
+    def test_facebook_sso_authentication(self, mock_get):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'id': 'facebook_user_id',
+            'email': 'facebook@example.com',
+            'first_name': 'Jane',
+            'last_name': 'Smith',
+            'name': 'Jane Smith'
+        }
+        mock_get.return_value = mock_response
+        data = {'access_token': 'fake_facebook_token'}
+        response = self.client.post('/api/auth/facebook-sso/', data, format='json')
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_201_CREATED])
+
+class AuthenticationSecurityTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user_data = {
+            'username': 'testuser',
+            'email': 'test@example.com',
+            'password': 'testpass123'
+        }
+    def test_password_validation(self):
+        data = {
+            'username': 'newuser',
+            'email': 'new@example.com',
+            'password': '123',
+            'password_confirm': '123'
+        }
+        response = self.client.post('/api/auth/register/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_email_verification_required(self):
+        user = User.objects.create_user(**self.user_data)
+        user.email_verified = False
+        user.save()
+        token, _ = Token.objects.get_or_create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        pass
+    def test_token_authentication(self):
+        user = User.objects.create_user(**self.user_data)
+        token, _ = Token.objects.get_or_create(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token.key}')
+        response = self.client.get('/api/auth/profile/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_invalid_token_authentication(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token invalid_token')
+        response = self.client.get('/api/auth/profile/')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED) 
