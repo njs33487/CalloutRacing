@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-njs33487/calloutracing}/backend:latest
+    image: calloutracing-backend:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -31,7 +31,7 @@ services:
       retries: 3
 
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-njs33487/calloutracing}/frontend:latest
+    image: calloutracing-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
