@@ -173,6 +173,35 @@ class AuthenticationAPITests(TestCase):
     # @patch('api.views.auth.requests.get')
     # def test_facebook_sso_authentication(self, mock_get):
     #     pass
+    def test_forgot_password_request(self):
+        """Test requesting a password reset email."""
+        User.objects.create_user(**self.user_data)
+        response = self.client.post('/api/auth/request-password-reset/', {'email': self.user_data['email']}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('message', response.data)
+
+    def test_reset_password(self):
+        """Test resetting password with a valid token."""
+        user = User.objects.create_user(**self.user_data)
+        # Simulate requesting a password reset
+        self.client.post('/api/auth/request-password-reset/', {'email': self.user_data['email']}, format='json')
+        user.refresh_from_db()
+        token = str(user.password_reset_token)
+        new_password = 'newsecurepass123'
+        response = self.client.post('/api/auth/reset-password/', {
+            'token': token,
+            'new_password': new_password,
+            'new_password_confirm': new_password
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('message', response.data)
+        # Ensure user can log in with new password
+        login_response = self.client.post(self.login_url, {
+            'username': self.user_data['username'],
+            'password': new_password
+        }, format='json')
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', login_response.data)
 
 class AuthenticationSecurityTests(TestCase):
     def setUp(self):
@@ -211,4 +240,48 @@ class AuthenticationSecurityTests(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token invalid_token')
         response = self.client.get('/api/auth/profile/')
         # API returns 403 for invalid token, not 401
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN) 
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+class AuthenticationOTPTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user_data = {
+            'username': 'otpuser',
+            'email': 'otp@example.com',
+            'password': 'otppass123'
+        }
+        self.user = User.objects.create_user(**self.user_data)
+        self.login_url = reverse('login')
+        self.otp_setup_url = reverse('otp-setup')
+        self.otp_verify_setup_url = reverse('otp-verify-setup')
+        self.otp_verify_login_url = reverse('otp-verify-login')
+
+    def test_otp_setup_and_login(self):
+        # Log in to get token
+        login_response = self.client.post(self.login_url, {
+            'username': self.user_data['username'],
+            'password': self.user_data['password']
+        }, format='json')
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        token = login_response.data['token']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        # Setup OTP
+        setup_response = self.client.post(self.otp_setup_url, {}, format='json')
+        self.assertEqual(setup_response.status_code, status.HTTP_200_OK)
+        self.assertIn('secret', setup_response.data)
+        otp_secret = setup_response.data['secret']
+        # Simulate verifying OTP setup (using pyotp)
+        import pyotp
+        totp = pyotp.TOTP(otp_secret)
+        otp_code = totp.now()
+        verify_response = self.client.post(self.otp_verify_setup_url, {'code': otp_code}, format='json')
+        self.assertEqual(verify_response.status_code, status.HTTP_200_OK)
+        self.assertIn('message', verify_response.data)
+        # Now test OTP login
+        self.client.credentials()  # Remove token
+        otp_login_response = self.client.post(self.otp_verify_login_url, {
+            'username': self.user_data['username'],
+            'code': totp.now()
+        }, format='json')
+        self.assertEqual(otp_login_response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', otp_login_response.data) 
