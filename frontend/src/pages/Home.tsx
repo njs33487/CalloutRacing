@@ -11,16 +11,10 @@ import {
   CameraIcon, 
   PencilIcon, 
   MapPinIcon,
-  TruckIcon,
-  HeartIcon,
-  ChatBubbleLeftIcon,
-  ShareIcon,
-  TrashIcon,
-  XMarkIcon,
-  CheckIcon
+  TruckIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
-import { calloutAPI, eventAPI, marketplaceAPI, userAPI, postAPI } from '../services/api'
+import { calloutAPI, eventAPI, userAPI, postAPI } from '../services/api'
 import { api } from '../services/api'
 import ConfirmationDialog from '../components/ConfirmationDialog'
 
@@ -90,13 +84,6 @@ export default function Dashboard() {
   const [posts, setPosts] = useState<UserPost[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [newPost, setNewPost] = useState('')
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [isPosting, setIsPosting] = useState(false)
-  const [editingPost, setEditingPost] = useState<number | null>(null)
-  const [editPostContent, setEditPostContent] = useState('')
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showProfileConfirmation, setShowProfileConfirmation] = useState(false)
@@ -123,17 +110,6 @@ export default function Dashboard() {
     queryKey: ['user-events'],
     queryFn: () => eventAPI.list().then(res => res.data),
     enabled: !!user
-  })
-
-  // General data
-  const { data: recentCallouts } = useQuery({
-    queryKey: ['recent-callouts'],
-    queryFn: () => calloutAPI.list().then(res => res.data.results?.slice(0, 3) || [])
-  })
-
-  const { data: marketplaceItems } = useQuery({
-    queryKey: ['marketplace-items'],
-    queryFn: () => marketplaceAPI.list().then(res => res.data)
   })
 
   const { data: stats } = useQuery({
@@ -236,18 +212,6 @@ export default function Dashboard() {
   ]
 
   // Profile CRUD Operations
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelectedImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
   const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && profile) {
@@ -272,32 +236,6 @@ export default function Dashboard() {
       } catch (error) {
         console.error('Error uploading cover photo:', error)
         setError('Failed to upload cover photo. Please try again.')
-      }
-    }
-  }
-
-  const handleRemoveProfilePicture = async () => {
-    if (profile) {
-      try {
-        await userAPI.removeProfilePicture(profile.id)
-        await loadProfile()
-        setSuccess('Profile picture removed successfully!')
-      } catch (error) {
-        console.error('Error removing profile picture:', error)
-        setError('Failed to remove profile picture. Please try again.')
-      }
-    }
-  }
-
-  const handleRemoveCoverPhoto = async () => {
-    if (profile) {
-      try {
-        await userAPI.removeCoverPhoto(profile.id)
-        await loadProfile()
-        setSuccess('Cover photo removed successfully!')
-      } catch (error) {
-        console.error('Error removing cover photo:', error)
-        setError('Failed to remove cover photo. Please try again.')
       }
     }
   }
@@ -344,20 +282,8 @@ export default function Dashboard() {
   }
 
   // Post CRUD Operations
-  const handleSubmitPost = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newPost.trim()) return
-
-    setConfirmationData({
-      type: 'post',
-      data: { content: newPost, image: selectedImage }
-    })
-    setShowPostConfirmation(true)
-  }
-
   const handleConfirmPostCreate = async () => {
     if (confirmationData?.type === 'post') {
-      setIsPosting(true)
       try {
         const formData = new FormData()
         formData.append('content', confirmationData.data.content)
@@ -366,66 +292,15 @@ export default function Dashboard() {
         }
 
         await postAPI.create(formData)
-        setNewPost('')
-        setSelectedImage(null)
-        setImagePreview(null)
         await loadPosts()
         setSuccess('Post created successfully!')
       } catch (error) {
         console.error('Error creating post:', error)
         setError('Failed to create post. Please try again.')
-      } finally {
-        setIsPosting(false)
       }
     }
     setShowPostConfirmation(false)
     setConfirmationData(null)
-  }
-
-  const handleEditPost = async (postId: number) => {
-    if (!editPostContent.trim()) return
-
-    try {
-      await postAPI.update(postId, { content: editPostContent })
-      setEditingPost(null)
-      setEditPostContent('')
-      await loadPosts()
-      setSuccess('Post updated successfully!')
-    } catch (error) {
-      console.error('Error updating post:', error)
-      setError('Failed to update post. Please try again.')
-    }
-  }
-
-  const handleDeletePost = async (postId: number) => {
-    try {
-      await postAPI.delete(postId)
-      await loadPosts()
-      setSuccess('Post deleted successfully!')
-    } catch (error) {
-      console.error('Error deleting post:', error)
-      setError('Failed to delete post. Please try again.')
-    }
-  }
-
-  const handleLikePost = async (postId: number) => {
-    try {
-      await postAPI.like(postId)
-      await loadPosts()
-    } catch (error) {
-      console.error('Error liking post:', error)
-      setError('Failed to like post. Please try again.')
-    }
-  }
-
-  const startEditPost = (post: UserPost) => {
-    setEditingPost(post.id)
-    setEditPostContent(post.content)
-  }
-
-  const cancelEditPost = () => {
-    setEditingPost(null)
-    setEditPostContent('')
   }
 
   if (isLoading) {
