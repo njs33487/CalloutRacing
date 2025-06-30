@@ -24,7 +24,11 @@ from .views import (
     RaceResultCreateView, RaceResultDetailView,
     accept_callout, decline_callout, cancel_callout,
     search_users_for_callout, callout_statistics,
-    # ViewSets from main views.py
+    # ViewSets from other files
+    ListingViewSet
+)
+# Import ViewSets directly from main views.py to avoid circular imports
+from api.views import (
     TrackViewSet, EventViewSet, CalloutViewSet, RaceResultViewSet,
     MarketplaceViewSet, EventParticipantViewSet, FriendshipViewSet,
     MessageViewSet, CarProfileViewSet, CarModificationViewSet,
@@ -33,9 +37,7 @@ from .views import (
     MarketplaceOrderViewSet, MarketplaceReviewViewSet, BetViewSet,
     BettingPoolViewSet, NotificationViewSet, HotSpotViewSet,
     RacingCrewViewSet, CrewMembershipViewSet, LocationBroadcastViewSet,
-    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet,
-    # ViewSets from other files
-    ListingViewSet
+    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet
 )
 from .views.auth import test_auth
 
