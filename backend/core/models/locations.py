@@ -48,60 +48,6 @@ class HotSpot(models.Model):
         ordering = ['name']
 
 
-class RacingCrew(models.Model):
-    """Racing crew model."""
-    name = models.CharField(max_length=200, help_text="Crew name")
-    description = models.TextField(help_text="Crew description")
-    logo = models.ImageField(upload_to='crew_logos/', blank=True, null=True, help_text="Crew logo")
-    location = models.CharField(max_length=200, help_text="Crew location")
-    founded_date = models.DateField(blank=True, null=True, help_text="When the crew was founded")
-    is_public = models.BooleanField(default=True, help_text="Whether crew is public")
-    is_verified = models.BooleanField(default=False, help_text="Whether crew is verified")
-    member_count = models.IntegerField(default=0, help_text="Number of members")
-    max_members = models.IntegerField(blank=True, null=True, help_text="Maximum number of members")
-    requirements = models.TextField(blank=True, help_text="Requirements to join")
-    rules = models.TextField(blank=True, help_text="Crew rules")
-    website = models.URLField(blank=True, help_text="Crew website")
-    social_media = models.JSONField(default=dict, blank=True, help_text="Social media links")
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_crews')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        ordering = ['name']
-
-
-class CrewMembership(models.Model):
-    """Crew membership model."""
-    crew = models.ForeignKey(RacingCrew, on_delete=models.CASCADE, related_name='memberships')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='crew_memberships')
-    role = models.CharField(max_length=50, choices=[
-        ('member', 'Member'),
-        ('officer', 'Officer'),
-        ('leader', 'Leader'),
-        ('founder', 'Founder'),
-    ], default='member', help_text="Member role")
-    status = models.CharField(max_length=20, choices=[
-        ('pending', 'Pending'),
-        ('active', 'Active'),
-        ('inactive', 'Inactive'),
-        ('banned', 'Banned'),
-    ], default='pending', help_text="Membership status")
-    joined_date = models.DateTimeField(auto_now_add=True, help_text="When member joined")
-    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name='crew_invitations_sent')
-    notes = models.TextField(blank=True, help_text="Admin notes")
-
-    def __str__(self):
-        return f"{self.user.username} - {self.crew.name} ({self.role})"
-
-    class Meta:
-        unique_together = ['crew', 'user']
-        ordering = ['joined_date']
-
-
 class LocationBroadcast(models.Model):
     """Location broadcast model."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='location_broadcasts')
