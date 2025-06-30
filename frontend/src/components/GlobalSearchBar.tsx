@@ -174,7 +174,7 @@ export default function GlobalSearchBar() {
   const getResultLink = (result: SearchResult): string => {
     switch (result.type) {
       case 'user':
-        return `/app/profile/${result.data.id}`;
+        return `/app`;
       case 'event':
         return `/app/events/${result.data.id}`;
       case 'marketplace':
