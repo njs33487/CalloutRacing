@@ -24,6 +24,8 @@ import CreateEvent from './pages/CreateEvent'
 import CreateListing from './pages/CreateListing'
 import HotSpots from './pages/HotSpots'
 import Search from './pages/Search'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
           <Route path="/email-verification-required" element={<EmailVerificationRequired />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           
           {/* Shared content routes - public access for social sharing */}
           <Route path="/share/event/:id" element={<SharedEvent />} />

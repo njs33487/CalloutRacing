@@ -47,6 +47,8 @@ export const authAPI = {
   verifyEmail: (token: string) => api.get(`/auth/verify-email/${token}/`),
   resendVerification: (email: string) => api.post('/auth/resend-verification/', { email }),
   checkUserExists: (data: { username?: string; email?: string }) => api.post('/auth/check-user/', data),
+  requestPasswordReset: (email: string) => api.post('/auth/request-password-reset/', { email }),
+  resetPassword: (token: string, new_password: string, new_password_confirm: string) => api.post('/auth/reset-password/', { token, new_password, new_password_confirm }),
 }
 
 // Contact form API
