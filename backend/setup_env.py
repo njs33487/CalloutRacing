@@ -77,23 +77,40 @@ def main():
     if not email_host_password:
         email_host_password = getpass.getpass("Email Host Password: ").strip()
     
-    # Replace placeholders in content
+    # Replace placeholders in content with environment variable references
+    # This prevents storing sensitive data in clear text
     replacements = {
-        'your-secret-key-here': secret_key,
-        'your-staff-email@example.com': staff_email,
-        'your-secure-password': staff_password,
-        'your-email@gmail.com': email_host_user,
-        'your-app-password': email_host_password,
+        'your-secret-key-here': '${DJANGO_SECRET_KEY:-' + secret_key + '}',
+        'your-staff-email@example.com': '${STAFF_EMAIL:-' + staff_email + '}',
+        'your-secure-password': '${STAFF_PASSWORD:-CHANGE_ME_IN_PRODUCTION}',
+        'your-email@gmail.com': '${EMAIL_HOST_USER:-' + (email_host_user or '') + '}',
+        'your-app-password': '${EMAIL_HOST_PASSWORD:-}',
     }
     
     for placeholder, value in replacements.items():
         content = content.replace(placeholder, value)
     
-    # Write .env file
+    # Write .env file with environment variable references instead of clear text
     with open(env_file, 'w') as f:
         f.write(content)
     
+    # Create a separate .env.local file for local development with actual values
+    # This file should be in .gitignore
+    local_env_file = Path('.env.local')
+    if not local_env_file.exists():
+        with open(local_env_file, 'w') as f:
+            f.write(f"# Local development overrides\n")
+            f.write(f"# This file should NOT be committed to version control\n")
+            f.write(f"DJANGO_SECRET_KEY={secret_key}\n")
+            f.write(f"STAFF_EMAIL={staff_email}\n")
+            f.write(f"STAFF_PASSWORD={staff_password}\n")
+            if email_host_user:
+                f.write(f"EMAIL_HOST_USER={email_host_user}\n")
+            if email_host_password:
+                f.write(f"EMAIL_HOST_PASSWORD={email_host_password}\n")
+    
     print(f"\n✅ Environment file created: {env_file}")
+    print(f"✅ Local overrides created: {local_env_file}")
     print("\nNext steps:")
     print("1. Review the .env file and update any other settings as needed")
     print("2. Run: python manage.py migrate")
@@ -101,10 +118,11 @@ def main():
     print("4. Run: python manage.py runserver")
     
     print(f"\n⚠️  Security reminder:")
-    print("- Never commit the .env file to version control")
+    print("- Never commit the .env or .env.local files to version control")
     print("- Use strong passwords in production")
     print("- Keep your secret keys secure")
-    print("- Set STAFF_PASSWORD environment variable for production")
+    print("- Set environment variables in production instead of using .env files")
+    print("- The .env.local file contains actual values and should be kept private")
 
 if __name__ == "__main__":
     main() 
