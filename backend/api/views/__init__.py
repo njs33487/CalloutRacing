@@ -34,6 +34,19 @@ from .hotspots import HotspotViewSet
 # Import utility views
 from .utils import sso_config
 
+# Import ViewSets from main views.py
+from ..views import (
+    TrackViewSet, CalloutViewSet, RaceResultViewSet, MarketplaceViewSet,
+    EventParticipantViewSet, FriendshipViewSet, MessageViewSet,
+    CarProfileViewSet, CarModificationViewSet, CarImageViewSet,
+    UserPostViewSet, PostCommentViewSet, SubscriptionViewSet,
+    PaymentViewSet, UserWalletViewSet, MarketplaceOrderViewSet,
+    MarketplaceReviewViewSet, BetViewSet, BettingPoolViewSet,
+    NotificationViewSet, HotSpotViewSet, RacingCrewViewSet,
+    CrewMembershipViewSet, LocationBroadcastViewSet,
+    ReputationRatingViewSet, OpenChallengeViewSet, ChallengeResponseViewSet
+)
+
 __all__ = [
     # Auth views
     'UserViewSet', 'UserProfileViewSet',
@@ -52,6 +65,15 @@ __all__ = [
     
     # ViewSets
     'EventViewSet', 'ListingViewSet', 'TransactionViewSet', 'ReviewViewSet', 'HotspotViewSet',
+    'TrackViewSet', 'CalloutViewSet', 'RaceResultViewSet', 'MarketplaceViewSet',
+    'EventParticipantViewSet', 'FriendshipViewSet', 'MessageViewSet',
+    'CarProfileViewSet', 'CarModificationViewSet', 'CarImageViewSet',
+    'UserPostViewSet', 'PostCommentViewSet', 'SubscriptionViewSet',
+    'PaymentViewSet', 'UserWalletViewSet', 'MarketplaceOrderViewSet',
+    'MarketplaceReviewViewSet', 'BetViewSet', 'BettingPoolViewSet',
+    'NotificationViewSet', 'HotSpotViewSet', 'RacingCrewViewSet',
+    'CrewMembershipViewSet', 'LocationBroadcastViewSet',
+    'ReputationRatingViewSet', 'OpenChallengeViewSet', 'ChallengeResponseViewSet',
     
     # Utility views
     'sso_config',
