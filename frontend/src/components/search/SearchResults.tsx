@@ -42,7 +42,7 @@ export default function SearchResults({ results, isLoading, searchQuery }: Searc
   const getResultLink = (result: SearchResult): string => {
     switch (result.type) {
       case 'user':
-        return `/app/profile/${result.data.id}`;
+        return `/app`;
       case 'event':
         return `/app/events/${result.data.id}`;
       case 'marketplace':
