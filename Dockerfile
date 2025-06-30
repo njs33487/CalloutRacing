@@ -34,4 +34,4 @@ RUN cd backend && python manage.py collectstatic --noinput
 EXPOSE 8080
 
 # Run the application
-CMD ["/app/start.sh"] 
+CMD ["bash", "/app/start.sh"] 
