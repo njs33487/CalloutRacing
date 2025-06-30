@@ -6,6 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import os
+import uuid
 from typing import List
 from core.models.marketplace import ListingCategory
 
@@ -62,7 +63,8 @@ class Command(BaseCommand):
                 is_staff=True,
                 is_superuser=True,
                 email_verified=True,
-                is_active=True
+                is_active=True,
+                email_verification_token=uuid.uuid4()
             )
             self.stdout.write(f'Created staff user: {email}')
         
