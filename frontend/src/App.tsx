@@ -14,11 +14,10 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import SharedEvent from './pages/SharedEvent'
 import SharedCallout from './pages/SharedCallout'
 import Layout from './components/Layout'
-import Home from './pages/Home'
+import Dashboard from './pages/Home'
 import Callouts from './pages/Callouts'
 import Events from './pages/Events'
 import Marketplace from './pages/Marketplace'
-import Profile from './pages/Profile'
 import Friends from './pages/Friends'
 import CreateCallout from './pages/CreateCallout'
 import CreateEvent from './pages/CreateEvent'
@@ -58,14 +57,13 @@ function App() {
               </ProtectedRoute>
             }>
               {/* Dashboard and main app pages */}
-              <Route index element={<Home />} />
+              <Route index element={<Dashboard />} />
               <Route path="callouts" element={<Callouts />} />
               <Route path="callouts/create" element={<CreateCallout />} />
               <Route path="events" element={<Events />} />
               <Route path="events/create" element={<CreateEvent />} />
               <Route path="marketplace" element={<Marketplace />} />
               <Route path="marketplace/create" element={<CreateListing />} />
-              <Route path="profile" element={<Profile />} />
               <Route path="friends" element={<Friends />} />
               <Route path="search" element={<Search />} />
               
