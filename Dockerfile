@@ -14,6 +14,7 @@ RUN apt-get update \
         postgresql-client \
         build-essential \
         libpq-dev \
+        dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -25,6 +26,7 @@ COPY backend/ backend/
 
 # Copy start script to the correct location and make it executable
 COPY backend/start.sh /app/start.sh
+RUN dos2unix /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Collect static files
