@@ -4,7 +4,6 @@ import {
   BoltIcon, 
   CalendarIcon, 
   ShoppingBagIcon, 
-  UserIcon,
   PlusIcon,
   ArrowRightOnRectangleIcon,
   UsersIcon,
@@ -22,7 +21,6 @@ const navigation = [
   { name: 'Hot Spots', href: '/app/hotspots', icon: MapPinIcon },
   { name: 'Friends', href: '/app/friends', icon: UsersIcon },
   { name: 'Search', href: '/app/search', icon: MagnifyingGlassIcon },
-  { name: 'Profile', href: '/app/profile', icon: UserIcon },
 ]
 
 export default function Layout() {

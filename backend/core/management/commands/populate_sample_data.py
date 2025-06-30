@@ -5,6 +5,7 @@ from core.models import User, Track, Event, Callout, UserProfile, HotSpot, Marke
 from django.utils import timezone
 from datetime import timedelta
 import random
+import os
 from typing import List
 from core.models.marketplace import ListingCategory
 
@@ -37,9 +38,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Successfully created comprehensive sample data!'))  # type: ignore
 
     def create_staff_profile(self):
-        """Create the staff profile for digibin@digitalbinarysolutionsllc.com"""
-        email = 'digibin@digitalbinarysolutionsllc.com'
-        password = '123qweQWE$$'
+        """Create the staff profile using environment variables"""
+        # Get credentials from environment variables
+        email = os.getenv('STAFF_EMAIL', 'admin@calloutracing.com')
+        password = os.getenv('STAFF_PASSWORD', 'admin123')
         
         # Check if user already exists
         if User.objects.filter(email=email).exists():  # type: ignore
@@ -52,11 +54,11 @@ class Command(BaseCommand):
             user.save()
         else:
             user = User.objects.create(  # type: ignore
-                username='digibin',
+                username='admin',
                 email=email,
                 password=make_password(password),
-                first_name='Digital',
-                last_name='Binary',
+                first_name='Admin',
+                last_name='User',
                 is_staff=True,
                 is_superuser=True,
                 email_verified=True,
@@ -68,7 +70,7 @@ class Command(BaseCommand):
         profile, created = UserProfile.objects.get_or_create(  # type: ignore
             user=user,
             defaults={
-                'bio': 'Founder and Lead Developer at Digital Binary Solutions LLC. Racing enthusiast and tech innovator.',
+                'bio': 'System Administrator for CalloutRacing. Racing enthusiast and platform manager.',
                 'location': 'United States',
                 'car_make': 'Tesla',
                 'car_model': 'Model S Plaid',
@@ -80,7 +82,7 @@ class Command(BaseCommand):
         )
         
         if not created:
-            profile.bio = 'Founder and Lead Developer at Digital Binary Solutions LLC. Racing enthusiast and tech innovator.'
+            profile.bio = 'System Administrator for CalloutRacing. Racing enthusiast and platform manager.'
             profile.location = 'United States'
             profile.car_make = 'Tesla'
             profile.car_model = 'Model S Plaid'
