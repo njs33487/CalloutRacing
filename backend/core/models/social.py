@@ -346,4 +346,98 @@ class ReputationRating(models.Model):
         # Prevent self-rating
         if self.rater and self.rated_user and self.rater == self.rated_user:
             raise ValueError("Users cannot rate themselves")
-        super().save(*args, **kwargs) 
+        super().save(*args, **kwargs)
+
+
+# Additional models for advanced social features
+
+class RacingCrew(models.Model):
+    """Racing crew model for social features."""
+    CREW_TYPES = [
+        ('drag_racing', 'Drag Racing'),
+        ('street_racing', 'Street Racing'),
+        ('track_racing', 'Track Racing'),
+        ('car_club', 'Car Club'),
+        ('modification', 'Modification Crew'),
+        ('other', 'Other'),
+    ]
+    
+    name = models.CharField(max_length=200, help_text='Crew name')
+    description = models.TextField(help_text='Crew description')
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='owned_crews',
+        help_text='Crew owner'
+    )
+    crew_type = models.CharField(
+        max_length=20,
+        choices=CREW_TYPES,
+        default='car_club',
+        help_text='Type of crew'
+    )
+    location = models.CharField(max_length=200, help_text='Crew location')
+    is_public = models.BooleanField(default=True, help_text='Whether crew is public')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Racing Crew"
+        verbose_name_plural = "Racing Crews"
+    
+    def __str__(self):
+        return self.name
+
+
+class CrewMembership(models.Model):
+    """Crew membership model."""
+    ROLES = [
+        ('member', 'Member'),
+        ('officer', 'Officer'),
+        ('leader', 'Leader'),
+        ('founder', 'Founder'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    ]
+    
+    crew = models.ForeignKey(
+        RacingCrew,
+        on_delete=models.CASCADE,
+        related_name='memberships',
+        help_text='Crew being joined'
+    )
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='crew_memberships',
+        help_text='Crew member'
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLES,
+        default='member',
+        help_text='Member role'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        help_text='Membership status'
+    )
+    joined_at = models.DateTimeField(auto_now_add=True, help_text='When member joined')
+    
+    class Meta:
+        unique_together = ('crew', 'member')
+        ordering = ['joined_at']
+        verbose_name = "Crew Membership"
+        verbose_name_plural = "Crew Memberships"
+    
+    def __str__(self):
+        return f"{self.member.username} - {self.crew.name} ({self.role})" 

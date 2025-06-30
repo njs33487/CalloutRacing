@@ -17,10 +17,19 @@ from datetime import timedelta
 
 from core.models.auth import User, UserProfile
 from core.models.racing import Callout, Track, RaceResult, Event, EventParticipant
-from core.models.cars import CarProfile
-from core.models.marketplace import Marketplace, MarketplaceImage, MarketplaceOrder, MarketplaceReview
-from core.models.social import Friendship
-from core.models.locations import HotSpot
+from core.models.cars import CarProfile, CarImage, BuildLog, PerformanceData, BuildMilestone
+from core.models.marketplace import (
+    Marketplace, MarketplaceImage, MarketplaceOrder, MarketplaceReview,
+    ListingCategory, MarketplaceListing, ListingImage, CarListing,
+    Review, Rating, PaymentTransaction, Order, OrderItem, ShippingAddress
+)
+from core.models.social import (
+    Friendship, Message, UserPost, PostComment, RacingCrew, CrewMembership
+)
+from core.models.locations import (
+    HotSpot, LocationBroadcast, OpenChallenge, ChallengeResponse
+)
+from core.models.payments import UserWallet, Bet, BettingPool
 
 User = get_user_model()
 
@@ -403,4 +412,310 @@ class HotSpotCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = HotSpot
         fields = ['name', 'description', 'address', 'city', 'state', 'zip_code',
-                 'latitude', 'longitude', 'spot_type', 'rules', 'amenities', 'peak_hours'] 
+                 'latitude', 'longitude', 'category', 'is_verified']
+
+
+# Social Feature Serializers
+
+class MessageSerializer(serializers.ModelSerializer):
+    """Message serializer for direct messaging."""
+    sender = UserSerializer(read_only=True)
+    receiver = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'receiver', 'content', 'is_read', 'created_at']
+        read_only_fields = ['id', 'sender', 'created_at']
+
+
+class UserPostSerializer(serializers.ModelSerializer):
+    """User post serializer for social content."""
+    user = UserSerializer(read_only=True)
+    car = CarProfileSerializer(read_only=True)
+    like_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserPost
+        fields = ['id', 'user', 'content', 'car', 'images', 'like_count', 
+                 'comment_count', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'like_count', 'comment_count', 'created_at', 'updated_at']
+    
+    def get_like_count(self, obj):
+        return getattr(obj, 'like_count', 0)
+    
+    def get_comment_count(self, obj):
+        return getattr(obj, 'comment_count', 0)
+
+
+class PostCommentSerializer(serializers.ModelSerializer):
+    """Post comment serializer."""
+    user = UserSerializer(read_only=True)
+    post = UserPostSerializer(read_only=True)
+    
+    class Meta:
+        model = PostComment
+        fields = ['id', 'user', 'post', 'content', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+
+
+class RacingCrewSerializer(serializers.ModelSerializer):
+    """Racing crew serializer."""
+    owner = UserSerializer(read_only=True)
+    members_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = RacingCrew
+        fields = ['id', 'name', 'description', 'owner', 'crew_type', 'location',
+                 'members_count', 'is_public', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'owner', 'members_count', 'created_at', 'updated_at']
+    
+    def get_members_count(self, obj):
+        return getattr(obj, 'members_count', 0)
+
+
+class CrewMembershipSerializer(serializers.ModelSerializer):
+    """Crew membership serializer."""
+    crew = RacingCrewSerializer(read_only=True)
+    member = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = CrewMembership
+        fields = ['id', 'crew', 'member', 'role', 'status', 'joined_at']
+        read_only_fields = ['id', 'joined_at']
+
+
+# Marketplace Feature Serializers
+
+class MarketplaceListingSerializer(serializers.ModelSerializer):
+    """Marketplace listing serializer."""
+    seller = UserSerializer(read_only=True)
+    category = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = MarketplaceListing
+        fields = ['id', 'seller', 'title', 'description', 'category', 'price',
+                 'condition', 'location', 'is_negotiable', 'images', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'seller', 'created_at', 'updated_at']
+    
+    def get_category(self, obj):
+        if hasattr(obj, 'category') and obj.category:
+            return obj.category.name
+        return None
+    
+    def get_images(self, obj):
+        if hasattr(obj, 'images'):
+            return [img.image.url for img in obj.images.all()]
+        return []
+
+
+class CarListingSerializer(serializers.ModelSerializer):
+    """Car listing serializer."""
+    seller = UserSerializer(read_only=True)
+    images = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CarListing
+        fields = ['id', 'seller', 'title', 'description', 'make', 'model', 'year',
+                 'price', 'mileage', 'condition', 'location', 'is_negotiable',
+                 'images', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'seller', 'created_at', 'updated_at']
+    
+    def get_images(self, obj):
+        if hasattr(obj, 'images'):
+            return [img.image.url for img in obj.images.all()]
+        return []
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """Review serializer."""
+    reviewer = UserSerializer(read_only=True)
+    listing = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Review
+        fields = ['id', 'reviewer', 'listing', 'rating', 'title', 'content',
+                 'is_verified_purchase', 'created_at']
+        read_only_fields = ['id', 'reviewer', 'is_verified_purchase', 'created_at']
+    
+    def get_listing(self, obj):
+        if hasattr(obj, 'listing') and obj.listing:
+            return {
+                'id': obj.listing.id,
+                'title': obj.listing.title
+            }
+        return None
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    """Rating serializer."""
+    rater = UserSerializer(read_only=True)
+    seller = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = Rating
+        fields = ['id', 'rater', 'seller', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'rater', 'created_at']
+
+
+class PaymentTransactionSerializer(serializers.ModelSerializer):
+    """Payment transaction serializer."""
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = PaymentTransaction
+        fields = ['id', 'user', 'amount', 'transaction_type', 'status',
+                 'payment_method', 'reference', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+
+
+class UserWalletSerializer(serializers.ModelSerializer):
+    """User wallet serializer."""
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = UserWallet
+        fields = ['id', 'user', 'balance', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    """Order serializer."""
+    buyer = UserSerializer(read_only=True)
+    items = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Order
+        fields = ['id', 'buyer', 'total_amount', 'status', 'items', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'buyer', 'created_at', 'updated_at']
+    
+    def get_items(self, obj):
+        if hasattr(obj, 'items'):
+            return [{'id': item.id, 'listing_title': item.listing.title, 'quantity': item.quantity} 
+                   for item in obj.items.all()]
+        return []
+
+
+# Advanced Feature Serializers
+
+class LocationBroadcastSerializer(serializers.ModelSerializer):
+    """Location broadcast serializer."""
+    user = UserSerializer(read_only=True)
+    responses = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = LocationBroadcast
+        fields = ['id', 'user', 'latitude', 'longitude', 'message', 'duration_minutes',
+                 'expires_at', 'responses', 'created_at']
+        read_only_fields = ['id', 'user', 'expires_at', 'created_at']
+    
+    def get_responses(self, obj):
+        if hasattr(obj, 'responses'):
+            return [{'user': response.user.username, 'message': response.message} 
+                   for response in obj.responses.all()]
+        return []
+
+
+class OpenChallengeSerializer(serializers.ModelSerializer):
+    """Open challenge serializer."""
+    challenger = UserSerializer(read_only=True)
+    track = TrackSerializer(read_only=True)
+    responses_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = OpenChallenge
+        fields = ['id', 'challenger', 'title', 'description', 'track', 'challenge_type',
+                 'stakes', 'expires_at', 'status', 'responses_count', 'created_at']
+        read_only_fields = ['id', 'challenger', 'responses_count', 'created_at']
+    
+    def get_responses_count(self, obj):
+        return getattr(obj, 'responses_count', 0)
+
+
+class ChallengeResponseSerializer(serializers.ModelSerializer):
+    """Challenge response serializer."""
+    challenge = OpenChallengeSerializer(read_only=True)
+    responder = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = ChallengeResponse
+        fields = ['id', 'challenge', 'responder', 'message', 'status', 'created_at']
+        read_only_fields = ['id', 'responder', 'created_at']
+
+
+class BetSerializer(serializers.ModelSerializer):
+    """Bet serializer."""
+    bettor = UserSerializer(read_only=True)
+    pool = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Bet
+        fields = ['id', 'bettor', 'pool', 'predicted_winner', 'amount', 'created_at']
+        read_only_fields = ['id', 'bettor', 'created_at']
+    
+    def get_pool(self, obj):
+        if hasattr(obj, 'pool') and obj.pool:
+            return {
+                'id': obj.pool.id,
+                'title': obj.pool.title
+            }
+        return None
+
+
+class BettingPoolSerializer(serializers.ModelSerializer):
+    """Betting pool serializer."""
+    created_by = UserSerializer(read_only=True)
+    participants = UserSerializer(many=True, read_only=True)
+    total_bets = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BettingPool
+        fields = ['id', 'created_by', 'title', 'description', 'participants',
+                 'total_pot', 'entry_fee', 'race_date', 'winner', 'total_bets', 'created_at']
+        read_only_fields = ['id', 'created_by', 'total_bets', 'created_at']
+    
+    def get_total_bets(self, obj):
+        return getattr(obj, 'total_bets', 0)
+
+
+class BuildLogSerializer(serializers.ModelSerializer):
+    """Build log serializer."""
+    owner = UserSerializer(read_only=True)
+    car = CarProfileSerializer(read_only=True)
+    entries_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BuildLog
+        fields = ['id', 'owner', 'car', 'title', 'description', 'entries_count',
+                 'created_at', 'updated_at']
+        read_only_fields = ['id', 'owner', 'entries_count', 'created_at', 'updated_at']
+    
+    def get_entries_count(self, obj):
+        return getattr(obj, 'entries_count', 0)
+
+
+class BuildLogEntrySerializer(serializers.ModelSerializer):
+    """Build log entry serializer."""
+    build_log = BuildLogSerializer(read_only=True)
+    
+    class Meta:
+        model = BuildMilestone
+        fields = ['id', 'build_log', 'title', 'content', 'modifications', 'cost',
+                 'hours_spent', 'images', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class PerformanceDataSerializer(serializers.ModelSerializer):
+    """Performance data serializer."""
+    car = CarProfileSerializer(read_only=True)
+    track = TrackSerializer(read_only=True)
+    verified_by = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = PerformanceData
+        fields = ['id', 'car', 'track', 'performance_type', 'time_seconds', 'speed_mph',
+                 'reaction_time', 'sixty_foot_time', 'horsepower', 'torque',
+                 'rpm_peak_hp', 'rpm_peak_torque', 'dyno_type', 'weather_conditions',
+                 'track_conditions', 'date', 'notes', 'is_verified', 'verified_by', 'created_at']
+        read_only_fields = ['id', 'is_verified', 'verified_by', 'created_at'] 
