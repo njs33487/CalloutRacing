@@ -3,7 +3,7 @@ import axios from 'axios'
 import { HotSpot, RacingCrew, CrewMembership, LocationBroadcast, ReputationRating, OpenChallenge, ChallengeResponse, Callout } from '../types';
 
 // Get API URL from environment variable or use default production URL
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend.up.railway.app/api'
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend-production.up.railway.app/api'
 
 // Create axios instance with base configuration
 const api = axios.create({
