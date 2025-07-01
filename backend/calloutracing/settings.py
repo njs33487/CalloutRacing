@@ -168,10 +168,23 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173').split(',') if origin.strip()]  # type: ignore
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://calloutracing.up.railway.app',
+]
 
-# Add production frontend domain
-CORS_ALLOWED_ORIGINS.append('https://calloutracing.up.railway.app')
+# Add any additional origins from environment variable
+try:
+    env_origins_str = config('CORS_ALLOWED_ORIGINS', default='')
+    if isinstance(env_origins_str, str) and env_origins_str:
+        env_origins = env_origins_str.split(',')
+        for origin in env_origins:
+            origin = origin.strip()
+            if origin and origin not in CORS_ALLOWED_ORIGINS:
+                CORS_ALLOWED_ORIGINS.append(origin)
+except Exception:
+    pass
 
 # Add Railway frontend domain to CORS if available
 if 'RAILWAY_STATIC_URL' in os.environ:
@@ -185,6 +198,10 @@ if 'RAILWAY_STATIC_URL' in os.environ:
             CORS_ALLOWED_ORIGINS.append(railway_frontend)
     except Exception:
         pass
+
+# Debug: Print CORS origins in development
+if DEBUG:
+    print(f"CORS_ALLOWED_ORIGINS: {CORS_ALLOWED_ORIGINS}")
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
@@ -206,6 +223,13 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# Additional CORS settings for better compatibility
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'content-disposition',
+]
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
 # Security settings for production
 if not DEBUG:
