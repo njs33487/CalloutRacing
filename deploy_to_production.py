@@ -82,8 +82,7 @@ def deploy_to_production():
         
         # Step 5: Populate data
         print("\n📊 Step 5: Populating production data...")
-        os.chdir('..')  # Go back to root directory
-        result = subprocess.run(['python', 'populate_production_data.py'], 
+        result = subprocess.run(['python', 'manage.py', 'populate_railway_data'], 
                               capture_output=True, text=True)
         if result.returncode == 0:
             print("✅ Data population completed successfully!")
