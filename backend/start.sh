@@ -296,6 +296,12 @@ if [ "$POPULATE_DATA" = "true" ]; then
     python manage.py populate_sample_data --noinput || echo "Data population failed or already exists"
 fi
 
+# Populate Railway data if environment variable is set
+if [ "$POPULATE_RAILWAY_DATA" = "true" ]; then
+    echo "=== Populating Railway data ==="
+    python manage.py populate_railway_data --noinput || echo "Railway data population failed or already exists"
+fi
+
 # Start the server
 echo "=== Starting Django server on port $PORT ==="
 python manage.py runserver 0.0.0.0:$PORT 
