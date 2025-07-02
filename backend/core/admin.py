@@ -6,7 +6,7 @@ This module configures the Django admin interface for all models.
 
 from django.contrib import admin
 from django.utils.html import format_html
-from .models.auth import User, UserProfile
+from .models.auth import UserProfile
 from .models.racing import Track, Callout, RaceResult, Event, EventParticipant
 from .models.social import (
     Follow, Block, Friendship, Message, UserPost, PostComment, 
@@ -18,13 +18,8 @@ from .models.payments import Subscription, Payment, UserWallet
 from .models.locations import HotSpot
 
 
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ['username', 'email', 'email_verified', 'date_joined', 'is_active']
-    list_filter = ['email_verified', 'is_active', 'date_joined']
-    search_fields = ['username', 'email', 'first_name', 'last_name']
-    readonly_fields = ['date_joined', 'last_login']
-    ordering = ['-date_joined']
+# User model is now Django's built-in User model, no need to register it here
+# Django automatically registers the built-in User model with UserAdmin
 
 
 @admin.register(UserProfile)
