@@ -7,6 +7,7 @@ This script will create a .env file from env.example and prompt for required val
 import os
 import getpass
 from pathlib import Path
+import re
 
 def main():
     print("CalloutRacing Backend Environment Setup")
@@ -84,7 +85,7 @@ def main():
         'your-staff-email@example.com': '${STAFF_EMAIL:-' + staff_email + '}',
         'your-secure-password': '${STAFF_PASSWORD:-CHANGE_ME_IN_PRODUCTION}',
         'your-email@gmail.com': '${EMAIL_HOST_USER:-' + (email_host_user or '') + '}',
-        'your-app-password': '${EMAIL_HOST_PASSWORD:-}',
+        'your-app-password': '${EMAIL_HOST_PASSWORD:-SET_VIA_ENVIRONMENT_VARIABLE}',
     }
     
     for placeholder, value in replacements.items():
@@ -101,13 +102,16 @@ def main():
         with open(local_env_file, 'w') as f:
             f.write(f"# Local development overrides\n")
             f.write(f"# This file should NOT be committed to version control\n")
+            f.write(f"# WARNING: This file contains sensitive information\n")
+            f.write(f"# Use environment variables in production instead\n")
             f.write(f"DJANGO_SECRET_KEY={secret_key}\n")
             f.write(f"STAFF_EMAIL={staff_email}\n")
-            f.write(f"STAFF_PASSWORD={staff_password}\n")
+            # Don't store password in clear text - use environment variable instead
+            f.write(f"STAFF_PASSWORD=CHANGE_ME_IN_PRODUCTION\n")
             if email_host_user:
                 f.write(f"EMAIL_HOST_USER={email_host_user}\n")
-            if email_host_password:
-                f.write(f"EMAIL_HOST_PASSWORD={email_host_password}\n")
+            # Don't store email password in clear text - use environment variable instead
+            f.write(f"EMAIL_HOST_PASSWORD=SET_VIA_ENVIRONMENT_VARIABLE\n")
     
     print(f"\n✅ Environment file created: {env_file}")
     print(f"✅ Local overrides created: {local_env_file}")
@@ -123,6 +127,30 @@ def main():
     print("- Keep your secret keys secure")
     print("- Set environment variables in production instead of using .env files")
     print("- The .env.local file contains actual values and should be kept private")
+    print("- Passwords are NOT stored in clear text - set them via environment variables")
+    print("- For production: Set STAFF_PASSWORD and EMAIL_HOST_PASSWORD as environment variables")
+    
+    # Security validation
+    validate_security(env_file, local_env_file)
+
+def validate_security(env_file, local_env_file):
+    """Validate that no sensitive data is stored in clear text"""
+    sensitive_patterns = [
+        r'STAFF_PASSWORD=.*[^CHANGE_ME_IN_PRODUCTION]',
+        r'EMAIL_HOST_PASSWORD=.*[^SET_VIA_ENVIRONMENT_VARIABLE]',
+        r'DJANGO_SECRET_KEY=.*[^${DJANGO_SECRET_KEY]',
+    ]
+    
+    files_to_check = [env_file, local_env_file]
+    
+    for file_path in files_to_check:
+        if file_path.exists():
+            with open(file_path, 'r') as f:
+                content = f.read()
+                for pattern in sensitive_patterns:
+                    if re.search(pattern, content):
+                        print(f"⚠️  WARNING: Potential sensitive data found in {file_path}")
+                        print("   Please review the file and ensure no passwords are stored in clear text")
 
 if __name__ == "__main__":
     main() 
