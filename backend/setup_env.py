@@ -2,6 +2,10 @@
 """
 Helper script to set up environment variables for CalloutRacing backend.
 This script will create a .env file from env.example and prompt for required values.
+
+SECURITY: This script follows security best practices to prevent clear-text storage
+of sensitive information. All passwords, keys, and credentials are stored as
+environment variable references rather than actual values in files.
 """
 
 import os
@@ -81,10 +85,10 @@ def main():
     # Replace placeholders in content with environment variable references
     # This prevents storing sensitive data in clear text
     replacements = {
-        'your-secret-key-here': '${DJANGO_SECRET_KEY:-' + secret_key + '}',
+        'your-secret-key-here': '${DJANGO_SECRET_KEY:-GENERATE_VIA_ENVIRONMENT_VARIABLE}',
         'your-staff-email@example.com': '${STAFF_EMAIL:-' + staff_email + '}',
         'your-secure-password': '${STAFF_PASSWORD:-CHANGE_ME_IN_PRODUCTION}',
-        'your-email@gmail.com': '${EMAIL_HOST_USER:-' + (email_host_user or '') + '}',
+        'your-email@gmail.com': '${EMAIL_HOST_USER:-SET_VIA_ENVIRONMENT_VARIABLE}',
         'your-app-password': '${EMAIL_HOST_PASSWORD:-SET_VIA_ENVIRONMENT_VARIABLE}',
     }
     
@@ -104,13 +108,14 @@ def main():
             f.write(f"# This file should NOT be committed to version control\n")
             f.write(f"# WARNING: This file contains sensitive information\n")
             f.write(f"# Use environment variables in production instead\n")
-            f.write(f"DJANGO_SECRET_KEY={secret_key}\n")
+            f.write(f"# SECURITY: Do not store actual passwords or keys in this file\n")
+            f.write(f"# Set these values via environment variables instead\n")
+            f.write(f"DJANGO_SECRET_KEY=SET_VIA_ENVIRONMENT_VARIABLE\n")
             f.write(f"STAFF_EMAIL={staff_email}\n")
             # Don't store password in clear text - use environment variable instead
             f.write(f"STAFF_PASSWORD=CHANGE_ME_IN_PRODUCTION\n")
-            if email_host_user:
-                f.write(f"EMAIL_HOST_USER={email_host_user}\n")
-            # Don't store email password in clear text - use environment variable instead
+            # Don't store email credentials in clear text - use environment variables instead
+            f.write(f"EMAIL_HOST_USER=SET_VIA_ENVIRONMENT_VARIABLE\n")
             f.write(f"EMAIL_HOST_PASSWORD=SET_VIA_ENVIRONMENT_VARIABLE\n")
     
     print(f"\n✅ Environment file created: {env_file}")
@@ -126,9 +131,10 @@ def main():
     print("- Use strong passwords in production")
     print("- Keep your secret keys secure")
     print("- Set environment variables in production instead of using .env files")
-    print("- The .env.local file contains actual values and should be kept private")
-    print("- Passwords are NOT stored in clear text - set them via environment variables")
-    print("- For production: Set STAFF_PASSWORD and EMAIL_HOST_PASSWORD as environment variables")
+    print("- The .env.local file contains placeholder values and should be kept private")
+    print("- NO sensitive data is stored in clear text - set all passwords/keys via environment variables")
+    print("- For production: Set DJANGO_SECRET_KEY, STAFF_PASSWORD, EMAIL_HOST_USER, and EMAIL_HOST_PASSWORD as environment variables")
+    print("- This setup follows security best practices to prevent clear-text storage of sensitive information")
     
     # Security validation
     validate_security(env_file, local_env_file)
@@ -138,7 +144,8 @@ def validate_security(env_file, local_env_file):
     sensitive_patterns = [
         r'STAFF_PASSWORD=.*[^CHANGE_ME_IN_PRODUCTION]',
         r'EMAIL_HOST_PASSWORD=.*[^SET_VIA_ENVIRONMENT_VARIABLE]',
-        r'DJANGO_SECRET_KEY=.*[^${DJANGO_SECRET_KEY]',
+        r'DJANGO_SECRET_KEY=.*[^SET_VIA_ENVIRONMENT_VARIABLE]',
+        r'EMAIL_HOST_USER=.*[^SET_VIA_ENVIRONMENT_VARIABLE]',
     ]
     
     files_to_check = [env_file, local_env_file]
@@ -151,6 +158,7 @@ def validate_security(env_file, local_env_file):
                     if re.search(pattern, content):
                         print(f"⚠️  WARNING: Potential sensitive data found in {file_path}")
                         print("   Please review the file and ensure no passwords are stored in clear text")
+                        print("   Use environment variables instead of storing sensitive data in files")
 
 if __name__ == "__main__":
     main() 
