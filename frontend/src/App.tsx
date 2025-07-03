@@ -19,6 +19,7 @@ import Callouts from './pages/Callouts'
 import Events from './pages/Events'
 import Marketplace from './pages/Marketplace'
 import Friends from './pages/Friends'
+import SocialFeed from './pages/SocialFeed'
 import CreateCallout from './pages/CreateCallout'
 import CreateEvent from './pages/CreateEvent'
 import CreateListing from './pages/CreateListing'
@@ -65,6 +66,7 @@ function App() {
               <Route path="marketplace" element={<Marketplace />} />
               <Route path="marketplace/create" element={<CreateListing />} />
               <Route path="friends" element={<Friends />} />
+              <Route path="social" element={<SocialFeed />} />
               <Route path="search" element={<Search />} />
               
               {/* Advanced callout racing features */}

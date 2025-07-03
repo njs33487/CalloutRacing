@@ -15,7 +15,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 
-from core.models.auth import User, UserProfile
+from django.contrib.auth.models import User
+from core.models.auth import UserProfile
 from core.models.racing import Callout, Track, RaceResult, Event, EventParticipant
 from core.models.cars import CarProfile, CarImage, BuildLog, PerformanceData, BuildMilestone
 from core.models.marketplace import (
@@ -24,7 +25,7 @@ from core.models.marketplace import (
     Review, Rating, PaymentTransaction, Order, OrderItem, ShippingAddress
 )
 from core.models.social import (
-    Friendship, Message, UserPost, PostComment, RacingCrew, CrewMembership
+    Friendship, Message, UserPost, PostComment, RacingCrew, CrewMembership, Notification
 )
 from core.models.locations import (
     HotSpot, LocationBroadcast, OpenChallenge, ChallengeResponse
@@ -430,33 +431,100 @@ class MessageSerializer(serializers.ModelSerializer):
 
 class UserPostSerializer(serializers.ModelSerializer):
     """User post serializer for social content."""
-    user = UserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     car = CarProfileSerializer(read_only=True)
-    like_count = serializers.SerializerMethodField()
-    comment_count = serializers.SerializerMethodField()
+    likes_count = serializers.IntegerField(read_only=True)
+    comments_count = serializers.IntegerField(read_only=True)
+    is_liked = serializers.SerializerMethodField()
     
     class Meta:
         model = UserPost
-        fields = ['id', 'user', 'content', 'car', 'images', 'like_count', 
-                 'comment_count', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'user', 'like_count', 'comment_count', 'created_at', 'updated_at']
+        fields = [
+            'id', 'author', 'content', 'post_type', 'image', 'video', 
+            'car', 'likes_count', 'comments_count', 'is_public', 
+            'is_liked', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'author', 'likes_count', 'comments_count', 'created_at', 'updated_at']
     
-    def get_like_count(self, obj):
-        return getattr(obj, 'like_count', 0)
-    
-    def get_comment_count(self, obj):
-        return getattr(obj, 'comment_count', 0)
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(id=request.user.id).exists()
+        return False
 
 
 class PostCommentSerializer(serializers.ModelSerializer):
     """Post comment serializer."""
-    user = UserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     post = UserPostSerializer(read_only=True)
+    likes_count = serializers.IntegerField(read_only=True)
+    time_ago = serializers.SerializerMethodField()
     
     class Meta:
         model = PostComment
-        fields = ['id', 'user', 'post', 'content', 'created_at']
-        read_only_fields = ['id', 'user', 'created_at']
+        fields = ['id', 'author', 'post', 'content', 'likes_count', 'time_ago', 'created_at']
+        read_only_fields = ['id', 'author', 'created_at']
+    
+    def get_time_ago(self, obj):
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        diff = now - obj.created_at
+        
+        if diff.days > 0:
+            return f"{diff.days}d ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours}h ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes}m ago"
+        else:
+            return "Just now"
+
+
+class FeedItemSerializer(serializers.ModelSerializer):
+    """Feed item serializer for live feed."""
+    author = UserSerializer(read_only=True)
+    comments = PostCommentSerializer(many=True, read_only=True)
+    likes_count = serializers.IntegerField(read_only=True)
+    comments_count = serializers.IntegerField(read_only=True)
+    is_liked = serializers.SerializerMethodField()
+    time_ago = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserPost
+        fields = [
+            'id', 'author', 'content', 'post_type', 'image', 'video',
+            'likes_count', 'comments_count', 'is_liked', 'time_ago',
+            'comments', 'created_at'
+        ]
+        read_only_fields = ['id', 'author', 'likes_count', 'comments_count', 'created_at']
+    
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(id=request.user.id).exists()
+        return False
+    
+    def get_time_ago(self, obj):
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        diff = now - obj.created_at
+        
+        if diff.days > 0:
+            return f"{diff.days}d ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours}h ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes}m ago"
+        else:
+            return "Just now"
 
 
 class RacingCrewSerializer(serializers.ModelSerializer):
@@ -718,4 +786,38 @@ class PerformanceDataSerializer(serializers.ModelSerializer):
                  'reaction_time', 'sixty_foot_time', 'horsepower', 'torque',
                  'rpm_peak_hp', 'rpm_peak_torque', 'dyno_type', 'weather_conditions',
                  'track_conditions', 'date', 'notes', 'is_verified', 'verified_by', 'created_at']
-        read_only_fields = ['id', 'is_verified', 'verified_by', 'created_at'] 
+        read_only_fields = ['id', 'is_verified', 'verified_by', 'created_at']
+
+
+# Social Feed Serializers
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Notification serializer for social feed."""
+    sender = UserSerializer(read_only=True)
+    time_ago = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'sender', 'notification_type', 'title', 'message',
+            'is_read', 'related_object_id', 'time_ago', 'created_at'
+        ]
+        read_only_fields = ['id', 'sender', 'created_at']
+    
+    def get_time_ago(self, obj):
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        diff = now - obj.created_at
+        
+        if diff.days > 0:
+            return f"{diff.days}d ago"
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours}h ago"
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes}m ago"
+        else:
+            return "Just now" 

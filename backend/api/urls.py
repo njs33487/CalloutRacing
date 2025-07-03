@@ -14,10 +14,11 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, UserProfileViewSet,
     login_view, register_view, logout_view, user_profile,
-    verify_email, resend_verification_email, check_user_exists,
-    run_migrations, request_password_reset, reset_password,
+    check_user_exists,
+    run_migrations,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
     generate_backup_codes, auth, racing, sso_config,
+    verify_email, resend_verification_email, request_password_reset, reset_password,
     # Racing views
     TrackListView, TrackDetailView,
     CalloutListView, CalloutCreateView, CalloutDetailView,
@@ -26,6 +27,10 @@ from .views import (
     search_users_for_callout, callout_statistics,
     # ViewSets from other files
     ListingViewSet, EventViewSet, HotspotViewSet
+)
+from .views.social import (
+    LiveFeedView, CreatePostView, PostDetailView, PostInteractionView,
+    trending_posts, user_feed, notifications, mark_notification_read
 )
 from .views.auth import test_auth
 
@@ -77,11 +82,24 @@ racing_patterns = [
     path('stats/', callout_statistics, name='stats'),  # Alias for stats
 ]
 
+# Social Feed URLs
+social_patterns = [
+    path('feed/', LiveFeedView.as_view(), name='live-feed'),
+    path('trending/', trending_posts, name='trending-posts'),
+    path('posts/', CreatePostView.as_view(), name='create-post'),
+    path('posts/<int:pk>/', PostDetailView.as_view(), name='post-detail'),
+    path('posts/<int:pk>/<str:action>/', PostInteractionView.as_view(), name='post-interaction'),
+    path('user/<str:username>/feed/', user_feed, name='user-feed'),
+    path('notifications/', notifications, name='notifications'),
+    path('notifications/<int:notification_id>/read/', mark_notification_read, name='mark-notification-read'),
+]
+
 # Combine all URL patterns
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include(auth_patterns)),
     path('racing/', include(racing_patterns)),
+    path('social/', include(social_patterns)),
     # Aliases for convenience
     path('tracks/', TrackListView.as_view(), name='track-list-alias'),
     path('callouts/', CalloutListView.as_view(), name='callout-list-alias'),

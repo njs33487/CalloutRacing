@@ -8,7 +8,8 @@ import {
   ArrowRightOnRectangleIcon,
   UsersIcon,
   MapPinIcon,
-  MagnifyingGlassIcon
+  MagnifyingGlassIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
 import GlobalSearchBar from './GlobalSearchBar'
@@ -18,6 +19,7 @@ const navigation = [
   { name: 'Callouts', href: '/app/callouts', icon: BoltIcon },
   { name: 'Events', href: '/app/events', icon: CalendarIcon },
   { name: 'Marketplace', href: '/app/marketplace', icon: ShoppingBagIcon },
+  { name: 'Social Feed', href: '/app/social', icon: ChatBubbleLeftRightIcon },
   { name: 'Hot Spots', href: '/app/hotspots', icon: MapPinIcon },
   { name: 'Friends', href: '/app/friends', icon: UsersIcon },
   { name: 'Search', href: '/app/search', icon: MagnifyingGlassIcon },

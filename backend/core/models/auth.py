@@ -14,6 +14,8 @@ import uuid
 class UserProfile(models.Model):
     """User profile model for additional user information."""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    
+    # Basic profile fields
     bio = models.TextField(blank=True, help_text="User's bio or description")
     location = models.CharField(max_length=200, blank=True, help_text="User's location")
     car_make = models.CharField(max_length=50, blank=True, help_text="User's car make")
@@ -21,9 +23,29 @@ class UserProfile(models.Model):
     car_year = models.IntegerField(blank=True, null=True, help_text="User's car year")
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     cover_photo = models.ImageField(upload_to='cover_photos/', blank=True, null=True)
+    
+    # Racing statistics
     wins = models.IntegerField(default=0, help_text="Number of races won")
     losses = models.IntegerField(default=0, help_text="Number of races lost")
     total_races = models.IntegerField(default=0, help_text="Total number of races")
+    
+    # Email verification fields
+    email_verified = models.BooleanField(default=False, help_text='Whether email has been verified')
+    email_verification_token = models.UUIDField(null=True, blank=True, unique=True, help_text='Token for email verification')
+    email_verification_sent_at = models.DateTimeField(blank=True, help_text='When verification email was sent', null=True)
+    email_verification_expires_at = models.DateTimeField(blank=True, help_text='When verification token expires', null=True)
+    
+    # Password reset fields
+    password_reset_token = models.UUIDField(null=True, blank=True, unique=True, help_text='Token for password reset')
+    password_reset_expires_at = models.DateTimeField(null=True, blank=True, help_text='When password reset token expires')
+    password_reset_sent_at = models.DateTimeField(null=True, blank=True, help_text='When password reset email was sent')
+    
+    # OTP fields
+    otp_enabled = models.BooleanField(default=False, help_text='Whether OTP is enabled for this account')
+    otp_secret = models.CharField(max_length=32, null=True, blank=True, help_text='TOTP secret key')
+    otp_backup_codes = models.JSONField(default=list, blank=True, help_text='Backup codes for OTP')
+    
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

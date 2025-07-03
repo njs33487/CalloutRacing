@@ -19,7 +19,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from core.models.racing import Callout, Track, RaceResult
-from core.models.auth import User
+from django.contrib.auth.models import User
 from ..serializers import (
     CalloutSerializer, 
     TrackSerializer, 

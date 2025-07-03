@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0005_fix_email_verification_token_null'),
+        ('core', '0003_callout_experience_level_callout_is_invite_only_and_more'),
     ]
 
     operations = [

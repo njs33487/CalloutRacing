@@ -1,167 +1,109 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { authAPI } from '../services/api'
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 
-export default function EmailVerification() {
-  const { token } = useParams<{ token: string }>()
-  const [status, setStatus] = useState<'verifying' | 'success' | 'error' | 'expired'>('verifying')
-  const [message, setMessage] = useState('')
-  const [email, setEmail] = useState('')
-  const [isResending, setIsResending] = useState(false)
+const EmailVerification: React.FC = () => {
+  const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (token) {
-      verifyEmail(token)
-    }
-  }, [token])
-
-  const verifyEmail = async (verificationToken: string) => {
-    try {
-      const response = await authAPI.verifyEmail(verificationToken)
-      setStatus('success')
-      setMessage(response.data.message || 'Email verified successfully! You can now log in.')
-    } catch (error: any) {
-      console.error('Email verification failed:', error)
-      const errorMessage = error.response?.data?.error || 'Email verification failed'
-      setMessage(errorMessage)
-      
-      if (errorMessage.includes('expired')) {
-        setStatus('expired')
-      } else {
-        setStatus('error')
+    const verifyEmail = async () => {
+      if (!token) {
+        setStatus('error');
+        setMessage('Invalid verification link');
+        return;
       }
-    }
-  }
 
-  const handleResendVerification = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email) return
+      try {
+        const response = await api.get(`/auth/verify-email/${token}/`);
+        
+        if (response.data.verified) {
+          setStatus('success');
+          setMessage(response.data.message || 'Email verified successfully!');
+          
+          // Redirect to login after 3 seconds
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+        } else {
+          setStatus('error');
+          setMessage(response.data.error || 'Verification failed');
+        }
+      } catch (error: any) {
+        setStatus('error');
+        setMessage(error.response?.data?.error || 'An error occurred during verification');
+      }
+    };
 
-    setIsResending(true)
-    try {
-      await authAPI.resendVerification(email)
-      setMessage('Verification email sent successfully! Please check your inbox.')
-      setStatus('success')
-    } catch (error: any) {
-      console.error('Resend verification failed:', error)
-      setMessage(error.response?.data?.error || 'Failed to resend verification email')
-      setStatus('error')
-    } finally {
-      setIsResending(false)
-    }
+    verifyEmail();
+  }, [token, navigate]);
+
+  const handleResendVerification = async () => {
+    // This would typically require the user's email
+    // For now, redirect to login where they can request a new verification
+    navigate('/login');
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+            <h2 className="mt-4 text-xl font-semibold text-gray-900">Verifying Email...</h2>
+            <p className="mt-2 text-gray-600">Please wait while we verify your email address.</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-secondary-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <img src="/android-chrome-192x192.png" alt="CalloutRacing Logo" className="h-12 w-12" />
-        </div>
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Email Verification
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Verify your email to complete your registration
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
-          {status === 'verifying' && (
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Verifying your email...</p>
-            </div>
-          )}
-
-          {status === 'success' && (
-            <div className="text-center">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
+        <div className="text-center">
+          {status === 'success' ? (
+            <>
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
                 <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Email Verified!</h3>
-              <p className="mt-2 text-sm text-gray-600">{message}</p>
-              <div className="mt-6">
-                <Link
-                  to="/login"
-                  className="w-full btn-primary"
-                >
-                  Continue to Login
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {status === 'error' && (
-            <div className="text-center">
+              <h2 className="mt-4 text-xl font-semibold text-gray-900">Email Verified!</h2>
+              <p className="mt-2 text-gray-600">{message}</p>
+              <p className="mt-2 text-sm text-gray-500">Redirecting to login...</p>
+            </>
+          ) : (
+            <>
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                 <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Verification Failed</h3>
-              <p className="mt-2 text-sm text-gray-600">{message}</p>
-              <div className="mt-6">
-                <Link
-                  to="/login"
-                  className="w-full btn-secondary"
+              <h2 className="mt-4 text-xl font-semibold text-gray-900">Verification Failed</h2>
+              <p className="mt-2 text-gray-600">{message}</p>
+              <div className="mt-6 space-y-3">
+                <button
+                  onClick={handleResendVerification}
+                  className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
                 >
-                  Back to Login
-                </Link>
+                  Request New Verification
+                </button>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Go to Login
+                </button>
               </div>
-            </div>
+            </>
           )}
-
-          {status === 'expired' && (
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
-                <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Link Expired</h3>
-              <p className="mt-2 text-sm text-gray-600">{message}</p>
-              
-              <div className="mt-6">
-                <form onSubmit={handleResendVerification} className="space-y-4">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="mt-1 input-field"
-                      placeholder="Enter your email address"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isResending}
-                    className="w-full btn-primary disabled:opacity-50"
-                  >
-                    {isResending ? 'Sending...' : 'Resend Verification Email'}
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6 text-center">
-            <Link
-              to="/login"
-              className="text-sm text-primary-600 hover:text-primary-500"
-            >
-              Back to Login
-            </Link>
-          </div>
         </div>
       </div>
     </div>
-  )
-} 
+  );
+};
+
+export default EmailVerification; 

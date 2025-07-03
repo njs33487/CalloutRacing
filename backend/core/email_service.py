@@ -14,7 +14,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
-from .models.auth import User
+from django.contrib.auth.models import User
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -28,14 +28,20 @@ def send_email_verification(user):
         user: User instance to send verification email to
     """
     try:
+        # Get or create user profile
+        try:
+            profile = user.profile
+        except UserProfile.DoesNotExist:
+            profile = UserProfile.objects.create(user=user)
+        
         # Generate new verification token and set expiration
-        user.email_verification_token = uuid.uuid4()
-        user.email_verification_sent_at = timezone.now()
-        user.email_verification_expires_at = timezone.now() + timedelta(hours=24)
-        user.save()
+        profile.email_verification_token = uuid.uuid4()
+        profile.email_verification_sent_at = timezone.now()
+        profile.email_verification_expires_at = timezone.now() + timedelta(hours=24)
+        profile.save()
         
         # Build verification URL
-        verification_url = f"{settings.FRONTEND_URL}/verify-email/{user.email_verification_token}"
+        verification_url = f"{settings.FRONTEND_URL}/verify-email/{profile.email_verification_token}"
         
         # Render email template
         context = {
@@ -115,19 +121,21 @@ def verify_email_token(token):
         tuple: (success: bool, user: User or None, message: str)
     """
     try:
-        # Find user with this token
-        user = User.objects.get(email_verification_token=token)
+        # Find user profile with this token
+        from core.models.auth import UserProfile
+        profile = UserProfile.objects.get(email_verification_token=token)
+        user = profile.user
         
         # Check if token is expired
-        if user.email_verification_expires_at and user.email_verification_expires_at < timezone.now():
+        if profile.email_verification_expires_at and profile.email_verification_expires_at < timezone.now():
             return False, None, "Email verification link has expired. Please request a new one."
         
         # Mark email as verified
-        user.email_verified = True
-        user.email_verification_token = None
-        user.email_verification_sent_at = None
-        user.email_verification_expires_at = None
-        user.save()
+        profile.email_verified = True
+        profile.email_verification_token = None
+        profile.email_verification_sent_at = None
+        profile.email_verification_expires_at = None
+        profile.save()
         
         # Send welcome email
         send_welcome_email(user)
@@ -135,7 +143,7 @@ def verify_email_token(token):
         logger.info(f"Email verified for user {user.email}")
         return True, user, "Email verified successfully!"
         
-    except User.DoesNotExist:
+    except UserProfile.DoesNotExist:
         return False, None, "Invalid verification token."
     except Exception as e:
         logger.error(f"Error verifying email token: {str(e)}")
@@ -154,13 +162,14 @@ def resend_verification_email(email):
     """
     try:
         user = User.objects.get(email=email)
+        profile = user.profile
         
-        if user.email_verified:
+        if profile.email_verified:
             return False, "Email is already verified."
         
         # Check if we can resend (rate limiting)
-        if (user.email_verification_sent_at and 
-            timezone.now() - user.email_verification_sent_at < timedelta(minutes=5)):
+        if (profile.email_verification_sent_at and 
+            timezone.now() - profile.email_verification_sent_at < timedelta(minutes=5)):
             return False, "Please wait 5 minutes before requesting another verification email."
         
         # Send verification email
@@ -175,4 +184,121 @@ def resend_verification_email(email):
         return False, "No account found with this email address."
     except Exception as e:
         logger.error(f"Error resending verification email: {str(e)}")
-        return False, "An error occurred. Please try again later." 
+        return False, "An error occurred. Please try again later."
+
+
+def send_password_reset_email(user):
+    """
+    Send password reset email to user.
+    
+    Args:
+        user: User instance to send password reset email to
+        
+    Returns:
+        bool: True if email sent successfully, False otherwise
+    """
+    try:
+        profile = user.profile
+        
+        # Generate password reset token
+        profile.password_reset_token = uuid.uuid4()
+        profile.password_reset_expires_at = timezone.now() + timedelta(hours=1)
+        profile.password_reset_sent_at = timezone.now()
+        profile.save()
+        
+        # Build reset URL
+        reset_url = f"{settings.FRONTEND_URL}/reset-password/{profile.password_reset_token}"
+        
+        # Render email template
+        context = {
+            'user': user,
+            'reset_url': reset_url,
+        }
+        
+        html_message = render_to_string('emails/password_reset.html', context)
+        plain_message = render_to_string('emails/password_reset.txt', context)
+        
+        # Send email
+        send_mail(
+            subject='Reset Your Password - CalloutRacing',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        logger.info(f"Password reset email sent to {user.email}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send password reset email to {user.email}: {str(e)}")
+        return False
+
+
+def verify_password_reset_token(token):
+    """
+    Verify password reset token.
+    
+    Args:
+        token: UUID token to verify
+        
+    Returns:
+        tuple: (success: bool, user: User or None, message: str)
+    """
+    try:
+        from core.models.auth import UserProfile
+        profile = UserProfile.objects.get(password_reset_token=token)
+        user = profile.user
+        
+        # Check if token is expired
+        if profile.password_reset_expires_at and profile.password_reset_expires_at < timezone.now():
+            return False, None, "Password reset link has expired. Please request a new one."
+        
+        return True, user, "Token is valid."
+        
+    except UserProfile.DoesNotExist:
+        return False, None, "Invalid password reset token."
+    except Exception as e:
+        logger.error(f"Error verifying password reset token: {str(e)}")
+        return False, None, "An error occurred while verifying the token."
+
+
+def reset_password_with_token(token, new_password):
+    """
+    Reset password using token.
+    
+    Args:
+        token: UUID token for password reset
+        new_password: New password to set
+        
+    Returns:
+        tuple: (success: bool, user: User or None, message: str)
+    """
+    try:
+        from core.models.auth import UserProfile
+        profile = UserProfile.objects.get(password_reset_token=token)
+        user = profile.user
+        
+        # Check if token is expired
+        if profile.password_reset_expires_at and profile.password_reset_expires_at < timezone.now():
+            return False, None, "Password reset link has expired. Please request a new one."
+        
+        # Set new password
+        user.set_password(new_password)
+        user.save()
+        
+        # Clear reset token
+        profile.password_reset_token = None
+        profile.password_reset_expires_at = None
+        profile.password_reset_sent_at = None
+        profile.save()
+        
+        logger.info(f"Password reset successfully for user {user.email}")
+        return True, user, "Password reset successfully. You can now log in with your new password."
+        
+    except UserProfile.DoesNotExist:
+        return False, None, "Invalid password reset token."
+    except Exception as e:
+        logger.error(f"Error resetting password: {str(e)}")
+        return False, None, "An error occurred while resetting your password." 
