@@ -111,33 +111,37 @@ class Command(BaseCommand):
             {
                 'title': 'Friday Night Drags',
                 'description': 'Weekly drag racing event for all skill levels',
-                'event_type': 'drag',
-                'start_time': timezone.now() + timedelta(days=7),
-                'end_time': timezone.now() + timedelta(days=7, hours=4),
-                'location': 'Atlanta Dragway',
+                'event_type': 'race',
+                'start_date': timezone.now() + timedelta(days=7),
+                'end_date': timezone.now() + timedelta(days=7, hours=4),
+                'max_participants': 50,
+                'entry_fee': 25.00,
+                'is_public': True,
                 'is_active': True
             },
             {
                 'title': 'Test & Tune Session',
                 'description': 'Open track time for testing and tuning',
-                'event_type': 'test_tune',
-                'start_time': timezone.now() + timedelta(days=14),
-                'end_time': timezone.now() + timedelta(days=14, hours=6),
-                'location': 'Bristol Dragway',
+                'event_type': 'test',
+                'start_date': timezone.now() + timedelta(days=14),
+                'end_date': timezone.now() + timedelta(days=14, hours=6),
+                'max_participants': 30,
+                'entry_fee': 15.00,
+                'is_public': True,
                 'is_active': True
             }
         ]
         
         created_events = []
         for event_info in event_data:
-            track = Track.objects.filter(name=event_info['location']).first()
+            track = Track.objects.first()  # Use first available track
             if track:
                 event, created = Event.objects.get_or_create(
                     title=event_info['title'],
                     defaults={
                         **event_info,
                         'track': track,
-                        'created_by': admin_user
+                        'organizer': admin_user
                     }
                 )
                 if created:
@@ -151,18 +155,20 @@ class Command(BaseCommand):
         
         callout_data = [
             {
-                'title': 'Looking for Competition',
-                'description': 'Anyone want to race? Stock vs Stock',
-                'callout_type': 'open',
+                'message': 'Looking for Competition - Anyone want to race? Stock vs Stock',
+                'race_type': 'quarter_mile',
                 'experience_level': 'beginner',
-                'is_invite_only': False
+                'is_invite_only': False,
+                'location_type': 'track',
+                'status': 'pending'
             },
             {
-                'title': 'Pro Challenge',
-                'description': 'Pro racers only. Serious competition.',
-                'callout_type': 'challenge',
-                'experience_level': 'expert',
-                'is_invite_only': True
+                'message': 'Pro Challenge - Pro racers only. Serious competition.',
+                'race_type': 'quarter_mile',
+                'experience_level': 'advanced',
+                'is_invite_only': True,
+                'location_type': 'track',
+                'status': 'pending'
             }
         ]
         
@@ -171,16 +177,17 @@ class Command(BaseCommand):
             track = Track.objects.first()
             if track:
                 callout, created = Callout.objects.get_or_create(
-                    title=callout_info['title'],
+                    message=callout_info['message'][:50],  # Use first 50 chars as unique identifier
                     defaults={
                         **callout_info,
                         'track': track,
-                        'created_by': admin_user
+                        'challenger': admin_user,
+                        'challenged': admin_user  # Self-challenge for demo
                     }
                 )
                 if created:
                     created_callouts.append(callout)
-                    self.stdout.write(f"   ✅ Created: {callout.title}")
+                    self.stdout.write(f"   ✅ Created: {callout.message[:30]}...")
         
         self.stdout.write(f"✅ Created {len(created_callouts)} callouts")
         
@@ -189,34 +196,45 @@ class Command(BaseCommand):
         
         hotspot_data = [
             {
-                'name': 'Pit Area',
+                'name': 'LA Raceway Pit Area',
                 'description': 'Main pit area for racers',
-                'hotspot_type': 'meeting',
-                'is_active': True
+                'address': '123 Racing Blvd',
+                'city': 'Los Angeles',
+                'state': 'CA',
+                'zip_code': '90210',
+                'latitude': 34.0522,
+                'longitude': -118.2437,
+                'spot_type': 'track',
+                'is_active': True,
+                'is_verified': True
             },
             {
-                'name': 'Starting Line',
+                'name': 'Miami Speedway Starting Line',
                 'description': 'Where the action begins',
-                'hotspot_type': 'racing',
-                'is_active': True
+                'address': '789 Drag Rd',
+                'city': 'Miami',
+                'state': 'FL',
+                'zip_code': '33101',
+                'latitude': 25.7617,
+                'longitude': -80.1918,
+                'spot_type': 'track',
+                'is_active': True,
+                'is_verified': True
             }
         ]
         
         created_hotspots = []
         for hotspot_info in hotspot_data:
-            track = Track.objects.first()
-            if track:
-                hotspot, created = HotSpot.objects.get_or_create(
-                    name=hotspot_info['name'],
-                    track=track,
-                    defaults={
-                        **hotspot_info,
-                        'created_by': admin_user
-                    }
-                )
-                if created:
-                    created_hotspots.append(hotspot)
-                    self.stdout.write(f"   ✅ Created: {hotspot.name}")
+            hotspot, created = HotSpot.objects.get_or_create(
+                name=hotspot_info['name'],
+                defaults={
+                    **hotspot_info,
+                    'created_by': admin_user
+                }
+            )
+            if created:
+                created_hotspots.append(hotspot)
+                self.stdout.write(f"   ✅ Created: {hotspot.name}")
         
         self.stdout.write(f"✅ Created {len(created_hotspots)} hotspots")
         

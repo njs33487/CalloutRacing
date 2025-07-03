@@ -29,9 +29,15 @@ import io
 import secrets
 from django.template.loader import render_to_string
 
-from core.models.auth import User, UserProfile
+from django.contrib.auth.models import User
+from core.models.auth import UserProfile
 from core.models.social import Follow, Block
-from core.email_service import send_email_verification, send_welcome_email
+from core.email_service import (
+    send_email_verification, send_welcome_email, 
+    verify_email_token, resend_verification_email,
+    send_password_reset_email, verify_password_reset_token, reset_password_with_token
+)
+
 from ..serializers import (
     UserSerializer, UserProfileSerializer
 )
@@ -414,14 +420,16 @@ def login_view(request):
         }, status=status.HTTP_401_UNAUTHORIZED)
     
     # Check if email is verified
-    print(f"Email verified: {user.email_verified}")
-    # Temporarily bypass email verification for development
-    # if not user.email_verified:
-    #     print("Email not verified - blocking login")
-    #     return Response({
-    #         'error': 'Please verify your email before logging in',
-    #         'email_verification_required': True
-    #     }, status=status.HTTP_401_UNAUTHORIZED)
+    try:
+        profile = user.profile
+        if not profile.email_verified:
+            return Response({
+                'error': 'Please verify your email address before logging in. Check your email for a verification link.',
+                'email_verification_required': True
+            }, status=status.HTTP_401_UNAUTHORIZED)
+    except UserProfile.DoesNotExist:
+        # If no profile exists, allow login (backward compatibility)
+        pass
     
     # Create or get token
     token, created = Token.objects.get_or_create(user=user)
@@ -429,6 +437,13 @@ def login_view(request):
     
     # Add debugging for response creation
     print(f"Token key: {token.key}")
+    # Get email verification status
+    try:
+        profile = user.profile
+        email_verified = profile.email_verified
+    except UserProfile.DoesNotExist:
+        email_verified = False
+    
     response_data = {
         'token': token.key,
         'user': {
@@ -437,7 +452,7 @@ def login_view(request):
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'email_verified': user.email_verified
+            'email_verified': email_verified
         }
     }
     print(f"Response data: {response_data}")
@@ -520,16 +535,13 @@ def register_view(request):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        # Create user with verification token
+        # Create user with basic fields only
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password,
             first_name=first_name,
-            last_name=last_name,
-            email_verified=False,
-            email_verification_token=uuid.uuid4(),
-            email_verification_expires_at=timezone.now() + timedelta(hours=24)
+            last_name=last_name
         )
         print(f"User created successfully: {user.username}")
     except Exception as e:
@@ -538,13 +550,20 @@ def register_view(request):
             'error': 'Failed to create user'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    # Create user profile
+    try:
+        UserProfile.objects.get_or_create(user=user)
+        print(f"User profile created successfully for {user.username}")
+    except Exception as e:
+        print(f"Failed to create user profile: {str(e)}")
+        # Continue anyway as profile is not critical for registration
+
+    # Send email verification
     email_sent = True
     warning = None
-    # Send verification email
     try:
         send_email_verification(user)
-        user.email_verification_sent_at = timezone.now()
-        user.save()
+        print(f"Email verification sent to {user.email}")
     except Exception as e:
         print(f"Failed to send verification email: {e}")
         email_sent = False
@@ -562,8 +581,7 @@ def register_view(request):
             'username': user.username,
             'email': user.email,
             'first_name': user.first_name,
-            'last_name': user.last_name,
-            'email_verified': user.email_verified
+            'last_name': user.last_name
         }
     }
     if warning:
@@ -591,191 +609,27 @@ def user_profile(request):
     """Get current user's profile."""
     user = request.user
     print(f"User profile request - user: {user.username}, authenticated: {request.user.is_authenticated}")
+    # Get user profile for email verification status
+    try:
+        profile = user.profile
+        email_verified = profile.email_verified
+    except UserProfile.DoesNotExist:
+        email_verified = False
+    
     return Response({
         'id': user.id,
         'username': user.username,
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
-        'email_verified': user.email_verified
+        'email_verified': email_verified
     })
 
 
-@api_view(['GET'])
-@permission_classes([permissions.AllowAny])
-def verify_email(request, token):
-    """Verify user email with token."""
-    try:
-        user = User.objects.get(email_verification_token=token)
-        
-        # Check if token is expired
-        if user.email_verification_expires_at and user.email_verification_expires_at < timezone.now():
-            return Response({
-                'error': 'Verification token has expired. Please request a new one.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Mark email as verified
-        user.email_verified = True
-        # Don't set token to None until migration is applied
-        # user.email_verification_token = None
-        user.email_verification_expires_at = None
-        user.save()
-        
-        # Send welcome email after successful verification
-        try:
-            send_welcome_email(user)
-        except Exception as e:
-            print(f"Failed to send welcome email: {e}")
-        
-        return Response({
-            'message': 'Email verified successfully. You can now log in.'
-        })
-        
-    except User.DoesNotExist:
-        return Response({
-            'error': 'Invalid verification token'
-        }, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def resend_verification_email(request):
-    """Resend email verification."""
-    email = request.data.get('email')
-    
-    if not email:
-        return Response({
-            'error': 'Email is required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    try:
-        user = User.objects.get(email=email)
-        
-        if user.email_verified:
-            return Response({
-                'error': 'Email is already verified'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Generate new verification token
-        user.email_verification_token = uuid.uuid4()
-        user.email_verification_expires_at = timezone.now() + timedelta(hours=24)
-        user.save()
-        
-        # Send verification email
-        try:
-            send_email_verification(user)
-            user.email_verification_sent_at = timezone.now()
-            user.save()
-            
-            return Response({
-                'message': 'Verification email sent successfully'
-            })
-            
-        except Exception as e:
-            return Response({
-                'error': 'Failed to send verification email'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    except User.DoesNotExist:
-        return Response({
-            'error': 'User with this email does not exist'
-        }, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def request_password_reset(request):
-    """Request password reset email."""
-    email = request.data.get('email')
-    
-    if not email:
-        return Response({
-            'error': 'Email is required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    try:
-        user = User.objects.get(email=email)
-        
-        # Generate password reset token
-        user.password_reset_token = uuid.uuid4()
-        user.password_reset_expires_at = timezone.now() + timedelta(hours=1)
-        user.save()
-        
-        # Send password reset email
-        try:
-            reset_url = f"{settings.FRONTEND_URL}/reset-password/{user.password_reset_token}"
-            
-            context = {
-                'user': user,
-                'reset_url': reset_url,
-            }
-            
-            html_message = render_to_string('emails/password_reset.html', context)
-            plain_message = render_to_string('emails/password_reset.txt', context)
-            
-            send_mail(
-                subject='Reset Your Password - CalloutRacing',
-                message=plain_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                html_message=html_message,
-                fail_silently=False,
-            )
-            
-            user.password_reset_sent_at = timezone.now()
-            user.save()
-            
-            return Response({
-                'message': 'Password reset email sent successfully'
-            })
-            
-        except Exception as e:
-            return Response({
-                'error': 'Failed to send password reset email'
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-    except User.DoesNotExist:
-        # Don't reveal if email exists or not for security
-        return Response({
-            'message': 'If an account with this email exists, a password reset email has been sent.'
-        })
-
-
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def reset_password(request):
-    """Reset password with token."""
-    token = request.data.get('token')
-    new_password = request.data.get('new_password')
-    
-    if not token or not new_password:
-        return Response({
-            'error': 'Token and new password are required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    try:
-        user = User.objects.get(password_reset_token=token)
-        
-        # Check if token is expired
-        if user.password_reset_expires_at and user.password_reset_expires_at < timezone.now():
-            return Response({
-                'error': 'Password reset token has expired. Please request a new one.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Set new password
-        user.set_password(new_password)
-        user.password_reset_token = None
-        user.password_reset_expires_at = None
-        user.save()
-        
-        return Response({
-            'message': 'Password reset successfully. You can now log in with your new password.'
-        })
-        
-    except User.DoesNotExist:
-        return Response({
-            'error': 'Invalid password reset token'
-        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -784,15 +638,18 @@ def setup_otp(request):
     """Setup OTP for user account."""
     user = request.user
     
-    if user.otp_enabled:
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    
+    if profile.otp_enabled:
         return Response({
             'error': 'OTP is already enabled for this account'
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Generate TOTP secret
     secret = pyotp.random_base32()
-    user.otp_secret = secret
-    user.save()
+    profile.otp_secret = secret
+    profile.save()
     
     # Generate QR code
     totp = pyotp.TOTP(secret)
@@ -815,8 +672,8 @@ def setup_otp(request):
     
     # Generate backup codes
     backup_codes = [secrets.token_hex(4).upper() for _ in range(10)]
-    user.otp_backup_codes = backup_codes
-    user.save()
+    profile.otp_backup_codes = backup_codes
+    profile.save()
     
     return Response({
         'secret': secret,
@@ -838,16 +695,24 @@ def verify_otp_setup(request):
             'error': 'OTP code is required'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    if not user.otp_secret:
+    # Get user profile
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        return Response({
+            'error': 'User profile not found'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not profile.otp_secret:
         return Response({
             'error': 'OTP setup not initiated'
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Verify the code
-    totp = pyotp.TOTP(user.otp_secret)
+    totp = pyotp.TOTP(profile.otp_secret)
     if totp.verify(code):
-        user.otp_enabled = True
-        user.save()
+        profile.otp_enabled = True
+        profile.save()
         
         return Response({
             'message': 'OTP setup completed successfully'
@@ -865,7 +730,15 @@ def disable_otp(request):
     user = request.user
     code = request.data.get('code')
     
-    if not user.otp_enabled:
+    # Get user profile
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        return Response({
+            'error': 'User profile not found'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not profile.otp_enabled:
         return Response({
             'error': 'OTP is not enabled for this account'
         }, status=status.HTTP_400_BAD_REQUEST)
@@ -876,12 +749,12 @@ def disable_otp(request):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Verify the code
-    totp = pyotp.TOTP(user.otp_secret)
+    totp = pyotp.TOTP(profile.otp_secret)
     if totp.verify(code):
-        user.otp_enabled = False
-        user.otp_secret = None
-        user.otp_backup_codes = []
-        user.save()
+        profile.otp_enabled = False
+        profile.otp_secret = None
+        profile.otp_backup_codes = []
+        profile.save()
         
         return Response({
             'message': 'OTP disabled successfully'
@@ -906,21 +779,22 @@ def verify_otp_login(request):
     
     try:
         user = User.objects.get(username=username)
+        profile = user.profile
         
-        if not user.otp_enabled:
+        if not profile.otp_enabled:
             return Response({
                 'error': 'OTP is not enabled for this account'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Check if it's a backup code
-        if code in user.otp_backup_codes:
+        if code in profile.otp_backup_codes:
             # Remove used backup code
-            user.otp_backup_codes.remove(code)
-            user.save()
+            profile.otp_backup_codes.remove(code)
+            profile.save()
             is_backup_code = True
         else:
             # Verify TOTP code
-            totp = pyotp.TOTP(user.otp_secret)
+            totp = pyotp.TOTP(profile.otp_secret)
             if not totp.verify(code):
                 return Response({
                     'error': 'Invalid OTP code'
@@ -938,12 +812,12 @@ def verify_otp_login(request):
                 'email': user.email,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-                'email_verified': user.email_verified
+                'email_verified': profile.email_verified
             },
             'is_backup_code': is_backup_code
         })
         
-    except User.DoesNotExist:
+    except (User.DoesNotExist, UserProfile.DoesNotExist):
         return Response({
             'error': 'User not found'
         }, status=status.HTTP_400_BAD_REQUEST)
@@ -955,15 +829,23 @@ def generate_backup_codes(request):
     """Generate new backup codes for OTP."""
     user = request.user
     
-    if not user.otp_enabled:
+    # Get user profile
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        return Response({
+            'error': 'User profile not found'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not profile.otp_enabled:
         return Response({
             'error': 'OTP is not enabled for this account'
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Generate new backup codes
     backup_codes = [secrets.token_hex(4).upper() for _ in range(10)]
-    user.otp_backup_codes = backup_codes
-    user.save()
+    profile.otp_backup_codes = backup_codes
+    profile.save()
     
     return Response({
         'backup_codes': backup_codes,
@@ -995,4 +877,100 @@ def test_auth(request):
         'message': 'Authentication working',
         'user': request.user.username,
         'authenticated': request.user.is_authenticated
-    }) 
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def verify_email(request, token):
+    """Verify user email with token."""
+    success, user, message = verify_email_token(token)
+    
+    if success:
+        return Response({
+            'message': message,
+            'verified': True
+        })
+    else:
+        return Response({
+            'error': message,
+            'verified': False
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def resend_verification_email(request):
+    """Resend email verification."""
+    email = request.data.get('email')
+    
+    if not email:
+        return Response({
+            'error': 'Email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    success, message = resend_verification_email(email)
+    
+    if success:
+        return Response({
+            'message': message
+        })
+    else:
+        return Response({
+            'error': message
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def request_password_reset(request):
+    """Request password reset email."""
+    email = request.data.get('email')
+    
+    if not email:
+        return Response({
+            'error': 'Email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(email=email)
+        success = send_password_reset_email(user)
+        
+        if success:
+            return Response({
+                'message': 'Password reset email sent successfully'
+            })
+        else:
+            return Response({
+                'error': 'Failed to send password reset email'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    except User.DoesNotExist:
+        # Don't reveal if email exists or not for security
+        return Response({
+            'message': 'If an account with this email exists, a password reset email has been sent.'
+        })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def reset_password(request):
+    """Reset password with token."""
+    token = request.data.get('token')
+    new_password = request.data.get('new_password')
+    
+    if not token or not new_password:
+        return Response({
+            'error': 'Token and new password are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    success, user, message = reset_password_with_token(token, new_password)
+    
+    if success:
+        return Response({
+            'message': message
+        })
+    else:
+        return Response({
+            'error': message
+        }, status=status.HTTP_400_BAD_REQUEST) 
