@@ -49,8 +49,8 @@ api.interceptors.response.use(
 
 // Utility to ensure CSRF cookie is set before making POST requests
 export async function ensureCSRFToken() {
-  // Make a GET request to login endpoint to set CSRF cookie
-  await api.get('/auth/login/');
+  // Make a GET request to csrf endpoint to set CSRF cookie
+  await api.get('/auth/csrf/');
 }
 
 // Authentication API endpoints
