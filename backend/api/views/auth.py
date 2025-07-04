@@ -282,9 +282,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         if profile.user != request.user:
             return Response({'error': 'Not authorized'}, status=status.HTTP_403_FORBIDDEN)
         
-        wins = request.data.get('wins', profile.wins)
-        losses = request.data.get('losses', profile.losses)
-        total_races = request.data.get('total_races', profile.total_races)
+        wins = int(request.data.get('wins', profile.wins))
+        losses = int(request.data.get('losses', profile.losses))
+        total_races = int(request.data.get('total_races', profile.total_races))
         
         profile.wins = wins
         profile.losses = losses

@@ -31,26 +31,69 @@ class UserProfileTests(APITestCase):
             email='racer2@test.com',
             password='testpass123'
         )
-        self.profile1 = UserProfile.objects.create(
+        self.profile1, created = UserProfile.objects.get_or_create(
             user=self.user1,
-            bio='Professional drag racer',
-            location='Los Angeles, CA',
-            car_make='Chevrolet',
-            car_model='Camaro',
-            wins=15,
-            losses=5,
-            total_races=20
+            defaults={
+                'bio': 'Professional drag racer',
+                'location': 'Los Angeles, CA',
+                'car_make': 'Chevrolet',
+                'car_model': 'Camaro',
+                'wins': 15,
+                'losses': 5,
+                'total_races': 20
+            }
         )
-        self.profile2 = UserProfile.objects.create(
+        if created:
+            self.profile1.bio = 'Professional drag racer'
+            self.profile1.location = 'Los Angeles, CA'
+            self.profile1.car_make = 'Chevrolet'
+            self.profile1.car_model = 'Camaro'
+            self.profile1.wins = 15
+            self.profile1.losses = 5
+            self.profile1.total_races = 20
+            self.profile1.save()
+        else:
+            # Update existing profile with test data
+            self.profile1.bio = 'Professional drag racer'
+            self.profile1.location = 'Los Angeles, CA'
+            self.profile1.car_make = 'Chevrolet'
+            self.profile1.car_model = 'Camaro'
+            self.profile1.wins = 15
+            self.profile1.losses = 5
+            self.profile1.total_races = 20
+            self.profile1.save()
+            
+        self.profile2, created = UserProfile.objects.get_or_create(
             user=self.user2,
-            bio='Weekend warrior',
-            location='Miami, FL',
-            car_make='Ford',
-            car_model='Mustang',
-            wins=8,
-            losses=12,
-            total_races=20
+            defaults={
+                'bio': 'Weekend warrior',
+                'location': 'Miami, FL',
+                'car_make': 'Ford',
+                'car_model': 'Mustang',
+                'wins': 8,
+                'losses': 12,
+                'total_races': 20
+            }
         )
+        if created:
+            self.profile2.bio = 'Weekend warrior'
+            self.profile2.location = 'Miami, FL'
+            self.profile2.car_make = 'Ford'
+            self.profile2.car_model = 'Mustang'
+            self.profile2.wins = 8
+            self.profile2.losses = 12
+            self.profile2.total_races = 20
+            self.profile2.save()
+        else:
+            # Update existing profile with test data
+            self.profile2.bio = 'Weekend warrior'
+            self.profile2.location = 'Miami, FL'
+            self.profile2.car_make = 'Ford'
+            self.profile2.car_model = 'Mustang'
+            self.profile2.wins = 8
+            self.profile2.losses = 12
+            self.profile2.total_races = 20
+            self.profile2.save()
 
     def test_get_user_profile(self):
         """Test retrieving a user's profile."""
