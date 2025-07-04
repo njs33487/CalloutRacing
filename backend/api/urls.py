@@ -14,7 +14,6 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, UserProfileViewSet,
     login_view, register_view, logout_view, user_profile,
-    check_user_exists,
     run_migrations,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
     generate_backup_codes, sso_config,
@@ -24,7 +23,7 @@ from .views import (
 )
 
 # Import auth views directly
-from .views.auth import resend_verification_email_view
+from .views.auth import resend_verification_email_view, check_user_exists
 
 # Import racing views directly
 from .views.racing import (
