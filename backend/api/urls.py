@@ -17,7 +17,7 @@ from .views import (
     check_user_exists,
     run_migrations,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
-    generate_backup_codes, auth, racing, sso_config,
+    generate_backup_codes, sso_config,
     verify_email, resend_verification_email_view, request_password_reset, reset_password,
     # Racing views
     TrackListView, TrackDetailView,
@@ -28,14 +28,12 @@ from .views import (
     # ViewSets from other files
     ListingViewSet, EventViewSet, HotspotViewSet
 )
+
+# Import social views directly
 from .views.social import (
     LiveFeedView, CreatePostView, PostDetailView, PostInteractionView,
     trending_posts, user_feed, notifications, mark_notification_read
 )
-from .views.auth import test_auth
-
-# Import ViewSets directly from views.py
-from . import views
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -50,7 +48,7 @@ auth_patterns = [
     path('register/', register_view, name='register'),
     path('logout/', logout_view, name='logout'),
     path('profile/', user_profile, name='user-profile'),
-    path('test-auth/', test_auth, name='test-auth'),
+
     path('verify-email/<str:token>/', verify_email, name='verify-email'),
     path('resend-verification/', resend_verification_email_view, name='resend-verification'),
     path('check-user/', check_user_exists, name='check-user'),
