@@ -29,7 +29,7 @@ import io
 import secrets
 from django.template.loader import render_to_string
 
-from django.contrib.auth.models import User
+from core.models.auth import User
 from core.models.auth import UserProfile
 from core.models.social import Follow, Block
 from core.email_service import (
@@ -624,12 +624,6 @@ def user_profile(request):
         'last_name': user.last_name,
         'email_verified': email_verified
     })
-
-
-
-
-
-
 
 
 @api_view(['POST'])

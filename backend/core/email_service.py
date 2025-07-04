@@ -14,10 +14,13 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 import uuid
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
+from core.models.auth import UserProfile
 
 
 def send_email_verification(user):
@@ -122,7 +125,6 @@ def verify_email_token(token):
     """
     try:
         # Find user profile with this token
-        from core.models.auth import UserProfile
         profile = UserProfile.objects.get(email_verification_token=token)
         user = profile.user
         

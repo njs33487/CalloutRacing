@@ -1,9 +1,11 @@
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from core.models import Track, Event, Callout, HotSpot, MarketplaceListing
 from django.utils import timezone
 from datetime import timedelta
+
+User = get_user_model()
 
 class Command(BaseCommand):
     help = 'Populate Railway database with sample data'
