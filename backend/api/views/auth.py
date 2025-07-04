@@ -28,6 +28,7 @@ import base64
 import io
 import secrets
 from django.template.loader import render_to_string
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from core.models.auth import User
 from core.models.auth import UserProfile
@@ -864,6 +865,13 @@ def test_auth(request):
         'user': request.user.username,
         'authenticated': request.user.is_authenticated
     })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+@ensure_csrf_cookie
+def get_csrf_token(request):
+    return Response({'message': 'CSRF cookie set'})
 
 
 @api_view(['GET'])

@@ -23,7 +23,7 @@ from .views import (
 )
 
 # Import auth views directly
-from .views.auth import resend_verification_email_view, check_user_exists
+from .views.auth import resend_verification_email_view, check_user_exists, get_csrf_token
 
 # Import racing views directly
 from .views.racing import (
@@ -53,6 +53,7 @@ auth_patterns = [
     path('register/', register_view, name='register'),
     path('logout/', logout_view, name='logout'),
     path('profile/', user_profile, name='user-profile'),
+    path('csrf/', get_csrf_token, name='get-csrf-token'),
 
     path('verify-email/<str:token>/', verify_email, name='verify-email'),
     path('resend-verification/', resend_verification_email_view, name='resend-verification'),
