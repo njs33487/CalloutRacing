@@ -1,6 +1,6 @@
 // Authentication Context - manages user authentication state across the app
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { authAPI } from '../services/api'
+import { authAPI, ensureCSRFToken } from '../services/api'
 
 // User data structure
 interface User {
@@ -15,7 +15,6 @@ interface User {
 // Authentication context interface - defines available methods and state
 interface AuthContextType {
   user: User | null
-  token: string | null
   login: (username: string, password: string) => Promise<void>
   register: (userData: any) => Promise<any>
   googleLogin: (idToken: string) => Promise<void>
@@ -44,55 +43,41 @@ interface AuthProviderProps {
 
 // Main authentication provider component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // State for user data, authentication token, and loading status
+  // State for user data and loading status
   const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   // Check for existing authentication on app startup
   useEffect(() => {
-    // Retrieve stored authentication data from localStorage
-    const storedToken = localStorage.getItem('token')
-    const storedUser = localStorage.getItem('user')
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken)
-      setUser(JSON.parse(storedUser))
-      
-      // Verify the stored token is still valid with the server
-      authAPI.profile()
-        .then(response => {
-          setUser(response.data)
-        })
-        .catch(() => {
-          // Token is invalid, clear all stored authentication data
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-          setToken(null)
-          setUser(null)
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
-    } else {
-      setIsLoading(false)
-    }
+    // Check if user is authenticated by calling profile endpoint
+    authAPI.profile()
+      .then(response => {
+        setUser(response.data)
+      })
+      .catch(() => {
+        // User is not authenticated, clear any stored data
+        localStorage.removeItem('user')
+        setUser(null)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [])
 
-  // Login function - authenticates user and stores credentials
+  // Login function - authenticates user and stores user data
   const login = async (username: string, password: string) => {
+    await ensureCSRFToken();
     const response = await authAPI.login({ username, password })
-    const { token: newToken, user: newUser } = response.data
+    const { user: newUser } = response.data
     
     // Update state and store in localStorage
-    setToken(newToken)
     setUser(newUser)
-    localStorage.setItem('token', newToken)
     localStorage.setItem('user', JSON.stringify(newUser))
   }
 
   // Register function - creates new user account and logs them in
   const register = async (userData: any) => {
+    await ensureCSRFToken();
     const response = await authAPI.register(userData)
     return response
   }
@@ -100,24 +85,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Google SSO login function
   const googleLogin = async (idToken: string) => {
     const response = await authAPI.googleSSO(idToken)
-    const { token: newToken, user: newUser } = response.data
+    const { user: newUser } = response.data
     
     // Update state and store in localStorage
-    setToken(newToken)
     setUser(newUser)
-    localStorage.setItem('token', newToken)
     localStorage.setItem('user', JSON.stringify(newUser))
   }
 
   // Facebook SSO login function
   const facebookLogin = async (accessToken: string) => {
     const response = await authAPI.facebookSSO(accessToken)
-    const { token: newToken, user: newUser } = response.data
+    const { user: newUser } = response.data
     
     // Update state and store in localStorage
-    setToken(newToken)
     setUser(newUser)
-    localStorage.setItem('token', newToken)
     localStorage.setItem('user', JSON.stringify(newUser))
   }
 
@@ -129,9 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Logout error:', error)
     } finally {
       // Always clear local authentication data
-      setToken(null)
       setUser(null)
-      localStorage.removeItem('token')
       localStorage.removeItem('user')
     }
   }
@@ -139,14 +118,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Context value object with all authentication methods and state
   const value: AuthContextType = {
     user,
-    token,
     login,
     register,
     googleLogin,
     facebookLogin,
     logout,
     isLoading,
-    isAuthenticated: !!token && !!user,
+    isAuthenticated: !!user,
     isEmailVerified: !!user?.email_verified
   }
 
