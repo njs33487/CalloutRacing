@@ -2377,36 +2377,17 @@ def verify_email(request, token):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def resend_verification_email(request):
-    """
-    Resend verification email endpoint.
-    
-    Resends verification email to user's email address.
-    
-    Args:
-        request: HTTP request object containing email
-        
-    Returns:
-        Response with resend result
-    """
-    email = request.data.get('email')
-    
-    if not email:
-        return Response({
-            'error': 'Email is required'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
-    from core.email_service import resend_verification_email
-    
-    success, message = resend_verification_email(email)
-    
-    if success:
-        return Response({
-            'message': message
-        })
-    else:
-        return Response({
-            'error': message
-        }, status=status.HTTP_400_BAD_REQUEST) 
+# Import social views to make them available
+from .views.social import (
+    LiveFeedView, CreatePostView, PostDetailView, PostInteractionView,
+    trending_posts, user_feed, notifications, mark_notification_read
+)
+
+# Import racing views to make them available
+from .views.racing import (
+    TrackListView, TrackDetailView,
+    CalloutListView, CalloutCreateView, CalloutDetailView,
+    RaceResultCreateView, RaceResultDetailView,
+    accept_callout, decline_callout, cancel_callout,
+    search_users_for_callout, callout_statistics
+)

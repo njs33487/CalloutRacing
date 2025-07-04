@@ -1,0 +1,204 @@
+{
+  "total": 28,
+  "passed": 23,
+  "failed": 5,
+  "success_rate": 82.14285714285714,
+  "results": [
+    {
+      "endpoint": "Root endpoint",
+      "status": 200,
+      "expected": 200,
+      "success": true,
+      "response": "{\"message\": \"CalloutRacing API is running!\", \"version\": \"1.0.0\", \"endpoints\": {\"api\": \"/api/\", \"admin\": \"/admin/\", \"docs\": \"/api/docs/\", \"contact\": \"/api/contact/\", \"health\": \"/health/\"}}"
+    },
+    {
+      "endpoint": "Health check",
+      "status": 200,
+      "expected": 200,
+      "success": true,
+      "response": "{\"status\": \"healthy\", \"database\": \"connected\", \"debug\": false, \"allowed_hosts\": [\"localhost\", \"127.0.0.1\", \"calloutracing.up.railway.app\", \"calloutracing.up.railway.app\", \".railway.app\", \".up.railway."
+    },
+    {
+      "endpoint": "API root",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "SSO config",
+      "status": 200,
+      "expected": 200,
+      "success": true,
+      "response": "{\"google\":{\"client_id\":\"\",\"enabled\":false},\"facebook\":{\"app_id\":\"\",\"enabled\":false}}"
+    },
+    {
+      "endpoint": "User Registration",
+      "status": 201,
+      "expected": 201,
+      "success": true,
+      "response": "{\"message\":\"Account created successfully. A verification email has been sent to your address. Please check your inbox.\",\"user\":{\"id\":5,\"username\":\"api_test_user\",\"email\":\"api_test@example.com\",\"first_"
+    },
+    {
+      "endpoint": "Login (unverified)",
+      "status": 401,
+      "expected": 401,
+      "success": true,
+      "response": "{\"error\":\"Please verify your email address before logging in. Check your email for a verification link.\",\"email_verification_required\":true}"
+    },
+    {
+      "endpoint": "Password Reset Request",
+      "status": 200,
+      "expected": 200,
+      "success": true,
+      "response": "{\"message\":\"Password reset email sent successfully\"}"
+    },
+    {
+      "endpoint": "Resend Verification Email",
+      "status": 400,
+      "expected": 200,
+      "success": false,
+      "response": "{\"error\":\"Please wait 5 minutes before requesting another verification email.\"}"
+    },
+    {
+      "endpoint": "Users list",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Profiles list",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "User profile",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Tracks list",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Callouts list",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Race results",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Search users",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Callout stats",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Social feed",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Trending posts",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Posts",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Notifications",
+      "status": 403,
+      "expected": 403,
+      "success": true,
+      "response": "{\"detail\":\"Authentication credentials were not provided.\"}"
+    },
+    {
+      "endpoint": "Marketplace list",
+      "status": 200,
+      "expected": 403,
+      "success": false,
+      "response": "{\"count\":0,\"next\":null,\"previous\":null,\"results\":[]}"
+    },
+    {
+      "endpoint": "Hotspots list",
+      "status": 200,
+      "expected": 403,
+      "success": false,
+      "response": "{\"count\":0,\"next\":null,\"previous\":null,\"results\":[]}"
+    },
+    {
+      "endpoint": "Events list",
+      "status": 200,
+      "expected": 403,
+      "success": false,
+      "response": "{\"count\":0,\"next\":null,\"previous\":null,\"results\":[]}"
+    },
+    {
+      "endpoint": "Invalid Registration",
+      "status": 400,
+      "expected": 400,
+      "success": true,
+      "response": "{\"error\":\"Username, email, and password are required\"}"
+    },
+    {
+      "endpoint": "Invalid Login",
+      "status": 401,
+      "expected": 401,
+      "success": true,
+      "response": "{\"error\":\"Invalid credentials\"}"
+    },
+    {
+      "endpoint": "Missing Fields",
+      "status": 400,
+      "expected": 400,
+      "success": true,
+      "response": "{\"error\":\"Username, email, and password are required\"}"
+    },
+    {
+      "endpoint": "CORS Preflight",
+      "status": 200,
+      "expected": 200,
+      "success": true,
+      "response": ""
+    },
+    {
+      "endpoint": "CORS POST Request",
+      "status": 400,
+      "expected": 201,
+      "success": false,
+      "response": "{\"error\":\"User already exists\",\"details\":{\"username\":\"The username \\\"cors_test_user\\\" is already taken. Please choose a different username.\",\"email\":\"The email \\\"cors@example.com\\\" is already register"
+    }
+  ]
+}

@@ -12,7 +12,7 @@ This module contains all API views organized by functionality:
 from .auth import (
     UserViewSet, UserProfileViewSet,
     login_view, register_view, logout_view, user_profile,
-    verify_email, resend_verification_email, check_user_exists,
+    verify_email, resend_verification_email_view, check_user_exists,
     run_migrations, request_password_reset, reset_password,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
     generate_backup_codes
@@ -38,7 +38,7 @@ __all__ = [
     # Auth views
     'UserViewSet', 'UserProfileViewSet',
     'login_view', 'register_view', 'logout_view', 'user_profile',
-    'verify_email', 'resend_verification_email', 'check_user_exists',
+    'verify_email', 'resend_verification_email_view', 'check_user_exists',
     'run_migrations', 'request_password_reset', 'reset_password',
     'setup_otp', 'verify_otp_setup', 'disable_otp', 'verify_otp_login',
     'generate_backup_codes',
