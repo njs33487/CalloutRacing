@@ -37,10 +37,18 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     """Basic user serializer for public information."""
+    email_verified = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'date_joined', 'email_verified']
         read_only_fields = ['id', 'date_joined', 'email_verified']
+    
+    def get_email_verified(self, obj):
+        try:
+            return obj.profile.email_verified
+        except UserProfile.DoesNotExist:
+            return False
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
