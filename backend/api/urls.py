@@ -19,14 +19,17 @@ from .views import (
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
     generate_backup_codes, sso_config,
     verify_email, resend_verification_email_view, request_password_reset, reset_password,
-    # Racing views
+    # ViewSets from other files
+    ListingViewSet, EventViewSet, HotspotViewSet
+)
+
+# Import racing views directly
+from .views.racing import (
     TrackListView, TrackDetailView,
     CalloutListView, CalloutCreateView, CalloutDetailView,
     RaceResultCreateView, RaceResultDetailView,
     accept_callout, decline_callout, cancel_callout,
-    search_users_for_callout, callout_statistics,
-    # ViewSets from other files
-    ListingViewSet, EventViewSet, HotspotViewSet
+    search_users_for_callout, callout_statistics
 )
 
 # Import social views directly
