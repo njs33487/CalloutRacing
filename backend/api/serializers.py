@@ -15,7 +15,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 
-from django.contrib.auth.models import User
+from core.models.auth import User
 from core.models.auth import UserProfile
 from core.models.racing import Callout, Track, RaceResult, Event, EventParticipant
 from core.models.cars import CarProfile, CarImage, BuildLog, PerformanceData, BuildMilestone
@@ -31,8 +31,6 @@ from core.models.locations import (
     HotSpot, LocationBroadcast, OpenChallenge, ChallengeResponse
 )
 from core.models.payments import UserWallet, Bet, BettingPool
-
-User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):

@@ -16,7 +16,7 @@ from django.conf import settings
 from rest_framework.authtoken.models import Token
 import requests
 
-from core.models import User, UserProfile
+from core.models.auth import User, UserProfile
 
 
 @api_view(['POST'])

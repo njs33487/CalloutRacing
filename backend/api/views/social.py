@@ -14,7 +14,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q, Count, Prefetch
 from django.utils import timezone
 from datetime import timedelta
-from django.contrib.auth.models import User
+from core.models.auth import User
 
 from core.models.social import UserPost, PostComment, Follow, Notification
 from core.models.racing import Callout, Event

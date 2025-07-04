@@ -146,8 +146,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Use Django's built-in User model
-# AUTH_USER_MODEL = 'core.User'  # Commented out to use Django's default User model
+# Use custom User model
+AUTH_USER_MODEL = 'core.User'
 
 # REST Framework settings
 REST_FRAMEWORK = {

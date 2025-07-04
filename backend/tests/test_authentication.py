@@ -12,7 +12,6 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from unittest.mock import patch, MagicMock
 
-from django.contrib.auth.models import User
 from core.models.auth import UserProfile
 from api.serializers import RegisterSerializer, LoginSerializer
 

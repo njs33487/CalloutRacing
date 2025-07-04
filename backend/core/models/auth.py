@@ -6,14 +6,23 @@ This module contains models related to user profiles:
 """
 
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 import uuid
 
 
+class User(AbstractUser):
+    """Custom user model extending Django's AbstractUser."""
+    email = models.EmailField(unique=True, help_text="User's email address")
+    # Add any additional custom fields here if needed
+
+    def __str__(self):
+        return self.username
+
+
 class UserProfile(models.Model):
     """User profile model for additional user information."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     
     # Basic profile fields
     bio = models.TextField(blank=True, help_text="User's bio or description")
@@ -50,14 +59,15 @@ class UserProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.username}'s profile"
+        return f"{getattr(self.user, 'username', 'UserProfile')}'s profile"
 
     @property
     def win_rate(self):
-        """Calculate win rate percentage."""
-        if self.total_races == 0:
-            return 0
-        return (self.wins / self.total_races) * 100
+        wins = self.wins if isinstance(self.wins, int) else 0
+        total_races = self.total_races if isinstance(self.total_races, int) else 0
+        if total_races:
+            return (float(wins) / float(total_races)) * 100
+        return 0.0
 
     class Meta:
         ordering = ['-created_at'] 

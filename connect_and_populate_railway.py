@@ -7,6 +7,7 @@ import sys
 import django
 from django.conf import settings
 from django.core.management import execute_from_command_line
+from django.contrib.auth import get_user_model
 
 # Add the backend directory to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
@@ -19,6 +20,8 @@ os.environ['DATABASE_URL'] = 'postgresql://postgres:password@caboose.proxy.rlwy.
 
 # Initialize Django
 django.setup()
+
+User = get_user_model()
 
 def populate_database():
     """Populate the database with sample data"""
