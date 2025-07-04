@@ -18,10 +18,13 @@ from .views import (
     run_migrations,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
     generate_backup_codes, sso_config,
-    verify_email, resend_verification_email_view, request_password_reset, reset_password,
+    verify_email, request_password_reset, reset_password,
     # ViewSets from other files
     ListingViewSet, EventViewSet, HotspotViewSet
 )
+
+# Import auth views directly
+from .views.auth import resend_verification_email_view
 
 # Import racing views directly
 from .views.racing import (
