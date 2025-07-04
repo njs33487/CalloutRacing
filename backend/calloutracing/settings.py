@@ -175,6 +175,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'https://calloutracing.up.railway.app',
+    'https://calloutracing-backend-production.up.railway.app',
+    'https://calloutracing-backend.up.railway.app',
 ]
 
 # Add any additional origins from environment variable
@@ -276,4 +278,8 @@ FRONTEND_URL = config('FRONTEND_URL', default='https://calloutracing.up.railway.
 # Additional Gmail settings for App Passwords
 if EMAIL_HOST == 'smtp.gmail.com':
     EMAIL_USE_TLS = True
-    EMAIL_USE_SSL = False 
+    EMAIL_USE_SSL = False
+
+# Add these at the end of the file for cross-site session support
+SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "None" 

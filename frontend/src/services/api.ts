@@ -1,6 +1,7 @@
 // API Service - centralizes all backend API calls and handles authentication
 import axios from 'axios'
 import { HotSpot, RacingCrew, CrewMembership, LocationBroadcast, ReputationRating, OpenChallenge, ChallengeResponse, Callout } from '../types';
+import Cookies from 'js-cookie';
 
 // Get API URL from environment variable or use default production URL
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend-production.up.railway.app/api'
@@ -11,15 +12,26 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Important for session authentication
 })
 
-// Request interceptor - automatically adds authentication token to all requests
+// Utility to fetch CSRF token from cookie
+export function getCSRFToken() {
+  return Cookies.get('csrftoken');
+}
+
+// Add a request interceptor to set X-CSRFToken header for all POST, PUT, PATCH, DELETE requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Token ${token}`
+  // For session authentication, we don't need to add tokens
+  // The session cookie will be automatically included
+  const method = config.method?.toLowerCase();
+  if (["post", "put", "patch", "delete"].includes(method || "")) {
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
   }
-  return config
+  return config;
 })
 
 // Response interceptor - handles authentication errors and redirects to login
@@ -27,13 +39,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear invalid token and redirect to login
-      localStorage.removeItem('token')
+      // Clear any stored user data and redirect to login
+      localStorage.removeItem('user')
       window.location.href = '/login'
     }
     return Promise.reject(error)
   }
 )
+
+// Utility to ensure CSRF cookie is set before making POST requests
+export async function ensureCSRFToken() {
+  // Make a GET request to login endpoint to set CSRF cookie
+  await api.get('/auth/login/');
+}
 
 // Authentication API endpoints
 export const authAPI = {
