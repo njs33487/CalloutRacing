@@ -18,7 +18,7 @@ from .views import (
     run_migrations,
     setup_otp, verify_otp_setup, disable_otp, verify_otp_login,
     generate_backup_codes, auth, racing, sso_config,
-    verify_email, resend_verification_email, request_password_reset, reset_password,
+    verify_email, resend_verification_email_view, request_password_reset, reset_password,
     # Racing views
     TrackListView, TrackDetailView,
     CalloutListView, CalloutCreateView, CalloutDetailView,
@@ -52,7 +52,7 @@ auth_patterns = [
     path('profile/', user_profile, name='user-profile'),
     path('test-auth/', test_auth, name='test-auth'),
     path('verify-email/<str:token>/', verify_email, name='verify-email'),
-    path('resend-verification/', resend_verification_email, name='resend-verification'),
+    path('resend-verification/', resend_verification_email_view, name='resend-verification'),
     path('check-user/', check_user_exists, name='check-user'),
     path('request-password-reset/', request_password_reset, name='request-password-reset'),
     path('reset-password/', reset_password, name='reset-password'),

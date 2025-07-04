@@ -894,7 +894,7 @@ def verify_email(request, token):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
-def resend_verification_email(request):
+def resend_verification_email_view(request):
     """Resend email verification."""
     email = request.data.get('email')
     
