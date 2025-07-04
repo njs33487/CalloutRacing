@@ -431,6 +431,10 @@ def login_view(request):
         # If no profile exists, allow login (backward compatibility)
         pass
     
+    # Create session - this is crucial for session authentication
+    from django.contrib.auth import login
+    login(request, user)
+    
     # Get email verification status
     try:
         profile = user.profile
