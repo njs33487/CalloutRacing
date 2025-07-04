@@ -16,7 +16,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
-from rest_framework.authtoken.models import Token
+# Removed Token import since we're not using authtoken anymore
 from django.utils import timezone
 from datetime import timedelta
 import uuid
@@ -431,12 +431,6 @@ def login_view(request):
         # If no profile exists, allow login (backward compatibility)
         pass
     
-    # Create or get token
-    token, created = Token.objects.get_or_create(user=user)
-    print(f"Login successful - user: {user.username}, token created: {created}")
-    
-    # Add debugging for response creation
-    print(f"Token key: {token.key}")
     # Get email verification status
     try:
         profile = user.profile
@@ -445,7 +439,6 @@ def login_view(request):
         email_verified = False
     
     response_data = {
-        'token': token.key,
         'user': {
             'id': user.id,
             'username': user.username,
@@ -594,12 +587,7 @@ def register_view(request):
 @permission_classes([permissions.IsAuthenticated])
 def logout_view(request):
     """User logout endpoint."""
-    try:
-        # Delete the user's token
-        request.user.auth_token.delete()
-    except:
-        pass
-    
+    # With session authentication, we don't need to delete tokens
     return Response({'message': 'Logged out successfully'})
 
 

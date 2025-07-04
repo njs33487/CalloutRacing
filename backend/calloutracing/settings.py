@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
-    'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg',
     'django_filters',
@@ -89,7 +88,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'calloutracing.wsgi.application'
 
 # Database
-# Use PostgreSQL in production (Railway provides this)
+# Use PostgreSQL by default, fallback to SQLite if not configured
 if 'DATABASE_URL' in os.environ:
     import dj_database_url
     DATABASES = {
@@ -101,10 +100,15 @@ elif 'Postgres.DATABASE_URL' in os.environ:
         'default': dj_database_url.parse(os.environ['Postgres.DATABASE_URL'])
     }
 else:
+    # Default to Railway PostgreSQL for local development
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='railway'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='QfGzdLFMYTfqmSAiohnrWGJGMMrQEMnK'),
+            'HOST': config('DB_HOST', default='caboose.proxy.rlwy.net'),
+            'PORT': config('DB_PORT', default='33954'),
         }
     }
 
@@ -153,7 +157,6 @@ AUTH_USER_MODEL = 'core.User'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
