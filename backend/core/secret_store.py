@@ -50,21 +50,34 @@ class SecretStore:
         key = config('STRIPE_SECRET_KEY', default='')
         
         if not key:
-            raise ValueError("STRIPE_SECRET_KEY not found in environment variables")
+            # For development, provide a dummy key
+            if settings.DEBUG:
+                print("⚠️  Using dummy Stripe secret key for development")
+                return "sk_test_dummy_key_for_development"
+            else:
+                raise ValueError("STRIPE_SECRET_KEY not found in environment variables")
         
-        # Validate key format
-        if not key.startswith(('sk_test_', 'sk_live_')):
+        # Validate key format (skip validation for dummy keys)
+        if not key.startswith(('sk_test_', 'sk_live_')) and not key.startswith('sk_test_dummy'):
             raise ValueError("Invalid Stripe secret key format")
         
         return key
     
     def get_stripe_publishable_key(self) -> str:
         """Get Stripe publishable key."""
-        return config('STRIPE_PUBLISHABLE_KEY', default='')
+        key = config('STRIPE_PUBLISHABLE_KEY', default='')
+        if not key and settings.DEBUG:
+            print("⚠️  Using dummy Stripe publishable key for development")
+            return "pk_test_dummy_key_for_development"
+        return key
     
     def get_stripe_webhook_secret(self) -> str:
         """Get Stripe webhook secret."""
-        return config('STRIPE_WEBHOOK_SECRET', default='')
+        secret = config('STRIPE_WEBHOOK_SECRET', default='')
+        if not secret and settings.DEBUG:
+            print("⚠️  Using dummy Stripe webhook secret for development")
+            return "whsec_dummy_webhook_secret"
+        return secret
     
     def get_database_password(self) -> str:
         """Get database password securely."""
