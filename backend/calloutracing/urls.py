@@ -33,7 +33,7 @@ def root_view(request):
             "admin": "/admin/",
             "docs": "/api/docs/",
             "contact": "/api/contact/",
-            "health": "/health/"
+            "health": "/api/health/"
         }
     })
 
@@ -46,7 +46,7 @@ def health_check(request):
 
 urlpatterns = [
     path('', root_view, name='root'),
-    path('health/', health_check, name='health'),
+    path('api/health/', health_check, name='health'),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
