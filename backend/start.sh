@@ -5,8 +5,8 @@ set -e
 
 echo "=== Starting CalloutRacing backend ==="
 echo "Current directory: $(pwd)"
-echo "Python version: $(python3 --version)"
-echo "Django version: $(python3 -c 'import django; print(django.get_version())')"
+echo "Python version: $(python --version)"
+echo "Django version: $(python -c 'import django; print(django.get_version())')"
 
 # Change to backend directory where manage.py is located
 cd backend
@@ -201,7 +201,7 @@ ON CONFLICT (app, name) DO NOTHING;
 EOF
 
     # Execute the SQL script
-    python3 -c "
+    python -c "
 import os
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calloutracing.settings')
@@ -222,26 +222,26 @@ fi
 
 # Test database connection
 echo "=== Testing database connection ==="
-python3 manage.py check --database default
+python manage.py check --database default
 
 # Check if migrations need to be run
 echo "=== Checking migration status ==="
-python3 manage.py showmigrations || echo "Failed to show migrations"
+python manage.py showmigrations || echo "Failed to show migrations"
 
 # Create migrations if needed
 echo "=== Creating migrations ==="
-python3 manage.py makemigrations --noinput || echo "No new migrations needed"
+python manage.py makemigrations --noinput || echo "No new migrations needed"
 
 # Run migrations with enhanced logging and fallback
 echo "=== Running database migrations ==="
-if python3 manage.py migrate --noinput --verbosity=2; then
+if python manage.py migrate --noinput --verbosity=2; then
     echo "=== Migrations completed successfully ==="
     echo "=== Migration status ==="
-    python3 manage.py showmigrations
+    python manage.py showmigrations
 else
     echo "=== Standard migration failed, trying alternative method ==="
     echo "=== Checking if core_user table exists ==="
-    python3 -c "
+    python -c "
 import os
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'calloutracing.settings')
@@ -288,20 +288,20 @@ fi
 
 # Collect static files (in case they weren't collected during build)
 echo "=== Collecting static files ==="
-python3 manage.py collectstatic --noinput
+python manage.py collectstatic --noinput
 
 # Populate sample data if environment variable is set
 if [ "$POPULATE_DATA" = "true" ]; then
     echo "=== Populating sample data ==="
-    python3 manage.py populate_sample_data --noinput || echo "Data population failed or already exists"
+    python manage.py populate_sample_data --noinput || echo "Data population failed or already exists"
 fi
 
 # Populate Railway data if environment variable is set
 if [ "$POPULATE_RAILWAY_DATA" = "true" ]; then
     echo "=== Populating Railway data ==="
-    python3 manage.py populate_railway_data --noinput || echo "Railway data population failed or already exists"
+    python manage.py populate_railway_data --noinput || echo "Railway data population failed or already exists"
 fi
 
 # Start the server
 echo "=== Starting Django server on port $PORT ==="
-python3 manage.py runserver 0.0.0.0:$PORT 
+python manage.py runserver 0.0.0.0:$PORT 
