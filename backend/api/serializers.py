@@ -25,7 +25,7 @@ from core.models.marketplace import (
     Review, Rating, PaymentTransaction, Order, OrderItem, ShippingAddress
 )
 from core.models.social import (
-    Friendship, Message, UserPost, PostComment, RacingCrew, CrewMembership, Notification
+    Friendship, Message, UserPost, PostComment, RacingCrew, CrewMembership, Notification, SponsoredContent
 )
 from core.models.locations import (
     HotSpot, LocationBroadcast, OpenChallenge, ChallengeResponse
@@ -826,4 +826,10 @@ class NotificationSerializer(serializers.ModelSerializer):
             minutes = diff.seconds // 60
             return f"{minutes}m ago"
         else:
-            return "Just now" 
+            return "Just now"
+
+
+class SponsoredContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SponsoredContent
+        fields = '__all__' 

@@ -41,7 +41,7 @@ const EmailVerificationRequired: React.FC = () => {
           
           <h2 className="mt-4 text-xl font-semibold text-gray-900">Email Verification Required</h2>
           <p className="mt-2 text-gray-600">
-            Please verify your email address before you can access your account.
+          Please verify your email address. before you can access your account.
           </p>
           
           <div className="mt-6">

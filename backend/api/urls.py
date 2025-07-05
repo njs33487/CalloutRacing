@@ -40,12 +40,19 @@ from .views.social import (
     trending_posts, user_feed, notifications, mark_notification_read
 )
 
+from api.views.sponsored_views import SponsoredContentViewSet
+from api.views.subscription_views import create_checkout_session, stripe_webhook, session_status, create_customer_portal_session
+from api.views.marketplace import create_connect_account, create_account_link, get_connect_account_status
+from api.views.marketplace_views import MarketplaceListingViewSet, marketplace_webhook
+
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'profiles', UserProfileViewSet, basename='profile')
 router.register(r'marketplace', ListingViewSet, basename='marketplace')
+router.register(r'marketplace-listings', MarketplaceListingViewSet, basename='marketplace-listing')
 router.register(r'events', EventViewSet, basename='event')
 router.register(r'hotspots', HotspotViewSet, basename='hotspot')
+router.register(r'sponsored-content', SponsoredContentViewSet, basename='sponsored-content')
 
 # Authentication URLs
 auth_patterns = [
@@ -98,12 +105,35 @@ social_patterns = [
     path('notifications/<int:notification_id>/read/', mark_notification_read, name='mark-notification-read'),
 ]
 
+# Add subscription URLs
+subscription_patterns = [
+    path('subscriptions/create-checkout-session/', create_checkout_session, name='create-checkout-session'),
+    path('subscriptions/session-status/', session_status, name='session-status'),
+    path('subscriptions/customer-portal/', create_customer_portal_session, name='customer-portal'),
+    path('stripe-webhook/', stripe_webhook, name='stripe-webhook'),
+]
+
+# Add Connect onboarding URLs
+connect_patterns = [
+    path('connect/create-account/', create_connect_account, name='create-connect-account'),
+    path('connect/create-account-link/', create_account_link, name='create-account-link'),
+    path('connect/account-status/', get_connect_account_status, name='connect-account-status'),
+]
+
+# Add marketplace webhook URL
+marketplace_patterns = [
+    path('marketplace/webhook/', marketplace_webhook, name='marketplace-webhook'),
+]
+
 # Combine all URL patterns
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include(auth_patterns)),
     path('racing/', include(racing_patterns)),
     path('social/', include(social_patterns)),
+    path('subscriptions/', include(subscription_patterns)),
+    path('connect/', include(connect_patterns)),
+    path('marketplace/', include(marketplace_patterns)),
     # Aliases for convenience
     path('tracks/', TrackListView.as_view(), name='track-list-alias'),
     path('callouts/', CalloutListView.as_view(), name='callout-list-alias'),

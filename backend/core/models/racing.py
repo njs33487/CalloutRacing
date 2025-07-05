@@ -83,9 +83,15 @@ class Event(models.Model):
     track = models.ForeignKey(Track, on_delete=models.CASCADE, related_name='events')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Sponsorship fields
+    is_sponsored = models.BooleanField(default=False, help_text="Whether event is sponsored")
+    sponsor_name = models.CharField(max_length=255, blank=True, null=True, help_text="Sponsor name")
+    sponsor_logo_url = models.URLField(max_length=500, blank=True, null=True, help_text="Sponsor logo URL")
+    sponsor_website_url = models.URLField(max_length=500, blank=True, null=True, help_text="Sponsor website URL")
 
     def __str__(self):
-        return self.title
+        return f"{self.title} (Sponsored: {self.is_sponsored})"
 
     class Meta:
         ordering = ['-start_date']

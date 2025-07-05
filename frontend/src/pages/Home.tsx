@@ -17,6 +17,9 @@ import { useAuth } from '../contexts/AuthContext'
 import { calloutAPI, eventAPI, userAPI, postAPI } from '../services/api'
 import { api } from '../services/api'
 import ConfirmationDialog from '../components/ConfirmationDialog'
+import React from 'react'
+import axios from 'axios'
+import { API_URL } from '../services/api'
 
 interface UserProfile {
   id: number;
@@ -78,6 +81,16 @@ interface PostComment {
   created_at: string;
 }
 
+interface SponsoredContent {
+  id: number;
+  title: string;
+  content: string;
+  image_url?: string;
+  link_url: string;
+  sponsor_name: string;
+  display_location: string;
+}
+
 export default function Dashboard() {
   const { user } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -89,6 +102,7 @@ export default function Dashboard() {
   const [showProfileConfirmation, setShowProfileConfirmation] = useState(false)
   const [showPostConfirmation, setShowPostConfirmation] = useState(false)
   const [confirmationData, setConfirmationData] = useState<any>(null)
+  const [sponsoredContent, setSponsoredContent] = useState<SponsoredContent[]>([])
 
   const [editForm, setEditForm] = useState({
     bio: '',
@@ -134,6 +148,18 @@ export default function Dashboard() {
       return () => clearTimeout(timer)
     }
   }, [error, success])
+
+  useEffect(() => {
+    const fetchSponsoredContent = async () => {
+      try {
+        const response = await axios.get<SponsoredContent[]>(`${API_URL}/sponsored-content/?display_location=homepage`);
+        setSponsoredContent(response.data);
+      } catch (error) {
+        console.error('Error fetching sponsored content:', error);
+      }
+    };
+    fetchSponsoredContent();
+  }, []);
 
   const loadProfile = async () => {
     try {
@@ -671,6 +697,23 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Sponsored Content */}
+      {sponsoredContent.length > 0 && (
+        <div className="sponsored-section">
+          <h2>Featured for You</h2>
+          {sponsoredContent.map((item) => (
+            <div key={item.id} className="sponsored-card">
+              {item.image_url && <img src={item.image_url} alt={item.title} style={{ maxWidth: '100%', height: 'auto' }} />}
+              <h3>{item.title}</h3>
+              <p>{item.content}</p>
+              <a href={item.link_url} target="_blank" rel="noopener noreferrer">
+                Learn More from {item.sponsor_name}
+              </a>
+            </div>
+          ))}
         </div>
       )}
 

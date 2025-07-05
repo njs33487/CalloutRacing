@@ -14,6 +14,8 @@ import uuid
 class User(AbstractUser):
     """Custom user model extending Django's AbstractUser."""
     email = models.EmailField(unique=True, help_text="User's email address")
+    # Stripe Connect fields
+    stripe_connect_account_id = models.CharField(max_length=255, blank=True, null=True, help_text='Stripe Connect account ID for marketplace sellers')
     # Add any additional custom fields here if needed
 
     def __str__(self):

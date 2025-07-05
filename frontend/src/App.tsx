@@ -27,6 +27,9 @@ import HotSpots from './pages/HotSpots'
 import Search from './pages/Search'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import ConnectOnboarding from './pages/ConnectOnboarding'
+import ConnectOnboardingReturn from './pages/ConnectOnboardingReturn'
+import ConnectOnboardingRefresh from './pages/ConnectOnboardingRefresh'
 
 function App() {
   return (
@@ -50,6 +53,11 @@ function App() {
             {/* Shared content routes - public access for social sharing */}
             <Route path="/share/event/:id" element={<SharedEvent />} />
             <Route path="/share/callout/:id" element={<SharedCallout />} />
+            
+            {/* Connect onboarding routes */}
+            <Route path="/connect" element={<ConnectOnboarding />} />
+            <Route path="/connect/return/:accountId" element={<ConnectOnboardingReturn />} />
+            <Route path="/connect/refresh/:accountId" element={<ConnectOnboardingRefresh />} />
             
             {/* Protected routes - require authentication and use shared layout */}
             <Route path="/app" element={
