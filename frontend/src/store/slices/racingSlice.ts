@@ -114,17 +114,8 @@ const initialState: RacingState = {
 // Async thunks
 export const fetchCallouts = createAsyncThunk(
   'racing/fetchCallouts',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState() as any;
-      const { filters } = state.racing;
-      
-      const params = new URLSearchParams({
-        ...(filters.calloutType !== 'all' && { callout_type: filters.calloutType }),
-        ...(filters.status !== 'all' && { status: filters.status }),
-        ...(filters.location && { location: filters.location }),
-      });
-
       const response = await calloutAPI.list();
       return response.data.results || response.data;
     } catch (error: any) {
@@ -135,16 +126,8 @@ export const fetchCallouts = createAsyncThunk(
 
 export const fetchEvents = createAsyncThunk(
   'racing/fetchEvents',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState() as any;
-      const { filters } = state.racing;
-      
-      const params = new URLSearchParams({
-        ...(filters.eventType !== 'all' && { event_type: filters.eventType }),
-        ...(filters.location && { location: filters.location }),
-      });
-
       const response = await eventAPI.list();
       return response.data.results || response.data;
     } catch (error: any) {
@@ -155,14 +138,9 @@ export const fetchEvents = createAsyncThunk(
 
 export const fetchHotspots = createAsyncThunk(
   'racing/fetchHotspots',
-  async (params: {
-    spot_type?: string;
-    city?: string;
-    state?: string;
-    is_verified?: boolean;
-  } = {}, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const hotspots = await getHotSpots(params);
+      const hotspots = await getHotSpots({});
       return hotspots;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch hotspots');
