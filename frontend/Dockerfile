@@ -1,33 +1,29 @@
-# Force rebuild: 2024-06-27 - Clear all Docker cache layers
-# Use Node.js 18 as base image
-FROM node:18
+# Clean Dockerfile for CalloutRacing Frontend
+FROM node:18-alpine
 
-# Set working directory
+# Set work directory
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY frontend/package*.json ./
 
-# Install ALL dependencies (including dev dependencies for build)
+# Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy frontend source
+COPY frontend/ .
 
 # Build the application
 RUN npm run build
 
-# Install serve to run the built app
+# Install serve for production
 RUN npm install -g serve
 
-# Remove dev dependencies to reduce image size
+# Remove dev dependencies
 RUN npm prune --production
 
-# Make start script executable
-RUN chmod +x start.sh
+# Expose port
+EXPOSE 3000
 
-# Expose port 8000 (Railway will override with $PORT if needed)
-EXPOSE 8000
-
-# Start the application using the start script
-CMD ["./start.sh"] 
+# Start the application
+CMD ["serve", "-s", "dist", "-l", "3000"] 

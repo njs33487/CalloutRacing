@@ -3,7 +3,7 @@ services:
     image: calloutracing-backend:latest
     build:
       context: ../..
-      dockerfile: config/docker/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "8001:8000"
     environment:
@@ -41,11 +41,7 @@ services:
     depends_on:
       - db
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
 
   frontend:
     image: calloutracing-frontend:latest
@@ -62,11 +58,7 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
 
   db:
     image: postgres:15-alpine
