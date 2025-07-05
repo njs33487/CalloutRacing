@@ -1,6 +1,8 @@
-// Main App component - handles routing and authentication context
+// Main App component - handles routing and Redux store
 import { Routes, Route } from 'react-router-dom'
-import { AuthProvider } from './contexts/AuthContext'
+import { Provider } from 'react-redux'
+import { store } from './store'
+import { ReduxAuthProvider } from './components/ReduxAuthProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 import About from './pages/About'
@@ -33,10 +35,11 @@ import ConnectOnboardingRefresh from './pages/ConnectOnboardingRefresh'
 
 function App() {
   return (
-    // Wrap entire app in error boundary and authentication context
+    // Wrap entire app in error boundary and Redux store
     <ErrorBoundary>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
+      <Provider store={store}>
+        <ReduxAuthProvider>
+          <div className="min-h-screen bg-gray-50">
           <Routes>
             {/* Public routes - accessible without authentication */}
             <Route path="/" element={<About />} />
@@ -82,7 +85,8 @@ function App() {
             </Route>
           </Routes>
         </div>
-      </AuthProvider>
+        </ReduxAuthProvider>
+      </Provider>
     </ErrorBoundary>
   )
 }
