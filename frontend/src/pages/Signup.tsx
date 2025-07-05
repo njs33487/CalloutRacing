@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EyeIcon, EyeSlashIcon, CheckIcon } from '@heroicons/react/24/outline'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { register } from '../store/slices/authSlice'
 import { SSOButtons } from '../components/SSOButtons'
 import { authAPI } from '../services/api'
 
 export default function Signup() {
   const navigate = useNavigate()
-  const { register } = useAuth()
+  const dispatch = useAppDispatch()
+  const { isLoading, error: authError } = useAppSelector((state) => state.auth)
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -19,7 +21,6 @@ export default function Signup() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [availability, setAvailability] = useState<{[key: string]: boolean}>({})
   const [checkingAvailability, setCheckingAvailability] = useState<{[key: string]: boolean}>({})
@@ -139,25 +140,23 @@ export default function Signup() {
       return
     }
 
-    setIsLoading(true)
-    
     try {
-      const response = await register({
+      const response = await dispatch(register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
         first_name: formData.firstName,
         last_name: formData.lastName,
-      })
+      })).unwrap()
       
       // Check if email was sent successfully based on backend response
-      if (response.data.message && response.data.message.includes('verification email has been sent')) {
+      if (response.message && response.message.includes('verification email has been sent')) {
         setErrors({ 
           success: 'Registration successful! Please check your email to verify your account before logging in.' 
         })
-      } else if (response.data.warning) {
+      } else if (response.warning) {
         setErrors({ 
-          warning: response.data.warning
+          warning: response.warning
         })
       } else {
         setErrors({ 
@@ -222,10 +221,7 @@ export default function Signup() {
           setErrors({ general: 'Registration failed. Please try again.' })
         }
       }
-    } finally {
-      setIsLoading(false)
     }
-  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target

@@ -177,6 +177,7 @@ CORS_ALLOWED_ORIGINS = [
     'https://calloutracing.up.railway.app',
     'https://calloutracing-backend-production.up.railway.app',
     'https://calloutracing-backend.up.railway.app',
+    'https://calloutracing-frontend.up.railway.app',
 ]
 
 # Add any additional origins from environment variable

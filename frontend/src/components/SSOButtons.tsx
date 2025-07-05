@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppDispatch } from '../store/hooks'
+import { googleLogin, facebookLogin } from '../store/slices/authSlice'
 import { authAPI } from '../services/api'
 
 interface SSOConfig {
@@ -24,7 +25,7 @@ export const SSOButtons: React.FC<SSOButtonsProps> = ({
   onError, 
   className = '' 
 }) => {
-  const { googleLogin, facebookLogin } = useAuth()
+  const dispatch = useAppDispatch()
   const [ssoConfig, setSsoConfig] = useState<SSOConfig | null>(null)
   const [configError, setConfigError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -73,7 +74,7 @@ export const SSOButtons: React.FC<SSOButtonsProps> = ({
             client_id: ssoConfig.google.client_id,
             callback: async (response: any) => {
               try {
-                await googleLogin(response.credential)
+                await dispatch(googleLogin(response.credential)).unwrap()
                 onSuccess?.()
               } catch (error: any) {
                 onError?.(error.response?.data?.error || 'Google login failed')
@@ -124,7 +125,7 @@ export const SSOButtons: React.FC<SSOButtonsProps> = ({
           window.FB.login(async (response: any) => {
             if (response.authResponse) {
               try {
-                await facebookLogin(response.authResponse.accessToken)
+                await dispatch(facebookLogin(response.authResponse.accessToken)).unwrap()
                 onSuccess?.()
               } catch (error: any) {
                 onError?.(error.response?.data?.error || 'Facebook login failed')
