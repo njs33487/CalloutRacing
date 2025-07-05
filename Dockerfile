@@ -1,4 +1,4 @@
-# Railway Dockerfile for CalloutRacing Backend
+# Clean Dockerfile for CalloutRacing Backend
 FROM python:3.11-slim
 
 # Set environment variables
@@ -16,7 +16,6 @@ RUN apt-get update \
         build-essential \
         libpq-dev \
         dos2unix \
-        curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -39,10 +38,6 @@ RUN python manage.py collectstatic --noinput
 
 # Railway uses PORT environment variable
 EXPOSE $PORT
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health/ || exit 1
 
 # Run the application
 CMD ["bash", "/app/start-railway.sh"] 
