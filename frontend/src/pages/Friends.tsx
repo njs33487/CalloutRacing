@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppSelector } from '../store/hooks';
 import { userAPI } from '../services/api';
 import { 
   MagnifyingGlassIcon,
@@ -65,7 +65,7 @@ interface Friendship {
 }
 
 export default function Friends() {
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [friends, setFriends] = useState<User[]>([]);

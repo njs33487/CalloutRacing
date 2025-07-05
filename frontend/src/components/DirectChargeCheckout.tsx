@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppSelector } from '../store/hooks';
 import { api } from '../services/api';
 
 interface DirectChargeCheckoutProps {
@@ -31,7 +31,7 @@ const DirectChargeCheckout: React.FC<DirectChargeCheckoutProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<CheckoutSession | null>(null);
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
 
   const createCheckoutSession = async () => {
     if (!user) {

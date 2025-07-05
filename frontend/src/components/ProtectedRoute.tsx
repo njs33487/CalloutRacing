@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppSelector } from '../store/hooks'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -7,7 +7,9 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requireEmailVerification = true }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, isEmailVerified } = useAuth()
+  const { user, isLoading } = useAppSelector((state) => state.auth)
+  const isAuthenticated = !!user
+  const isEmailVerified = user?.email_verified || false
 
   if (isLoading) {
     return (

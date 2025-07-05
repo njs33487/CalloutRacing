@@ -4,12 +4,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarIcon, PlusIcon, MapPinIcon, UserGroupIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { eventAPI } from '../services/api'
 import { Event } from '../types'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppSelector } from '../store/hooks'
 import { generateEventShareData } from '../utils/socialSharing'
 import ShareButton from '../components/ShareButton'
 
 export default function Events() {
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useAppSelector((state) => state.auth);
   const queryClient = useQueryClient();
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);

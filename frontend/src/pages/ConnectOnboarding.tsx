@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppSelector } from '../store/hooks';
 import { api } from '../services/api';
 
 interface ConnectAccountStatus {
@@ -19,7 +19,7 @@ const ConnectOnboarding: React.FC = () => {
   const [connectedAccountId, setConnectedAccountId] = useState<string | null>(null);
   const [accountStatus, setAccountStatus] = useState<ConnectAccountStatus | null>(null);
   
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const { accountId } = useParams();
 
   useEffect(() => {
