@@ -61,27 +61,15 @@ const initialState: MarketplaceState = {
 // Async thunks
 export const fetchMarketplaceItems = createAsyncThunk(
   'marketplace/fetchItems',
-  async ({ page = 1, refresh = false }: { page?: number; refresh?: boolean }, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState() as any;
-      const { filters } = state.marketplace;
-      
-      const params = new URLSearchParams({
-        page: page.toString(),
-        ...(filters.category !== 'all' && { category: filters.category }),
-        ...(filters.condition !== 'all' && { condition: filters.condition }),
-        ...(filters.location && { location: filters.location }),
-        ...(filters.priceRange[0] > 0 && { min_price: filters.priceRange[0].toString() }),
-        ...(filters.priceRange[1] < 100000 && { max_price: filters.priceRange[1].toString() }),
-      });
-
       const response = await marketplaceAPI.list();
       const items = response.data.results || response.data;
       
       return {
         items,
-        page,
-        refresh,
+        page: 1,
+        refresh: false,
         hasMore: items.length === 20, // Assuming page size is 20
       };
     } catch (error: any) {
@@ -175,13 +163,8 @@ const marketplaceSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch marketplace items
-      .addCase(fetchMarketplaceItems.pending, (state, action) => {
-        const { refresh } = action.meta.arg;
-        if (refresh) {
-          state.loading = true;
-        } else {
-          state.pagination.loading = true;
-        }
+      .addCase(fetchMarketplaceItems.pending, (state) => {
+        state.pagination.loading = true;
         state.error = null;
       })
       .addCase(fetchMarketplaceItems.fulfilled, (state, action) => {

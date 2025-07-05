@@ -113,29 +113,15 @@ const initialState: EventsState = {
 // Async thunks
 export const fetchEvents = createAsyncThunk(
   'events/fetchEvents',
-  async ({ page = 1, refresh = false }: { page?: number; refresh?: boolean }, { getState, rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState() as any;
-      const { filters } = state.events;
-      
-      const params = new URLSearchParams({
-        page: page.toString(),
-        ...(filters.event_type !== 'all' && { event_type: filters.event_type }),
-        ...(filters.location && { location: filters.location }),
-        ...(filters.price_range[0] > 0 && { min_fee: filters.price_range[0].toString() }),
-        ...(filters.price_range[1] < 1000 && { max_fee: filters.price_range[1].toString() }),
-        ...(filters.is_public !== null && { is_public: filters.is_public.toString() }),
-        ...(filters.is_featured !== null && { is_featured: filters.is_featured.toString() }),
-        ...(filters.organizer_id && { organizer_id: filters.organizer_id.toString() }),
-      });
-
       const response = await eventAPI.list();
       const events = response.data.results || response.data;
       
       return {
         events,
-        page,
-        refresh,
+        page: 1,
+        refresh: false,
         hasMore: events.length === 20, // Assuming page size is 20
       };
     } catch (error: any) {
@@ -354,13 +340,8 @@ const eventsSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Fetch events
-      .addCase(fetchEvents.pending, (state, action) => {
-        const { refresh } = action.meta.arg;
-        if (refresh) {
-          state.loading = true;
-        } else {
-          state.pagination.loading = true;
-        }
+      .addCase(fetchEvents.pending, (state) => {
+        state.pagination.loading = true;
         state.error = null;
       })
       .addCase(fetchEvents.fulfilled, (state, action) => {
