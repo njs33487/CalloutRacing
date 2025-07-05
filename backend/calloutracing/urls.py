@@ -38,22 +38,10 @@ def root_view(request):
     })
 
 def health_check(request):
-    """Health check endpoint to verify database connection"""
-    from django.db import connection
-    from django.db.utils import OperationalError
-    
-    try:
-        # Test database connection
-        connection.ensure_connection()
-        db_status = "connected"
-    except OperationalError:
-        db_status = "disconnected"
-    
+    """Simple health check endpoint"""
     return JsonResponse({
         "status": "healthy",
-        "database": db_status,
-        "debug": settings.DEBUG,
-        "allowed_hosts": settings.ALLOWED_HOSTS
+        "message": "CalloutRacing API is running"
     })
 
 urlpatterns = [
