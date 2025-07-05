@@ -18,12 +18,12 @@ import {
 } from '@heroicons/react/24/outline'
 import { calloutAPI } from '../services/api'
 import { Callout } from '../types'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppSelector } from '../store/hooks'
 import { generateCalloutShareData } from '../utils/socialSharing'
 import ShareButton from '../components/ShareButton'
 
 export default function Callouts() {
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useAppSelector((state) => state.auth);
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');

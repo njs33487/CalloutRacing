@@ -13,7 +13,7 @@ import {
   MapPinIcon,
   TruckIcon
 } from '@heroicons/react/24/outline'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppSelector } from '../store/hooks'
 import { calloutAPI, eventAPI, userAPI, postAPI } from '../services/api'
 import { api } from '../services/api'
 import ConfirmationDialog from '../components/ConfirmationDialog'
@@ -92,7 +92,7 @@ interface SponsoredContent {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user } = useAppSelector((state) => state.auth)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [posts, setPosts] = useState<UserPost[]>([])
   const [isEditing, setIsEditing] = useState(false)

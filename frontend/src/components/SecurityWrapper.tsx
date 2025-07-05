@@ -1,6 +1,6 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppSelector } from '../store/hooks';
 
 interface SecurityWrapperProps {
   children: ReactNode;
@@ -13,7 +13,8 @@ export default function SecurityWrapper({
   requireAuth = true,
   fallback 
 }: SecurityWrapperProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const isAuthenticated = !!user;
   const navigate = useNavigate();
   const location = useLocation();
   const [hasError, setHasError] = useState(false);

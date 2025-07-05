@@ -1,8 +1,10 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppSelector } from '../store/hooks';
 
 const AdvancedFeatureButton: React.FC = () => {
-  const { hasActiveSubscription, subscriptionType } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
+  const hasActiveSubscription = user?.subscription_status === 'active';
+  const subscriptionType = user?.subscription_type;
 
   if (hasActiveSubscription && subscriptionType === 'pro') {
     return (

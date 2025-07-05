@@ -11,7 +11,8 @@ import {
   MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { logout } from '../store/slices/authSlice'
 import GlobalSearchBar from './GlobalSearchBar'
 
 const navigation = [
@@ -28,10 +29,10 @@ const navigation = [
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const dispatch = useAppDispatch()
 
   const handleLogout = async () => {
-    await logout()
+    await dispatch(logout()).unwrap()
     navigate('/')
   }
 

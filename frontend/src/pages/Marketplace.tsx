@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ShoppingBagIcon, PlusIcon, CurrencyDollarIcon, TrashIcon, PencilIcon, PhoneIcon, EnvelopeIcon, MapPinIcon } from '@heroicons/react/24/outline'
 import { marketplaceAPI } from '../services/api'
 import { MarketplaceItem } from '../types'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppSelector } from '../store/hooks'
 import AdDisplay from '../components/AdDisplay'
 
 export default function Marketplace() {
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useAppSelector((state) => state.auth);
   const queryClient = useQueryClient();
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
