@@ -2,24 +2,45 @@ version: '3.8'
 
 services:
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-njs33487/calloutracing}/backend:latest
+    image: calloutracing-backend:latest
+    build:
+      context: ../..
+      dockerfile: config/docker/Dockerfile
     ports:
       - "8000:8000"
     environment:
       - DEBUG=False
       - SECRET_KEY=${SECRET_KEY}
       - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_PUBLIC_URL=${DATABASE_PUBLIC_URL}
+      - PGDATA=${PGDATA}
+      - PGDATABASE=${PGDATABASE}
+      - PGHOST=${PGHOST}
+      - PGPASSWORD=${PGPASSWORD}
+      - PGPORT=${PGPORT}
+      - PGUSER=${PGUSER}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - EMAIL_HOST=${EMAIL_HOST}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - EMAIL_BACKEND=${EMAIL_BACKEND}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USE_TLS=${EMAIL_USE_TLS}
+      - EMAIL_USE_SSL=${EMAIL_USE_SSL}
       - STAFF_EMAIL=${STAFF_EMAIL}
       - STAFF_PASSWORD=${STAFF_PASSWORD}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - REDIS_URL=${REDIS_URL}
     volumes:
       - static_volume:/app/backend/staticfiles
       - media_volume:/app/backend/media
     depends_on:
-      - db
       - redis
     restart: unless-stopped
     healthcheck:
@@ -29,12 +50,15 @@ services:
       retries: 3
 
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-njs33487/calloutracing}/frontend:latest
+    image: calloutracing-frontend:latest
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "80:3000"
     environment:
       - VITE_API_URL=${VITE_API_URL}
-      - VITE_APP_NAME=CalloutRacing
+      - VITE_APP_NAME=${VITE_APP_NAME}
     depends_on:
       - backend
     restart: unless-stopped
@@ -44,23 +68,10 @@ services:
       timeout: 10s
       retries: 3
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   redis:
     image: redis:7-alpine
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -70,27 +81,12 @@ services:
       timeout: 5s
       retries: 3
 
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - static_volume:/var/www/static
-      - media_volume:/var/www/media
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - backend
-      - frontend
-    restart: unless-stopped
-
 volumes:
-  postgres_data:
   redis_data:
   static_volume:
   media_volume:
 
 networks:
   default:
+    external: true
     name: calloutracing-network 
