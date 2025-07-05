@@ -76,7 +76,7 @@ create_env_file() {
     echo "" >> .env.production
     echo "# Frontend Settings" >> .env.production
     echo "NODE_ENV=production" >> .env.production
-    prompt_with_default "Enter VITE_API_URL" "https://calloutracing-backend.up.railway.app/api" "VITE_API_URL"
+    prompt_with_default "Enter VITE_API_URL" "https://calloutracing-backend-production.up.railway.app/api" "VITE_API_URL"
     echo "VITE_APP_NAME=CalloutRacing" >> .env.production
     echo "VITE_DEV_MODE=false" >> .env.production
     
