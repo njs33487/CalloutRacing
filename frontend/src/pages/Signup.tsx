@@ -9,7 +9,7 @@ import { authAPI } from '../services/api'
 export default function Signup() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { isLoading, error: authError } = useAppSelector((state) => state.auth)
+  const { isLoading } = useAppSelector((state) => state.auth)
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -222,6 +222,7 @@ export default function Signup() {
         }
       }
     }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -705,4 +706,4 @@ export default function Signup() {
       </div>
     </div>
   )
-} 
+}
