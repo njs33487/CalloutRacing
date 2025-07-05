@@ -11,7 +11,7 @@ import {
   MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline'
-import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { useAppDispatch } from '../store/hooks'
 import { logout } from '../store/slices/authSlice'
 import GlobalSearchBar from './GlobalSearchBar'
 
