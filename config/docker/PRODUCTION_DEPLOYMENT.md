@@ -59,8 +59,10 @@ The following environment variables must be set in `.env.production`:
 - `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret
 
 #### Frontend
+- `NODE_ENV`: Set to `production`
 - `VITE_API_URL`: Backend API URL
 - `VITE_APP_NAME`: Application name
+- `VITE_DEV_MODE`: Set to `false`
 
 ## 🏗️ Architecture
 
