@@ -5,6 +5,7 @@ import { ShoppingBagIcon, PlusIcon, CurrencyDollarIcon, TrashIcon, PencilIcon, P
 import { marketplaceAPI } from '../services/api'
 import { MarketplaceItem } from '../types'
 import { useAuth } from '../contexts/AuthContext'
+import AdDisplay from '../components/AdDisplay'
 
 export default function Marketplace() {
   const { user: authUser } = useAuth();
@@ -249,6 +250,9 @@ export default function Marketplace() {
           </button>
         ))}
       </div>
+
+      {/* Ad Display */}
+      <AdDisplay adSlot="YOUR_MARKETPLACE_AD_SLOT_ID" />
 
       {/* Marketplace Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

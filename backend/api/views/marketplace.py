@@ -9,7 +9,8 @@ This module contains views for managing marketplace listings:
 """
 
 from rest_framework import viewsets, status, permissions, serializers
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Avg
@@ -17,6 +18,14 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 
 from core.models.marketplace import Marketplace, MarketplaceOrder, MarketplaceReview
+from django.conf import settings
+
+# Import stripe only if available
+try:
+    import stripe
+    STRIPE_AVAILABLE = True
+except ImportError:
+    STRIPE_AVAILABLE = False
 
 
 # Basic serializers for now
@@ -255,4 +264,96 @@ class ReviewViewSet(viewsets.ModelViewSet):
         """Get reviews of the current user."""
         reviews_of_me = MarketplaceReview.objects.filter(order__seller=request.user).order_by('-created_at')
         serializer = self.get_serializer(reviews_of_me, many=True)
-        return Response(serializer.data) 
+        return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_connect_account(request):
+    """Create a Stripe Connect account for marketplace sellers"""
+    try:
+        # Create a connected account for the user
+        account = stripe.Account.create(
+            controller={
+                "stripe_dashboard": {
+                    "type": "express",
+                },
+                "fees": {
+                    "payer": "application"
+                },
+                "losses": {
+                    "payments": "application"
+                },
+            },
+            metadata={
+                "user_id": str(request.user.id),
+                "platform": "calloutracing"
+            }
+        )
+        
+        # Store the account ID in user profile
+        request.user.stripe_connect_account_id = account.id
+        request.user.save()
+        
+        return Response({
+            'account_id': account.id,
+            'message': 'Connect account created successfully'
+        })
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_account_link(request):
+    """Create an account link for Connect onboarding"""
+    try:
+        account_id = request.data.get('account_id')
+        
+        if not account_id:
+            return Response({
+                'error': 'Account ID is required'
+            }, status=400)
+        
+        # Create account link for onboarding
+        account_link = stripe.AccountLink.create(
+            account=account_id,
+            return_url=f"{settings.FRONTEND_URL}/marketplace/onboarding/return/{account_id}",
+            refresh_url=f"{settings.FRONTEND_URL}/marketplace/onboarding/refresh/{account_id}",
+            type="account_onboarding",
+        )
+        
+        return Response({
+            'url': account_link.url,
+        })
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=400)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_connect_account_status(request):
+    """Get the status of user's Connect account"""
+    try:
+        if not request.user.stripe_connect_account_id:
+            return Response({
+                'has_account': False,
+                'account_id': None
+            })
+        
+        account = stripe.Account.retrieve(request.user.stripe_connect_account_id)
+        
+        return Response({
+            'has_account': True,
+            'account_id': account.id,
+            'charges_enabled': account.charges_enabled,
+            'payouts_enabled': account.payouts_enabled,
+            'details_submitted': account.details_submitted,
+            'requirements': account.requirements
+        })
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=400) 

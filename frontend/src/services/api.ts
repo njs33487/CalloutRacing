@@ -388,4 +388,5 @@ export const searchAPI = {
   },
 };
 
+export { API_URL };
 export { api } 

@@ -441,4 +441,19 @@ class CrewMembership(models.Model):
         verbose_name_plural = "Crew Memberships"
     
     def __str__(self):
-        return f"{self.member.username} - {self.crew.name} ({self.role})" 
+        return f"{self.member.username} - {self.crew.name} ({self.role})"
+
+
+class SponsoredContent(models.Model):
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    image_url = models.URLField(max_length=500, blank=True, null=True)
+    link_url = models.URLField(max_length=500)
+    sponsor_name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    display_location = models.CharField(max_length=50, help_text="e.g., 'homepage', 'marketplace', 'event_list'")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Sponsored: {self.title} by {self.sponsor_name}" 

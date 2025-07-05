@@ -10,6 +10,8 @@ interface User {
   first_name: string
   last_name: string
   email_verified: boolean
+  subscription_status?: 'active' | 'inactive' | 'cancelled'
+  subscription_type?: 'basic' | 'pro' | 'premium'
 }
 
 // Authentication context interface - defines available methods and state
@@ -23,6 +25,8 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   isEmailVerified: boolean
+  hasActiveSubscription: boolean
+  subscriptionType?: 'basic' | 'pro' | 'premium'
 }
 
 // Create the authentication context
@@ -125,7 +129,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isLoading,
     isAuthenticated: !!user,
-    isEmailVerified: !!user?.email_verified
+    isEmailVerified: !!user?.email_verified,
+    hasActiveSubscription: user?.subscription_status === 'active',
+    subscriptionType: user?.subscription_type,
   }
 
   return (

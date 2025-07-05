@@ -163,6 +163,8 @@ class MarketplaceListing(models.Model):
     ], help_text='Item condition')
     location = models.CharField(max_length=200, help_text='Item location')
     is_negotiable = models.BooleanField(default=True, help_text='Whether price is negotiable')
+    # Stripe Connect fields
+    stripe_product_id = models.CharField(max_length=255, blank=True, null=True, help_text='Stripe product ID')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -293,7 +295,10 @@ class Order(models.Model):
     
     buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, help_text='Total order amount')
+    platform_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text='Platform commission amount')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', help_text='Order status')
+    # Stripe Connect fields
+    stripe_payment_intent_id = models.CharField(max_length=255, blank=True, null=True, help_text='Stripe PaymentIntent ID')
     shipping_address = models.ForeignKey('ShippingAddress', on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -302,7 +307,7 @@ class Order(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Order {self.id} - {self.buyer.username}"
+        return f"Order {self.id} - ${self.total_amount}"
 
 
 class OrderItem(models.Model):
