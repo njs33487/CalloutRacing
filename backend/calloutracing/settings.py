@@ -295,3 +295,5 @@ FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 # Marketplace commission percentage
 MARKETPLACE_COMMISSION_PERCENTAGE = config('MARKETPLACE_COMMISSION_PERCENTAGE', default=0.05, cast=float)  # 5% default 
+
+CORS_ALLOW_ALL_ORIGINS = True  # TEMPORARY: Allow all origins for testing. Remove in production! 
