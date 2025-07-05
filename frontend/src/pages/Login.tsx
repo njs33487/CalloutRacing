@@ -1,27 +1,27 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
-import { useAuth } from '../contexts/AuthContext'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { login } from '../store/slices/authSlice'
 import { SSOButtons } from '../components/SSOButtons'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const dispatch = useAppDispatch()
+  const { isLoading, error: authError } = useAppSelector((state) => state.auth)
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [localError, setLocalError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError('')
+    setLocalError('')
     
     try {
-      await login(formData.username, formData.password)
+      await dispatch(login(formData)).unwrap()
       // Redirect to app
       navigate('/app')
     } catch (error: any) {
@@ -29,12 +29,10 @@ export default function Login() {
       
       // Handle email verification error specifically
       if (error.response?.data?.email_verification_required) {
-        setError('Please verify your email before logging in. Check your inbox for a verification link, or use the resend verification feature.')
+        setLocalError('Please verify your email before logging in. Check your inbox for a verification link, or use the resend verification feature.')
       } else {
-        setError(error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || 'Invalid username or password')
+        setLocalError(error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || 'Invalid username or password')
       }
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -44,7 +42,7 @@ export default function Login() {
       [e.target.name]: e.target.value
     })
     // Clear error when user starts typing
-    if (error) setError('')
+    if (localError) setLocalError('')
   }
 
   const handleSSOSuccess = () => {
@@ -52,7 +50,7 @@ export default function Login() {
   }
 
   const handleSSOError = (errorMessage: string) => {
-    setError(errorMessage)
+    setLocalError(errorMessage)
   }
 
   return (
@@ -71,7 +69,7 @@ export default function Login() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
-          {error && (
+          {(localError || authError) && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex">
                 <div className="flex-shrink-0">
@@ -81,7 +79,7 @@ export default function Login() {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm text-red-800">
-                    {error}
+                    {localError || authError}
                   </p>
                 </div>
               </div>
