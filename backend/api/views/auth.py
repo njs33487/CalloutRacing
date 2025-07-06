@@ -392,9 +392,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Cover photo removed'})
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
-@csrf_exempt
 def login_view(request):
     """User login endpoint."""
     # Add debugging
@@ -488,9 +488,9 @@ def login_view(request):
     return Response(response_data)
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
-@csrf_exempt
 def check_user_exists(request):
     """Check if a username or email already exists."""
     # Add debugging
@@ -529,9 +529,9 @@ def check_user_exists(request):
     })
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
-@csrf_exempt
 def register_view(request):
     """User registration endpoint with robust error logging."""
     # Add debugging
