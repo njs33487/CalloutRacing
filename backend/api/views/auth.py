@@ -28,7 +28,7 @@ import base64
 import io
 import secrets
 from django.template.loader import render_to_string
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 
 from core.models.auth import User
 from core.models.auth import UserProfile
@@ -394,15 +394,45 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@csrf_exempt
 def login_view(request):
     """User login endpoint."""
     # Add debugging
     print(f"Login request data: {request.data}")
+    print(f"Request user: {request.user}")
+    print(f"Request user is authenticated: {request.user.is_authenticated}")
+    print(f"Request method: {request.method}")
+    print(f"Request headers: {dict(request.headers)}")
+    print(f"CSRF Token in header: {request.headers.get('X-CSRFToken', 'NOT_FOUND')}")
+    print(f"CSRF Token in cookies: {request.COOKIES.get('csrftoken', 'NOT_FOUND')}")
+    print(f"Session ID in cookies: {request.COOKIES.get('sessionid', 'NOT_FOUND')}")
     
     username = request.data.get('username')
     password = request.data.get('password')
     
     print(f"Login attempt - username: {username}")
+    
+    # If user is already authenticated, return success
+    if request.user.is_authenticated:
+        print("User is already authenticated, returning current user data")
+        try:
+            profile = request.user.profile
+            email_verified = profile.email_verified
+        except UserProfile.DoesNotExist:
+            email_verified = False
+        
+        response_data = {
+            'user': {
+                'id': request.user.id,
+                'username': request.user.username,
+                'email': request.user.email,
+                'first_name': request.user.first_name,
+                'last_name': request.user.last_name,
+                'email_verified': email_verified
+            }
+        }
+        print(f"Response data for already authenticated user: {response_data}")
+        return Response(response_data)
     
     if not username or not password:
         print("Missing username or password")
