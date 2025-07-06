@@ -490,8 +490,17 @@ def login_view(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@csrf_exempt
 def check_user_exists(request):
     """Check if a username or email already exists."""
+    # Add debugging
+    print(f"Check user exists request data: {request.data}")
+    print(f"Request method: {request.method}")
+    print(f"Request headers: {dict(request.headers)}")
+    print(f"CSRF Token in header: {request.headers.get('X-CSRFToken', 'NOT_FOUND')}")
+    print(f"CSRF Token in cookies: {request.COOKIES.get('csrftoken', 'NOT_FOUND')}")
+    print(f"Session ID in cookies: {request.COOKIES.get('sessionid', 'NOT_FOUND')}")
+    
     username = request.data.get('username', '').strip()
     email = request.data.get('email', '').strip()
     
@@ -522,6 +531,7 @@ def check_user_exists(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
+@csrf_exempt
 def register_view(request):
     """User registration endpoint with robust error logging."""
     # Add debugging
