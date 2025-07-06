@@ -50,7 +50,7 @@ export default function About() {
               <img 
                 src="/callourRacingLaunch.jpg" 
                 alt="CalloutRacing Launch" 
-                className="w-64 h-64 sm:w-96 sm:h-96 md:w-[500px] md:h-[500px] lg:w-[800px] lg:h-[800px] xl:w-[1000px] xl:h-[1000px] 2xl:w-[1440px] 2xl:h-[1440px] mx-auto object-cover rounded-lg shadow-lg transition-all duration-300 ease-in-out"
+                className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 xl:w-[400px] xl:h-[400px] 2xl:w-[500px] 2xl:h-[500px] mx-auto object-cover rounded-lg shadow-lg transition-all duration-300 ease-in-out"
               />
             </div>
           </div>
