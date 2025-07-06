@@ -39,10 +39,13 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Login form submitted with data:', formData)
     setLocalError('')
     
     try {
+      console.log('Dispatching login action...')
       await dispatch(login(formData)).unwrap()
+      console.log('Login successful, redirecting to /app')
       // Redirect to app
       navigate('/app')
     } catch (error: any) {
@@ -50,9 +53,12 @@ export default function Login() {
       
       // Handle email verification error specifically
       if (error.response?.data?.email_verification_required) {
-        setLocalError('Please verify your email before logging in. Check your inbox for a verification link, or use the resend verification feature.')
+        console.log('Email verification required, redirecting to verification page')
+        // Redirect to email verification page instead of showing error
+        navigate('/email-verification-required')
       } else {
-        setLocalError(error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || 'Invalid username or password')
+        console.log('Setting error message:', error.response?.data?.error)
+        setLocalError(error.response?.data?.error || error.response?.data?.non_field_errors?.[0] || error.message || 'Invalid username or password')
       }
     }
   }
