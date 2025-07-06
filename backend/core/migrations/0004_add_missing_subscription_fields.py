@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0003_add_stripe_connect_account_id'),
+        ('core', '0002_add_missing_user_fields'),
     ]
 
     operations = [
