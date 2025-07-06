@@ -77,22 +77,34 @@ export const authAPI = {
   register: (data: any) => api.post('/auth/register/', data),
   login: (data: any) => api.post('/auth/login/', data),
   logout: () => api.post('/auth/logout/'),
+  refresh: () => api.post('/auth/refresh/'),
+  verifyEmail: (token: string) => api.post('/auth/verify-email/', { token }),
+  resendVerification: () => api.post('/auth/resend-verification/'),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password/', { email }),
+  resetPassword: (token: string, password: string) => api.post('/auth/reset-password/', { token, password }),
+  changePassword: (oldPassword: string, newPassword: string) => api.post('/auth/change-password/', { old_password: oldPassword, new_password: newPassword }),
   profile: () => api.get('/auth/profile/'),
+  updateProfile: (data: any) => api.patch('/auth/profile/', data),
+  deleteAccount: () => api.delete('/auth/delete-account/'),
   testAuth: () => api.get('/auth/test-auth/'),
   googleSSO: (idToken: string) => api.post('/auth/google/', { id_token: idToken }),
   facebookSSO: (accessToken: string) => api.post('/auth/facebook/', { access_token: accessToken }),
   getSSOConfig: () => api.get('/auth/sso-config/'),
-  verifyEmail: (token: string) => api.get(`/auth/verify-email/${token}/`),
-  resendVerification: (email: string) => api.post('/auth/resend-verification/', { email }),
   checkUserExists: (data: { username?: string; email?: string }) => api.post('/auth/check-user/', data),
   requestPasswordReset: (email: string) => api.post('/auth/request-password-reset/', { email }),
-  resetPassword: (token: string, new_password: string, new_password_confirm: string) => api.post('/auth/reset-password/', { token, new_password, new_password_confirm }),
-  
-  // OTP Authentication
-  sendOtp: (identifier: string, type: 'phone' | 'email') => api.post('/auth/otp/send/', { identifier, type }),
-  verifyOtp: (identifier: string, otp_code: string, type: 'phone' | 'email') => api.post('/auth/otp/verify/', { identifier, otp_code, type }),
-  phoneLogin: (phone_number: string) => api.post('/auth/phone-login/', { phone_number }),
+  // OTP methods
+  sendOtp: (identifier: string, method: 'email' | 'phone') => api.post('/auth/send-otp/', { identifier, method }),
+  verifyOtp: (identifier: string, otp: string) => api.post('/auth/verify-otp/', { identifier, otp }),
+  otpLogin: (identifier: string, otp: string) => api.post('/auth/otp-login/', { identifier, otp }),
   emailLogin: (email: string) => api.post('/auth/email-login/', { email }),
+  // Subscription methods
+  getSubscriptionPlans: () => api.get('/subscriptions/plans/'),
+  createSubscriptionCheckout: (data: { price_id: string }) => api.post('/subscriptions/create-checkout-session/', data),
+  createCustomerPortalSession: () => api.post('/subscriptions/create-portal-session/'),
+  getSubscriptionStatus: () => api.get('/subscriptions/status/'),
+  // Marketplace methods
+  getMarketplaceItem: (itemId: string) => api.get(`/marketplace/items/${itemId}/`),
+  createMarketplacePaymentIntent: (itemId: string) => api.post(`/marketplace/items/${itemId}/create-payment-intent/`),
 }
 
 // Contact form API

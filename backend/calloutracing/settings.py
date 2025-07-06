@@ -312,4 +312,38 @@ VONAGE_API_SECRET = config('VONAGE_API_SECRET', default='')
 
 # OTP Settings
 OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', default=10, cast=int)
-OTP_LENGTH = config('OTP_LENGTH', default=6, cast=int) 
+OTP_LENGTH = config('OTP_LENGTH', default=6, cast=int)
+
+# Initialize Stripe
+import stripe
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
+else:
+    print("⚠️  Using dummy Stripe secret key for development")
+    stripe.api_key = "sk_test_dummy_key_for_development"
+
+# Stripe Connect settings
+STRIPE_CONNECT_CLIENT_ID = config('STRIPE_CONNECT_CLIENT_ID', default='')
+STRIPE_CONNECT_REDIRECT_URI = config('STRIPE_CONNECT_REDIRECT_URI', default='')
+
+# Subscription settings
+SUBSCRIPTION_PLANS = {
+    'basic': {
+        'price_id': config('STRIPE_BASIC_PLAN_PRICE_ID', default='price_basic_plan'),
+        'name': 'Basic Plan',
+        'price': 9.99,
+        'features': ['Basic racing features', 'Limited callouts', 'Community access']
+    },
+    'pro': {
+        'price_id': config('STRIPE_PRO_PLAN_PRICE_ID', default='price_pro_plan'),
+        'name': 'Pro Plan',
+        'price': 19.99,
+        'features': ['Advanced racing features', 'Unlimited callouts', 'Priority support', 'Analytics']
+    },
+    'premium': {
+        'price_id': config('STRIPE_PREMIUM_PLAN_PRICE_ID', default='price_premium_plan'),
+        'name': 'Premium Plan',
+        'price': 39.99,
+        'features': ['All Pro features', 'Exclusive events', 'Custom branding', 'API access']
+    }
+} 

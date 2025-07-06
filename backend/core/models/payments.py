@@ -1,130 +1,152 @@
 """
-Payment Models
+Payment and Subscription Models
 
-This module contains models related to payments and financial features:
-- Subscription: User subscription plans
-- Payment: Payment transactions
-- UserWallet: User wallet and balance
-- Bet: Betting on races and events
-- BettingPool: Betting pools and odds
+This module contains models for handling payments, subscriptions, and marketplace transactions.
 """
 
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+import uuid
 
 
 class Subscription(models.Model):
-    """Subscription model."""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
-    subscription_type = models.CharField(max_length=20, choices=[
-        ('basic', 'Basic'),
-        ('premium', 'Premium'),
-        ('pro', 'Pro'),
-    ], help_text="Subscription type")
-    status = models.CharField(max_length=20, choices=[
+    """User subscription model for premium plans."""
+    SUBSCRIPTION_STATUS_CHOICES = [
         ('active', 'Active'),
-        ('cancelled', 'Cancelled'),
-        ('expired', 'Expired'),
-    ], default='active', help_text="Subscription status")
-    start_date = models.DateTimeField(auto_now_add=True, help_text="Subscription start date")
-    end_date = models.DateTimeField(blank=True, null=True, help_text="Subscription end date")
-    next_billing_date = models.DateTimeField(blank=True, null=True, help_text="Next billing date")
+        ('canceled', 'Canceled'),
+        ('past_due', 'Past Due'),
+        ('unpaid', 'Unpaid'),
+        ('trialing', 'Trialing'),
+        ('incomplete', 'Incomplete'),
+        ('incomplete_expired', 'Incomplete Expired'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='subscriptions')
+    stripe_subscription_id = models.CharField(max_length=255, unique=True, help_text='Stripe subscription ID', null=True, blank=True)
+    stripe_customer_id = models.CharField(max_length=255, help_text='Stripe customer ID', null=True, blank=True)
+    stripe_price_id = models.CharField(max_length=255, help_text='Stripe price ID', null=True, blank=True)
+    status = models.CharField(max_length=20, choices=SUBSCRIPTION_STATUS_CHOICES, default='incomplete')
+    current_period_start = models.DateTimeField(null=True, blank=True)
+    current_period_end = models.DateTimeField(null=True, blank=True)
+    cancel_at_period_end = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.subscription_type} ({self.status})"
-
+    
     class Meta:
         ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"
 
 
 class Payment(models.Model):
-    """Payment model."""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments')
-    payment_type = models.CharField(max_length=20, choices=[
+    """Payment model for tracking all payments."""
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('succeeded', 'Succeeded'),
+        ('failed', 'Failed'),
+        ('canceled', 'Canceled'),
+    ]
+    
+    PAYMENT_TYPE_CHOICES = [
         ('subscription', 'Subscription'),
         ('marketplace', 'Marketplace'),
-        ('betting', 'Betting'),
-        ('other', 'Other'),
-    ], help_text="Payment type")
-    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text="Payment amount")
-    status = models.CharField(max_length=20, choices=[
+        ('one_time', 'One Time'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='payments')
+    stripe_payment_intent_id = models.CharField(max_length=255, unique=True, help_text='Stripe payment intent ID', null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text='Amount in dollars')
+    currency = models.CharField(max_length=3, default='usd')
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
+    description = models.TextField(blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - ${self.amount} - {self.status}"
+
+
+class UserWallet(models.Model):
+    """User wallet for managing balances and transactions."""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text='Current balance in dollars')
+    stripe_account_id = models.CharField(max_length=255, blank=True, null=True, help_text='Stripe Connect account ID for marketplace sellers')
+    is_onboarded = models.BooleanField(default=False, help_text='Whether user has completed Stripe Connect onboarding')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.username} - ${self.balance}"
+
+
+class Bet(models.Model):
+    """Betting model for race challenges."""
+    BET_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('canceled', 'Canceled'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bets', null=True, blank=True)
+    callout = models.ForeignKey('core.Callout', on_delete=models.CASCADE, related_name='bets', null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text='Bet amount in dollars', default=0)
+    predicted_winner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bets_on_me', null=True, blank=True)
+    status = models.CharField(max_length=20, choices=BET_STATUS_CHOICES, default='pending')
+    payout_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username if self.user else 'Unknown'} bets ${self.amount} on {self.predicted_winner.username if self.predicted_winner else 'Unknown'}"
+
+
+class BettingPool(models.Model):
+    """Pool for collecting and distributing bet amounts."""
+    callout = models.OneToOneField('core.Callout', on_delete=models.CASCADE, related_name='betting_pool', null=True, blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    winner_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_distributed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Pool for {self.callout} - ${self.total_amount}"
+
+
+class MarketplaceTransaction(models.Model):
+    """Model for tracking marketplace sales and commissions."""
+    TRANSACTION_STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('completed', 'Completed'),
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
-    ], default='pending', help_text="Payment status")
-    payment_provider = models.CharField(max_length=50, blank=True, help_text="Payment provider")
-    transaction_id = models.CharField(max_length=100, blank=True, help_text="Transaction ID")
+    ]
+    
+    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='marketplace_purchases')
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='marketplace_sales')
+    item = models.ForeignKey('core.MarketplaceListing', on_delete=models.CASCADE, related_name='transactions')
+    stripe_payment_intent_id = models.CharField(max_length=255, unique=True, help_text='Stripe payment intent ID')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text='Total amount in dollars')
+    seller_amount = models.DecimalField(max_digits=10, decimal_places=2, help_text='Amount seller receives')
+    platform_commission = models.DecimalField(max_digits=10, decimal_places=2, help_text='Platform commission amount')
+    status = models.CharField(max_length=20, choices=TRANSACTION_STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.payment_type} - ${self.amount}"
-
+    
     class Meta:
         ordering = ['-created_at']
-
-
-class UserWallet(models.Model):
-    """User wallet model."""
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wallet')
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Wallet balance")
-    is_active = models.BooleanField(default=True, help_text="Whether wallet is active")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
+    
     def __str__(self):
-        return f"{self.user.username}'s wallet - ${self.balance}"
-
-    class Meta:
-        ordering = ['-updated_at']
-
-
-class Bet(models.Model):
-    """Bet model."""
-    bettor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bets')
-    bet_type = models.CharField(max_length=20, choices=[
-        ('callout', 'Callout'),
-        ('event', 'Event'),
-        ('other', 'Other'),
-    ], help_text="Bet type")
-    bet_amount = models.DecimalField(max_digits=8, decimal_places=2, help_text="Bet amount")
-    odds = models.DecimalField(max_digits=5, decimal_places=2, help_text="Betting odds")
-    potential_payout = models.DecimalField(max_digits=8, decimal_places=2, help_text="Potential payout")
-    status = models.CharField(max_length=20, choices=[
-        ('pending', 'Pending'),
-        ('won', 'Won'),
-        ('lost', 'Lost'),
-        ('cancelled', 'Cancelled'),
-    ], default='pending', help_text="Bet status")
-    callout = models.ForeignKey('Callout', on_delete=models.CASCADE, related_name='bets', blank=True, null=True)
-    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='bets', blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.bettor.username} - ${self.bet_amount} on {self.bet_type}"
-
-    class Meta:
-        ordering = ['-created_at']
-
-
-class BettingPool(models.Model):
-    """Betting pool model."""
-    name = models.CharField(max_length=200, help_text="Pool name")
-    description = models.TextField(blank=True, help_text="Pool description")
-    total_pool = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Total pool amount")
-    is_active = models.BooleanField(default=True, help_text="Whether pool is active")
-    is_settled = models.BooleanField(default=False, help_text="Whether pool is settled")
-    callout = models.ForeignKey('Callout', on_delete=models.CASCADE, related_name='betting_pools', blank=True, null=True)
-    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='betting_pools', blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name} - ${self.total_pool}"
-
-    class Meta:
-        ordering = ['-created_at'] 
+        return f"{self.buyer.username} → {self.seller.username} - ${self.amount}" 

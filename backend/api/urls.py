@@ -44,7 +44,14 @@ from .views.social import (
 )
 
 from api.views.sponsored_views import SponsoredContentViewSet
-from api.views.subscription_views import create_checkout_session, stripe_webhook, session_status, create_customer_portal_session
+from api.views.subscription_views import (
+    stripe_webhook, 
+    get_subscription_plans, 
+    create_subscription_checkout_session, 
+    get_subscription_status,
+    create_customer_portal_session,
+    create_marketplace_payment_intent
+)
 from api.views.marketplace import create_connect_account, create_account_link, get_connect_account_status
 from api.views.marketplace_views import MarketplaceListingViewSet, marketplace_webhook
 
@@ -117,22 +124,24 @@ social_patterns = [
 
 # Add subscription URLs
 subscription_patterns = [
-    path('subscriptions/create-checkout-session/', create_checkout_session, name='create-checkout-session'),
-    path('subscriptions/session-status/', session_status, name='session-status'),
-    path('subscriptions/customer-portal/', create_customer_portal_session, name='customer-portal'),
+    path('plans/', get_subscription_plans, name='get-subscription-plans'),
+    path('create-checkout-session/', create_subscription_checkout_session, name='create-checkout-session'),
+    path('create-portal-session/', create_customer_portal_session, name='create-portal-session'),
+    path('status/', get_subscription_status, name='get-subscription-status'),
     path('stripe-webhook/', stripe_webhook, name='stripe-webhook'),
 ]
 
 # Add Connect onboarding URLs
 connect_patterns = [
-    path('connect/create-account/', create_connect_account, name='create-connect-account'),
-    path('connect/create-account-link/', create_account_link, name='create-account-link'),
-    path('connect/account-status/', get_connect_account_status, name='connect-account-status'),
+    path('create-account/', create_connect_account, name='create-connect-account'),
+    path('create-account-link/', create_account_link, name='create-account-link'),
+    path('account-status/', get_connect_account_status, name='connect-account-status'),
 ]
 
 # Add marketplace webhook URL
 marketplace_patterns = [
-    path('marketplace/webhook/', marketplace_webhook, name='marketplace-webhook'),
+    path('webhook/', marketplace_webhook, name='marketplace-webhook'),
+    path('items/<int:item_id>/create-payment-intent/', create_marketplace_payment_intent, name='create-marketplace-payment-intent'),
 ]
 
 # Combine all URL patterns

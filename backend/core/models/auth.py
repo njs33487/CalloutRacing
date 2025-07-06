@@ -18,6 +18,7 @@ class User(AbstractUser):
     phone_verified = models.BooleanField(default=False, help_text="Whether phone number has been verified")
     # Stripe Connect fields
     stripe_connect_account_id = models.CharField(max_length=255, blank=True, null=True, help_text='Stripe Connect account ID for marketplace sellers')
+    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True, help_text='Stripe customer ID for subscriptions')
     # Add any additional custom fields here if needed
 
     def __str__(self):

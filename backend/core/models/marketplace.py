@@ -163,6 +163,8 @@ class MarketplaceListing(models.Model):
     ], help_text='Item condition')
     location = models.CharField(max_length=200, help_text='Item location')
     is_negotiable = models.BooleanField(default=True, help_text='Whether price is negotiable')
+    is_active = models.BooleanField(default=True, help_text='Whether listing is active')
+    is_sold = models.BooleanField(default=False, help_text='Whether item has been sold')
     # Stripe Connect fields
     stripe_product_id = models.CharField(max_length=255, blank=True, null=True, help_text='Stripe product ID')
     created_at = models.DateTimeField(auto_now_add=True)

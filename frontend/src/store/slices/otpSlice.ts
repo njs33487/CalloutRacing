@@ -30,8 +30,8 @@ export const sendOtpAsync = createAsyncThunk(
 
 export const verifyOtpAsync = createAsyncThunk(
   'otp/verifyOtp',
-  async ({ identifier, otp_code, type }: { identifier: string; otp_code: string; type: 'phone' | 'email' }) => {
-    const response = await authAPI.verifyOtp(identifier, otp_code, type);
+  async ({ identifier, otp_code }: { identifier: string; otp_code: string; type: 'phone' | 'email' }) => {
+    const response = await authAPI.verifyOtp(identifier, otp_code);
     return response.data;
   }
 );

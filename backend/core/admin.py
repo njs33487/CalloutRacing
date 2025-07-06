@@ -137,10 +137,10 @@ class MarketplaceAdmin(admin.ModelAdmin):
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ['user', 'subscription_type', 'status', 'start_date', 'end_date']
-    list_filter = ['subscription_type', 'status', 'start_date']
-    search_fields = ['user__username']
-    readonly_fields = ['created_at', 'updated_at']
+    list_display = ['user', 'status', 'stripe_subscription_id', 'current_period_start', 'current_period_end']
+    list_filter = ['status', 'cancel_at_period_end', 'created_at']
+    search_fields = ['user__username', 'user__email', 'stripe_subscription_id']
+    readonly_fields = ['stripe_subscription_id', 'stripe_customer_id', 'stripe_price_id']
 
 
 @admin.register(Payment)
@@ -153,9 +153,9 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(UserWallet)
 class UserWalletAdmin(admin.ModelAdmin):
-    list_display = ['user', 'balance', 'is_active', 'created_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['user__username']
+    list_display = ['user', 'balance', 'stripe_account_id', 'is_onboarded']
+    list_filter = ['is_onboarded', 'created_at']
+    search_fields = ['user__username', 'user__email', 'stripe_account_id']
     readonly_fields = ['created_at', 'updated_at']
 
 
