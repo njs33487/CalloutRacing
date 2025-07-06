@@ -19,8 +19,8 @@ RUN npm run build
 # Install serve to run the built app
 RUN npm install -g serve
 
-# Expose port
-EXPOSE 3000
+# Expose port (will be overridden by Railway's PORT environment variable)
+EXPOSE $PORT
 
-# Start the application
-CMD ["npx", "serve", "-s", "dist", "-l", "3000"] 
+# Start the application using Railway's PORT environment variable
+CMD ["sh", "-c", "npx serve -s dist -l $PORT"] 

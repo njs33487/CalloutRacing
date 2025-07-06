@@ -3,8 +3,11 @@ import axios from 'axios'
 import { HotSpot, RacingCrew, CrewMembership, LocationBroadcast, ReputationRating, OpenChallenge, ChallengeResponse, Callout } from '../types';
 import Cookies from 'js-cookie';
 
-// Get API URL from environment variable or use default production URL
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend-production.up.railway.app/api'
+// Get API URL from environment variable or use default
+const API_URL = (import.meta as any).env?.VITE_API_URL || 
+                (window.location.hostname === 'localhost' ? 'http://localhost:8000/api' : 'https://calloutracing-backend-production.up.railway.app/api')
+
+console.log('API URL configured as:', API_URL)
 
 // Create axios instance with base configuration
 const api = axios.create({

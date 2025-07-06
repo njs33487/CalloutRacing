@@ -1,11 +1,21 @@
-#!/bin/sh
+#!/bin/bash
 
-# Set default port if not provided
-PORT=${PORT:-8080}
+# Frontend start script for Railway deployment
+set -e
+
+echo "=== Starting CalloutRacing Frontend ==="
+echo "Current directory: $(pwd)"
+
+# Use PORT environment variable or default to 3000
+PORT=${PORT:-3000}
+echo "Starting on port: $PORT"
+
+# Check if dist directory exists
+if [ ! -d "dist" ]; then
+    echo "Building application..."
+    npm run build
+fi
 
 # Start the application
-echo "Starting CalloutRacing frontend on port $PORT"
-echo "Environment: $NODE_ENV"
-echo "API URL: $VITE_API_URL"
-
-serve -s dist -l $PORT 
+echo "=== Starting frontend server on port $PORT ==="
+npx serve -s dist -l $PORT 
