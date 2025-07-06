@@ -18,13 +18,17 @@ export default function Login() {
 
   // Redirect if user is already authenticated
   useEffect(() => {
+    console.log('Login page - user state:', user)
+    console.log('Login page - isLoading:', isLoading)
     if (user) {
+      console.log('User is authenticated, redirecting to /app')
       navigate('/app')
     }
   }, [user, navigate])
 
   // Show loading while checking authentication
   if (isLoading) {
+    console.log('Login page - showing loading state')
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-secondary-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -34,6 +38,7 @@ export default function Login() {
 
   // Don't render login form if user is already authenticated
   if (user) {
+    console.log('Login page - user is authenticated, not rendering form')
     return null
   }
 
