@@ -295,3 +295,21 @@ FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 # Marketplace commission percentage
 MARKETPLACE_COMMISSION_PERCENTAGE = config('MARKETPLACE_COMMISSION_PERCENTAGE', default=0.05, cast=float)  # 5% default 
+
+# SMS Configuration (Twilio)
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
+TWILIO_FROM_NUMBER = config('TWILIO_FROM_NUMBER', default='')
+
+# Alternative SMS providers
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_REGION = config('AWS_REGION', default='us-east-1')
+
+# Vonage (Nexmo) SMS
+VONAGE_API_KEY = config('VONAGE_API_KEY', default='')
+VONAGE_API_SECRET = config('VONAGE_API_SECRET', default='')
+
+# OTP Settings
+OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', default=10, cast=int)
+OTP_LENGTH = config('OTP_LENGTH', default=6, cast=int) 

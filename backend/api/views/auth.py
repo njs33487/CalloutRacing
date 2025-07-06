@@ -43,6 +43,9 @@ from ..serializers import (
     UserSerializer, UserProfileSerializer
 )
 
+from core.otp_service import OTPService
+import re
+
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -994,17 +997,234 @@ def reset_password(request):
     new_password = request.data.get('new_password')
     
     if not token or not new_password:
+        return Response({'error': 'Token and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    success, message = reset_password_with_token(token, new_password)
+    
+    if success:
+        return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': message}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# OTP Authentication Views
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def send_otp(request):
+    """Send OTP to phone number or email."""
+    identifier = request.data.get('identifier')  # phone or email
+    otp_type = request.data.get('type')  # 'phone' or 'email'
+    
+    if not identifier or not otp_type:
         return Response({
-            'error': 'Token and new password are required'
+            'error': 'Identifier and type are required'
         }, status=status.HTTP_400_BAD_REQUEST)
     
-    success, user, message = reset_password_with_token(token, new_password)
+    if otp_type not in ['phone', 'email']:
+        return Response({
+            'error': 'Type must be either "phone" or "email"'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate phone number format
+    if otp_type == 'phone':
+        phone_pattern = re.compile(r'^\+?1?\d{9,15}$')
+        if not phone_pattern.match(identifier):
+            return Response({
+                'error': 'Invalid phone number format'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate email format
+    if otp_type == 'email':
+        email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        if not email_pattern.match(identifier):
+            return Response({
+                'error': 'Invalid email format'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if user exists with this identifier
+    if otp_type == 'phone':
+        try:
+            user = User.objects.get(phone_number=identifier)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'No user found with this phone number'
+            }, status=status.HTTP_404_NOT_FOUND)
+    else:  # email
+        try:
+            user = User.objects.get(email=identifier)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'No user found with this email'
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Send OTP
+    success, otp = OTPService.send_otp(user, identifier, otp_type)
     
     if success:
         return Response({
-            'message': message
-        })
+            'message': f'OTP sent to {identifier}',
+            'type': otp_type
+        }, status=status.HTTP_200_OK)
     else:
         return Response({
+            'error': 'Failed to send OTP'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def verify_otp(request):
+    """Verify OTP and authenticate user."""
+    identifier = request.data.get('identifier')
+    otp_code = request.data.get('otp_code')
+    otp_type = request.data.get('type')
+    
+    if not identifier or not otp_code or not otp_type:
+        return Response({
+            'error': 'Identifier, OTP code, and type are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if otp_type not in ['phone', 'email']:
+        return Response({
+            'error': 'Type must be either "phone" or "email"'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Find user by identifier
+    if otp_type == 'phone':
+        try:
+            user = User.objects.get(phone_number=identifier)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'No user found with this phone number'
+            }, status=status.HTTP_404_NOT_FOUND)
+    else:  # email
+        try:
+            user = User.objects.get(email=identifier)
+        except User.DoesNotExist:
+            return Response({
+                'error': 'No user found with this email'
+            }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Verify OTP
+    success, message = OTPService.verify_otp(user, identifier, otp_code, otp_type)
+    
+    if not success:
+        return Response({
             'error': message
-        }, status=status.HTTP_400_BAD_REQUEST) 
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Mark phone as verified if it's a phone OTP
+    if otp_type == 'phone' and not user.phone_verified:
+        user.phone_verified = True
+        user.save()
+    
+    # Log in the user
+    from django.contrib.auth import login
+    login(request, user)
+    
+    # Get user profile
+    try:
+        profile = UserProfile.objects.get(user=user)
+        profile_data = UserProfileSerializer(profile).data
+    except UserProfile.DoesNotExist:
+        profile_data = None
+    
+    return Response({
+        'message': 'OTP verified successfully',
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'phone_number': user.phone_number,
+            'phone_verified': user.phone_verified,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'is_authenticated': True
+        },
+        'profile': profile_data
+    }, status=status.HTTP_200_OK)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def phone_login(request):
+    """Login with phone number and OTP."""
+    phone_number = request.data.get('phone_number')
+    
+    if not phone_number:
+        return Response({
+            'error': 'Phone number is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate phone number format
+    phone_pattern = re.compile(r'^\+?1?\d{9,15}$')
+    if not phone_pattern.match(phone_number):
+        return Response({
+            'error': 'Invalid phone number format'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if user exists
+    try:
+        user = User.objects.get(phone_number=phone_number)
+    except User.DoesNotExist:
+        return Response({
+            'error': 'No user found with this phone number'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Send OTP
+    success, otp = OTPService.send_otp(user, phone_number, 'phone')
+    
+    if success:
+        return Response({
+            'message': f'OTP sent to {phone_number}',
+            'phone_number': phone_number
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            'error': 'Failed to send OTP'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def email_login(request):
+    """Login with email and OTP."""
+    email = request.data.get('email')
+    
+    if not email:
+        return Response({
+            'error': 'Email is required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate email format
+    email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    if not email_pattern.match(email):
+        return Response({
+            'error': 'Invalid email format'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if user exists
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({
+            'error': 'No user found with this email'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # Send OTP
+    success, otp = OTPService.send_otp(user, email, 'email')
+    
+    if success:
+        return Response({
+            'message': f'OTP sent to {email}',
+            'email': email
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response({
+            'error': 'Failed to send OTP'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

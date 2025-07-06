@@ -87,6 +87,12 @@ export const authAPI = {
   checkUserExists: (data: { username?: string; email?: string }) => api.post('/auth/check-user/', data),
   requestPasswordReset: (email: string) => api.post('/auth/request-password-reset/', { email }),
   resetPassword: (token: string, new_password: string, new_password_confirm: string) => api.post('/auth/reset-password/', { token, new_password, new_password_confirm }),
+  
+  // OTP Authentication
+  sendOtp: (identifier: string, type: 'phone' | 'email') => api.post('/auth/otp/send/', { identifier, type }),
+  verifyOtp: (identifier: string, otp_code: string, type: 'phone' | 'email') => api.post('/auth/otp/verify/', { identifier, otp_code, type }),
+  phoneLogin: (phone_number: string) => api.post('/auth/phone-login/', { phone_number }),
+  emailLogin: (email: string) => api.post('/auth/email-login/', { email }),
 }
 
 // Contact form API

@@ -12,7 +12,7 @@ This package contains all database models organized by domain:
 """
 
 # Import all models to maintain backward compatibility
-from .auth import User, UserProfile
+from .auth import User, UserProfile, OTP
 from .racing import Track, Event, Callout, RaceResult, EventParticipant
 from .marketplace import (
     Marketplace, MarketplaceImage, MarketplaceOrder, 
@@ -39,7 +39,7 @@ from .locations import (
 
 __all__ = [
     # Auth models
-    'User', 'UserProfile',
+    'User', 'UserProfile', 'OTP',
     
     # Racing models
     'Track', 'Event', 'Callout', 'RaceResult', 'EventParticipant',
