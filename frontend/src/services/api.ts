@@ -17,18 +17,21 @@ const api = axios.create({
 
 // Utility to fetch CSRF token from cookie
 export function getCSRFToken() {
-  return Cookies.get('csrftoken');
+  const token = Cookies.get('csrftoken');
+  console.log('CSRF Token from cookie:', token);
+  return token;
 }
 
 // Add a request interceptor to set X-CSRFToken header for all POST, PUT, PATCH, DELETE requests
 api.interceptors.request.use((config) => {
-  // For session authentication, we don't need to add tokens
-  // The session cookie will be automatically included
   const method = config.method?.toLowerCase();
   if (["post", "put", "patch", "delete"].includes(method || "")) {
     const csrfToken = getCSRFToken();
     if (csrfToken) {
       config.headers['X-CSRFToken'] = csrfToken;
+      console.log('Setting X-CSRFToken header:', csrfToken);
+    } else {
+      console.warn('No CSRF token found for', method, 'request to', config.url);
     }
   }
   return config;
@@ -49,8 +52,24 @@ api.interceptors.response.use(
 
 // Utility to ensure CSRF cookie is set before making POST requests
 export async function ensureCSRFToken() {
-  // Make a GET request to csrf endpoint to set CSRF cookie
-  await api.get('/auth/csrf/');
+  try {
+    console.log('Fetching CSRF token...');
+    const response = await api.get('/auth/csrf/');
+    console.log('CSRF token response:', response.status);
+    
+    // Check if CSRF token is now available
+    const token = getCSRFToken();
+    if (token) {
+      console.log('CSRF token successfully set:', token);
+    } else {
+      console.warn('CSRF token not found after fetch attempt');
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Failed to fetch CSRF token:', error);
+    throw error;
+  }
 }
 
 // Authentication API endpoints

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -8,13 +8,34 @@ import { SSOButtons } from '../components/SSOButtons'
 export default function Login() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { isLoading, error: authError } = useAppSelector((state) => state.auth)
+  const { isLoading, error: authError, user } = useAppSelector((state) => state.auth)
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
   const [localError, setLocalError] = useState('')
+
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate('/app')
+    }
+  }, [user, navigate])
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-secondary-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  // Don't render login form if user is already authenticated
+  if (user) {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
