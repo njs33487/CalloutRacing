@@ -30,7 +30,7 @@ from core.models.social import (
 from core.models.locations import (
     HotSpot, LocationBroadcast, OpenChallenge, ChallengeResponse
 )
-from core.models.payments import UserWallet, Bet, BettingPool
+from core.models.payments import UserWallet
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -716,41 +716,6 @@ class ChallengeResponseSerializer(serializers.ModelSerializer):
         model = ChallengeResponse
         fields = ['id', 'challenge', 'responder', 'message', 'status', 'created_at']
         read_only_fields = ['id', 'responder', 'created_at']
-
-
-class BetSerializer(serializers.ModelSerializer):
-    """Bet serializer."""
-    bettor = UserSerializer(read_only=True)
-    pool = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Bet
-        fields = ['id', 'bettor', 'pool', 'predicted_winner', 'amount', 'created_at']
-        read_only_fields = ['id', 'bettor', 'created_at']
-    
-    def get_pool(self, obj):
-        if hasattr(obj, 'pool') and obj.pool:
-            return {
-                'id': obj.pool.id,
-                'title': obj.pool.title
-            }
-        return None
-
-
-class BettingPoolSerializer(serializers.ModelSerializer):
-    """Betting pool serializer."""
-    created_by = UserSerializer(read_only=True)
-    participants = UserSerializer(many=True, read_only=True)
-    total_bets = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = BettingPool
-        fields = ['id', 'created_by', 'title', 'description', 'participants',
-                 'total_pot', 'entry_fee', 'race_date', 'winner', 'total_bets', 'created_at']
-        read_only_fields = ['id', 'created_by', 'total_bets', 'created_at']
-    
-    def get_total_bets(self, obj):
-        return getattr(obj, 'total_bets', 0)
 
 
 class BuildLogSerializer(serializers.ModelSerializer):

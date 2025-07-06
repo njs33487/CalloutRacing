@@ -5,13 +5,12 @@ from rest_framework import status
 from django.urls import reverse
 from core.models import (
     UserProfile, LocationBroadcast, HotSpot, OpenChallenge,
-    ChallengeResponse, Bet, BettingPool, BuildLog, BuildLogEntry,
+    ChallengeResponse, BuildLog, BuildLogEntry,
     PerformanceData, CarProfile, CarModification, Track
 )
 from api.serializers import (
     LocationBroadcastSerializer, HotSpotSerializer, OpenChallengeSerializer,
-    ChallengeResponseSerializer, BetSerializer, BettingPoolSerializer,
-    BuildLogSerializer, BuildLogEntrySerializer, PerformanceDataSerializer
+    ChallengeResponseSerializer, BuildLogSerializer, BuildLogEntrySerializer, PerformanceDataSerializer
 )
 from django.utils import timezone
 from datetime import timedelta
@@ -256,6 +255,11 @@ class OpenChallengesTests(APITestCase):
             email='racer2@test.com',
             password='testpass123'
         )
+        self.user3 = User.objects.create_user(
+            username='racer3',
+            email='racer3@test.com',
+            password='testpass123'
+        )
         self.track = Track.objects.create(
             name='LA Raceway',
             location='Los Angeles, CA',
@@ -267,11 +271,11 @@ class OpenChallengesTests(APITestCase):
         self.client.force_authenticate(user=self.user1)
         data = {
             'title': 'Quarter Mile Challenge',
-            'description': 'Any takers for a quarter mile race?',
-            'track': self.track.id,
+            'description': 'Looking for a quarter mile race',
             'challenge_type': 'quarter_mile',
+            'location': 'LA Raceway',
             'stakes': 'bragging_rights',
-            'expires_at': (timezone.now() + timedelta(hours=2)).isoformat()
+            'expires_at': (timezone.now() + timedelta(days=1)).isoformat()
         }
         response = self.client.post('/api/challenges/', data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -280,15 +284,15 @@ class OpenChallengesTests(APITestCase):
         ).exists())
 
     def test_get_open_challenges(self):
-        """Test getting open challenges."""
+        """Test getting available open challenges."""
         OpenChallenge.objects.create(
-            challenger=self.user1,
             title='Quarter Mile Challenge',
-            description='Any takers?',
-            track=self.track,
+            description='Looking for a quarter mile race',
+            challenger=self.user1,
             challenge_type='quarter_mile',
+            location='LA Raceway',
             stakes='bragging_rights',
-            expires_at=timezone.now() + timedelta(hours=2)
+            expires_at=timezone.now() + timedelta(days=1)
         )
         response = self.client.get('/api/challenges/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -297,16 +301,19 @@ class OpenChallengesTests(APITestCase):
     def test_respond_to_challenge(self):
         """Test responding to an open challenge."""
         challenge = OpenChallenge.objects.create(
-            challenger=self.user1,
             title='Quarter Mile Challenge',
-            description='Any takers?',
-            track=self.track,
+            description='Looking for a quarter mile race',
+            challenger=self.user1,
             challenge_type='quarter_mile',
+            location='LA Raceway',
             stakes='bragging_rights',
-            expires_at=timezone.now() + timedelta(hours=2)
+            expires_at=timezone.now() + timedelta(days=1)
         )
         self.client.force_authenticate(user=self.user2)
-        data = {'message': 'I accept your challenge!'}
+        data = {
+            'message': 'I accept your challenge!',
+            'proposed_time': (timezone.now() + timedelta(hours=2)).isoformat()
+        }
         response = self.client.post(f'/api/challenges/{challenge.id}/respond/', data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(ChallengeResponse.objects.filter(
@@ -316,22 +323,22 @@ class OpenChallengesTests(APITestCase):
     def test_filter_challenges_by_type(self):
         """Test filtering challenges by type."""
         OpenChallenge.objects.create(
-            challenger=self.user1,
             title='Quarter Mile Challenge',
-            description='Any takers?',
-            track=self.track,
+            description='Looking for a quarter mile race',
+            challenger=self.user1,
             challenge_type='quarter_mile',
+            location='LA Raceway',
             stakes='bragging_rights',
-            expires_at=timezone.now() + timedelta(hours=2)
+            expires_at=timezone.now() + timedelta(days=1)
         )
         OpenChallenge.objects.create(
-            challenger=self.user1,
             title='Dyno Challenge',
             description='Dyno competition',
-            track=self.track,
+            challenger=self.user2,
             challenge_type='dyno',
+            location='Performance Shop',
             stakes='bragging_rights',
-            expires_at=timezone.now() + timedelta(hours=2)
+            expires_at=timezone.now() + timedelta(days=1)
         )
         response = self.client.get('/api/challenges/?challenge_type=quarter_mile')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -340,142 +347,19 @@ class OpenChallengesTests(APITestCase):
     def test_cancel_challenge(self):
         """Test canceling an open challenge."""
         challenge = OpenChallenge.objects.create(
-            challenger=self.user1,
             title='Quarter Mile Challenge',
-            description='Any takers?',
-            track=self.track,
+            description='Looking for a quarter mile race',
+            challenger=self.user1,
             challenge_type='quarter_mile',
+            location='LA Raceway',
             stakes='bragging_rights',
-            expires_at=timezone.now() + timedelta(hours=2)
+            expires_at=timezone.now() + timedelta(days=1)
         )
         self.client.force_authenticate(user=self.user1)
         response = self.client.post(f'/api/challenges/{challenge.id}/cancel/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         challenge.refresh_from_db()
-        self.assertEqual(challenge.status, 'cancelled')
-
-
-class BettingSystemTests(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user1 = User.objects.create_user(
-            username='racer1',
-            email='racer1@test.com',
-            password='testpass123'
-        )
-        self.user2 = User.objects.create_user(
-            username='racer2',
-            email='racer2@test.com',
-            password='testpass123'
-        )
-        self.user3 = User.objects.create_user(
-            username='racer3',
-            email='racer3@test.com',
-            password='testpass123'
-        )
-
-    def test_create_betting_pool(self):
-        """Test creating a betting pool for a race."""
-        self.client.force_authenticate(user=self.user1)
-        data = {
-            'title': 'Quarter Mile Race',
-            'description': 'Race between two cars',
-            'participants': [self.user1.id, self.user2.id],
-            'total_pot': Decimal('1000.00'),
-            'entry_fee': Decimal('50.00'),
-            'race_date': (timezone.now() + timedelta(days=1)).isoformat()
-        }
-        response = self.client.post('/api/betting/pools/', data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(BettingPool.objects.filter(
-            title='Quarter Mile Race', created_by=self.user1
-        ).exists())
-
-    def test_place_bet(self):
-        """Test placing a bet on a race."""
-        pool = BettingPool.objects.create(
-            title='Quarter Mile Race',
-            description='Race between two cars',
-            created_by=self.user1,
-            total_pot=Decimal('1000.00'),
-            entry_fee=Decimal('50.00'),
-            race_date=timezone.now() + timedelta(days=1)
-        )
-        self.client.force_authenticate(user=self.user3)
-        data = {
-            'pool': pool.id,
-            'predicted_winner': self.user1.id,
-            'amount': Decimal('100.00')
-        }
-        response = self.client.post('/api/betting/bets/', data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Bet.objects.filter(
-            bettor=self.user3, pool=pool
-        ).exists())
-
-    def test_get_betting_pools(self):
-        """Test getting available betting pools."""
-        BettingPool.objects.create(
-            title='Quarter Mile Race',
-            description='Race between two cars',
-            created_by=self.user1,
-            total_pot=Decimal('1000.00'),
-            entry_fee=Decimal('50.00'),
-            race_date=timezone.now() + timedelta(days=1)
-        )
-        response = self.client.get('/api/betting/pools/')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-
-    def test_get_pool_details(self):
-        """Test getting detailed information about a betting pool."""
-        pool = BettingPool.objects.create(
-            title='Quarter Mile Race',
-            description='Race between two cars',
-            created_by=self.user1,
-            total_pot=Decimal('1000.00'),
-            entry_fee=Decimal('50.00'),
-            race_date=timezone.now() + timedelta(days=1)
-        )
-        Bet.objects.create(
-            bettor=self.user2,
-            pool=pool,
-            predicted_winner=self.user1,
-            amount=Decimal('100.00')
-        )
-        response = self.client.get(f'/api/betting/pools/{pool.id}/')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['total_bets'], 1)
-
-    def test_set_race_winner(self):
-        """Test setting the winner of a race and distributing winnings."""
-        pool = BettingPool.objects.create(
-            title='Quarter Mile Race',
-            description='Race between two cars',
-            created_by=self.user1,
-            total_pot=Decimal('1000.00'),
-            entry_fee=Decimal('50.00'),
-            race_date=timezone.now() + timedelta(days=1)
-        )
-        Bet.objects.create(
-            bettor=self.user2,
-            pool=pool,
-            predicted_winner=self.user1,
-            amount=Decimal('100.00')
-        )
-        Bet.objects.create(
-            bettor=self.user3,
-            pool=pool,
-            predicted_winner=self.user2,
-            amount=Decimal('50.00')
-        )
-        
-        self.client.force_authenticate(user=self.user1)
-        data = {'winner': self.user1.id}
-        response = self.client.post(f'/api/betting/pools/{pool.id}/set_winner/', data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        pool.refresh_from_db()
-        self.assertEqual(pool.winner, self.user1)
+        self.assertTrue(challenge.is_cancelled)
 
 
 class BuildLogsTests(APITestCase):
@@ -793,11 +677,11 @@ class AdvancedFeaturesIntegrationTests(APITestCase):
         # 3. Create open challenge
         challenge_data = {
             'title': 'Quarter Mile Challenge',
-            'description': 'Any takers for a quarter mile race?',
-            'track': self.track.id,
+            'description': 'Looking for a quarter mile race',
             'challenge_type': 'quarter_mile',
+            'location': 'LA Raceway',
             'stakes': 'bragging_rights',
-            'expires_at': (timezone.now() + timedelta(hours=2)).isoformat()
+            'expires_at': (timezone.now() + timedelta(days=1)).isoformat()
         }
         response = self.client.post('/api/challenges/', challenge_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

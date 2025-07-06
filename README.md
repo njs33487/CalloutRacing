@@ -75,7 +75,7 @@ npm run dev
 - **Location Broadcasting** - "I'm Here, Who's There?" real-time location sharing
 - **Hot Spots** - Discover popular racing locations and meet points
 - **Open Challenges** - Public challenges for any racer to respond to
-- **Betting System** - Place bets on races and events
+
 - **Build Logs** - Document and share car build progress
 - **Performance Data** - Track and verify quarter-mile times, dyno results
 

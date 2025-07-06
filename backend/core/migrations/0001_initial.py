@@ -244,36 +244,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-created_at'],
             },
         ),
-        migrations.CreateModel(
-            name='BettingPool',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('total_amount', models.DecimalField(decimal_places=2, default=0.0, max_digits=10)),
-                ('winner_payout', models.DecimalField(decimal_places=2, default=0.0, max_digits=10)),
-                ('platform_fee', models.DecimalField(decimal_places=2, default=0.0, max_digits=10)),
-                ('is_distributed', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('callout', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='betting_pool', to='core.callout')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Bet',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.DecimalField(decimal_places=2, default=0, help_text='Bet amount in dollars', max_digits=10)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('active', 'Active'), ('completed', 'Completed'), ('canceled', 'Canceled')], default='pending', max_length=20)),
-                ('payout_amount', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('predicted_winner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='bets_on_me', to=settings.AUTH_USER_MODEL)),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='bets', to=settings.AUTH_USER_MODEL)),
-                ('callout', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='bets', to='core.callout')),
-            ],
-            options={
-                'ordering': ['-created_at'],
-            },
-        ),
+
         migrations.CreateModel(
             name='CarListing',
             fields=[

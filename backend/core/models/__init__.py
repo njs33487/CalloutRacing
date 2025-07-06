@@ -30,9 +30,7 @@ from .cars import (
     BuildWishlist, WishlistSuggestion, BuildRating, 
     BuildComment, BuildBadge, BuildBadgeAward
 )
-from .payments import (
-    Subscription, Payment, UserWallet, Bet, BettingPool
-)
+from .payments import UserWallet, Payment, MarketplaceTransaction
 from .locations import (
     HotSpot, LocationBroadcast, OpenChallenge, ChallengeResponse
 )
@@ -61,7 +59,7 @@ __all__ = [
     'BuildComment', 'BuildBadge', 'BuildBadgeAward',
     
     # Payment models
-    'Subscription', 'Payment', 'UserWallet', 'Bet', 'BettingPool',
+    'Subscription', 'Payment', 'UserWallet', 'MarketplaceTransaction',
     
     # Location models
     'HotSpot', 'LocationBroadcast', 'OpenChallenge', 'ChallengeResponse',

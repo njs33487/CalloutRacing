@@ -86,45 +86,6 @@ class UserWallet(models.Model):
         return f"{self.user.username} - ${self.balance}"
 
 
-class Bet(models.Model):
-    """Betting model for race challenges."""
-    BET_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('active', 'Active'),
-        ('completed', 'Completed'),
-        ('canceled', 'Canceled'),
-    ]
-    
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bets', null=True, blank=True)
-    callout = models.ForeignKey('core.Callout', on_delete=models.CASCADE, related_name='bets', null=True, blank=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text='Bet amount in dollars', default=0)
-    predicted_winner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bets_on_me', null=True, blank=True)
-    status = models.CharField(max_length=20, choices=BET_STATUS_CHOICES, default='pending')
-    payout_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.user.username if self.user else 'Unknown'} bets ${self.amount} on {self.predicted_winner.username if self.predicted_winner else 'Unknown'}"
-
-
-class BettingPool(models.Model):
-    """Pool for collecting and distributing bet amounts."""
-    callout = models.OneToOneField('core.Callout', on_delete=models.CASCADE, related_name='betting_pool', null=True, blank=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    winner_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    is_distributed = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    def __str__(self):
-        return f"Pool for {self.callout} - ${self.total_amount}"
-
-
 class MarketplaceTransaction(models.Model):
     """Model for tracking marketplace sales and commissions."""
     TRANSACTION_STATUS_CHOICES = [

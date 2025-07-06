@@ -25,23 +25,19 @@ from core.models import (
     Marketplace, MarketplaceImage, EventParticipant,
     Friendship, Message, CarProfile, CarModification, 
     CarImage, UserPost, PostComment, Subscription, Payment, UserWallet,
-    MarketplaceOrder, MarketplaceReview, Bet, BettingPool, Notification,
+    MarketplaceOrder, MarketplaceReview, Notification,
     ContactSubmission, HotSpot, RacingCrew, CrewMembership, LocationBroadcast,
     ReputationRating, OpenChallenge, ChallengeResponse
 )
 from .serializers import (
     UserSerializer, UserProfileSerializer, TrackSerializer, EventSerializer,
     CalloutSerializer, CalloutDetailSerializer, RaceResultSerializer,
-    MarketplaceSerializer, MarketplaceDetailSerializer, EventParticipantSerializer,
-    EventDetailSerializer, FriendshipSerializer, MessageSerializer,
-    CarProfileSerializer, CarModificationSerializer, CarImageSerializer,
-    UserPostSerializer, PostCommentSerializer, SubscriptionSerializer,
-    PaymentSerializer, UserWalletSerializer,
-    MarketplaceOrderSerializer, MarketplaceReviewSerializer, BetSerializer,
-    BettingPoolSerializer, NotificationSerializer, SubscriptionPlanSerializer,
-    HotSpotSerializer, RacingCrewSerializer, CrewMembershipSerializer,
-    LocationBroadcastSerializer, ReputationRatingSerializer, OpenChallengeSerializer,
-    ChallengeResponseSerializer
+    MarketplaceSerializer, EventParticipantSerializer,
+    FriendshipSerializer, MessageSerializer,
+    CarProfileSerializer, UserPostSerializer, PostCommentSerializer,
+    UserWalletSerializer, MarketplaceOrderSerializer, MarketplaceReviewSerializer,
+    NotificationSerializer, HotSpotSerializer, RacingCrewSerializer, CrewMembershipSerializer,
+    LocationBroadcastSerializer, OpenChallengeSerializer, ChallengeResponseSerializer
 )
 from django.utils import timezone
 from datetime import timedelta
@@ -1426,127 +1422,6 @@ class MarketplaceReviewViewSet(viewsets.ModelViewSet):
 
 
 # ============================================================================
-# BETTING VIEWSETS
-# ============================================================================
-
-class BetViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Bet model.
-    
-    Handles CRUD operations for bets with custom actions
-    for bet management and settlement.
-    """
-    serializer_class = BetSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['bet_type', 'status', 'callout', 'event']
-    ordering_fields = ['created_at', 'bet_amount', 'potential_payout']
-
-    def get_queryset(self):
-        """Only show user's own bets."""
-        return Bet.objects.filter(bettor=self.request.user)
-
-    def perform_create(self, serializer):
-        """Automatically set the current user as bettor."""
-        serializer.save(bettor=self.request.user)
-
-    @action(detail=True, methods=['post'])
-    def place_bet(self, request, pk=None):
-        """Place a bet on a race."""
-        bet = self.get_object()
-        
-        # Check if user has sufficient funds
-        wallet = UserWallet.objects.get_or_create(user=request.user)[0]
-        if not wallet.can_afford(bet.bet_amount):
-            return Response({'error': 'Insufficient funds'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Deduct funds and activate bet
-        wallet.deduct_funds(bet.bet_amount, f"Bet on {bet.selected_winner.username}")
-        bet.status = 'active'
-        bet.save()
-        
-        return Response({'message': 'Bet placed successfully'})
-
-    @action(detail=True, methods=['post'])
-    def cancel_bet(self, request, pk=None):
-        """Cancel a pending bet."""
-        bet = self.get_object()
-        if bet.status != 'pending':
-            return Response({'error': 'Cannot cancel active bet'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        bet.status = 'cancelled'
-        bet.save()
-        return Response({'message': 'Bet cancelled successfully'})
-
-    @action(detail=False, methods=['get'])
-    def betting_history(self, request):
-        """Get user's betting history."""
-        bets = Bet.objects.filter(bettor=request.user).order_by('-created_at')
-        serializer = BettingHistorySerializer(bets, many=True)
-        return Response(serializer.data)
-
-
-class BettingPoolViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for BettingPool model.
-    
-    Handles CRUD operations for betting pools with custom actions
-    for pool management and odds calculation.
-    """
-    serializer_class = BettingPoolSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['is_active', 'is_settled', 'callout', 'event']
-    ordering_fields = ['created_at', 'total_pool']
-
-    def get_queryset(self):
-        """Show active betting pools."""
-        return BettingPool.objects.filter(is_active=True)
-
-    @action(detail=True, methods=['get'])
-    def odds(self, request, pk=None):
-        """Get current odds for all participants."""
-        pool = self.get_object()
-        odds_data = {}
-        
-        # Calculate odds for each participant
-        if pool.callout:
-            participants = [pool.callout.challenger, pool.callout.challenged]
-        elif pool.event:
-            participants = [participant.user for participant in pool.event.participants.all()]
-        else:
-            return Response({'error': 'No participants found'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        for participant in participants:
-            odds_data[participant.username] = pool.calculate_odds(participant)
-        
-        return Response(odds_data)
-
-    @action(detail=True, methods=['post'])
-    def close_pool(self, request, pk=None):
-        """Close betting pool before race starts."""
-        pool = self.get_object()
-        pool.close_pool()
-        return Response({'message': 'Betting pool closed'})
-
-    @action(detail=True, methods=['post'])
-    def settle_pool(self, request, pk=None):
-        """Settle betting pool after race completion."""
-        pool = self.get_object()
-        winner_id = request.data.get('winner_id')
-        
-        if not winner_id:
-            return Response({'error': 'Winner ID required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            winner = User.objects.get(id=winner_id)
-            pool.settle_pool(winner)
-            return Response({'message': 'Betting pool settled'})
-        except User.DoesNotExist:
-            return Response({'error': 'Winner not found'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# ============================================================================
 # NOTIFICATION VIEWSET
 # ============================================================================
 
@@ -1627,8 +1502,7 @@ def subscription_plans(request):
                 'Advanced race analytics',
                 'Full marketplace access',
                 'Priority support',
-                'Custom car profiles',
-                'Betting features'
+                'Custom car profiles'
             ],
             'is_popular': True,
             'is_current': False
@@ -1641,7 +1515,6 @@ def subscription_plans(request):
             'features': [
                 'All Premium features',
                 'Event organization',
-                'Advanced betting pools',
                 'API access',
                 'Dedicated support'
             ],

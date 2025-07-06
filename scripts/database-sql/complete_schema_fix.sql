@@ -806,26 +806,7 @@ CREATE TABLE core_payment (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Bets
-CREATE TABLE core_bet (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES auth_user(id),
-    race_id INTEGER,
-    amount DECIMAL(10,2) NOT NULL,
-    prediction VARCHAR(100),
-    odds DECIMAL(5,2),
-    status VARCHAR(20) DEFAULT 'pending',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
--- Betting pools
-CREATE TABLE core_bettingpool (
-    id SERIAL PRIMARY KEY,
-    race_id INTEGER,
-    total_pool DECIMAL(10,2) DEFAULT 0.00,
-    status VARCHAR(20) DEFAULT 'open',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
 -- Contact submissions
 CREATE TABLE core_contactsubmission (
