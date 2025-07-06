@@ -48,9 +48,12 @@ export const login = createAsyncThunk(
     try {
       await ensureCSRFToken();
       const response = await authAPI.login({ username, password });
-      return response.data.user;
+      // The backend returns { user: { ... } }, so we need to extract the user data
+      return response.data.user || response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      console.error('Login thunk error:', error);
+      // Pass through the full error response for better error handling
+      return rejectWithValue(error);
     }
   }
 );
