@@ -26,9 +26,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 # Copy start script and make it executable
-COPY backend/start-railway.sh /app/start-railway.sh
-RUN dos2unix /app/start-railway.sh
-RUN chmod +x /app/start-railway.sh
+COPY backend/start-docker.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 # Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media
@@ -40,4 +39,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE $PORT
 
 # Run the application
-CMD ["bash", "/app/start-railway.sh"] 
+CMD ["bash", "/app/start.sh"] 
