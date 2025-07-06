@@ -1,19 +1,21 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import uiReducer from './slices/uiSlice';
-import socialReducer from './slices/socialSlice';
+import eventsReducer from './slices/eventsSlice';
 import marketplaceReducer from './slices/marketplaceSlice';
 import racingReducer from './slices/racingSlice';
-import eventsReducer from './slices/eventsSlice';
+import socialReducer from './slices/socialSlice';
+import uiReducer from './slices/uiSlice';
+import otpReducer from './slices/otpSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    ui: uiReducer,
-    social: socialReducer,
+    events: eventsReducer,
     marketplace: marketplaceReducer,
     racing: racingReducer,
-    events: eventsReducer,
+    social: socialReducer,
+    ui: uiReducer,
+    otp: otpReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

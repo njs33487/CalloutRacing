@@ -207,6 +207,16 @@ export default function Login() {
                 )}
               </button>
             </div>
+
+            {/* OTP Login Option */}
+            <div className="text-center">
+              <Link
+                to="/otp-login"
+                className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
+              >
+                Sign in with phone or email OTP
+              </Link>
+            </div>
           </form>
 
           {/* SSO Buttons - Moved to bottom */}

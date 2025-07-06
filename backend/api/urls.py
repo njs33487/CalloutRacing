@@ -25,6 +25,9 @@ from .views import (
 # Import auth views directly
 from .views.auth import resend_verification_email_view, check_user_exists, get_csrf_token
 
+# Import OTP auth views
+from .views.auth import send_otp, verify_otp, phone_login, email_login
+
 # Import racing views directly
 from .views.racing import (
     TrackListView, TrackDetailView,
@@ -67,6 +70,13 @@ auth_patterns = [
     path('check-user/', check_user_exists, name='check-user'),
     path('request-password-reset/', request_password_reset, name='request-password-reset'),
     path('reset-password/', reset_password, name='reset-password'),
+    
+    # OTP Authentication URLs
+    path('otp/send/', send_otp, name='send-otp'),
+    path('otp/verify/', verify_otp, name='verify-otp'),
+    path('phone-login/', phone_login, name='phone-login'),
+    path('email-login/', email_login, name='email-login'),
+    
     path('otp/setup/', setup_otp, name='otp-setup'),
     path('otp/verify-setup/', verify_otp_setup, name='otp-verify-setup'),
     path('otp/disable/', disable_otp, name='otp-disable'),

@@ -32,6 +32,7 @@ import ResetPassword from './pages/ResetPassword'
 import ConnectOnboarding from './pages/ConnectOnboarding'
 import ConnectOnboardingReturn from './pages/ConnectOnboardingReturn'
 import ConnectOnboardingRefresh from './pages/ConnectOnboardingRefresh'
+import OtpLogin from './components/OtpLogin'
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
             {/* Public routes - accessible without authentication */}
             <Route path="/" element={<About />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/otp-login" element={<OtpLogin />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/verify-email/:token" element={<EmailVerification />} />
