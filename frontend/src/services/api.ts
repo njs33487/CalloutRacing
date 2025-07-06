@@ -6,10 +6,6 @@ import Cookies from 'js-cookie';
 // Get API URL from environment variable or use default production URL
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://calloutracing-backend-production.up.railway.app/api'
 
-// Debug: Log the API URL being used
-console.log('API_URL:', API_URL)
-console.log('Environment VITE_API_URL:', (import.meta as any).env?.VITE_API_URL)
-
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: API_URL,
