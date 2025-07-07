@@ -4,13 +4,11 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { login } from '../store/slices/authSlice'
 import { SSOButtons } from '../components/SSOButtons'
-import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const { isLoading, error: authError, user } = useAppSelector((state) => state.auth)
-  const { user: authUser, isLoading: authLoading } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -22,18 +20,15 @@ export default function Login() {
   useEffect(() => {
     console.log('Login page - user state:', user)
     console.log('Login page - isLoading:', isLoading)
-    console.log('AuthContext - user state:', authUser)
-    console.log('AuthContext - isLoading:', authLoading)
     
-    // Check both Redux and AuthContext for authentication
-    if (user || authUser) {
+    if (user) {
       console.log('User is authenticated, redirecting to /app')
       navigate('/app')
     }
-  }, [user, authUser, navigate, isLoading, authLoading])
+  }, [user, navigate, isLoading])
 
   // Show loading while checking authentication
-  if (isLoading || authLoading) {
+  if (isLoading) {
     console.log('Login page - showing loading state')
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-secondary-50 flex items-center justify-center">
@@ -43,7 +38,7 @@ export default function Login() {
   }
 
   // Don't render login form if user is already authenticated
-  if (user || authUser) {
+  if (user) {
     console.log('Login page - user is authenticated, not rendering form')
     return null
   }
@@ -198,41 +193,24 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Signing in...
-                  </div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : (
                   'Sign in'
                 )}
               </button>
             </div>
-
-            {/* OTP Login Option */}
-            <div className="text-center">
-              <Link
-                to="/otp-login"
-                className="text-sm text-indigo-600 hover:text-indigo-500 font-medium"
-              >
-                Sign in with phone or email OTP
-              </Link>
-            </div>
           </form>
 
-          {/* SSO Buttons - Moved to bottom */}
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">Or sign in with</span>
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
 
@@ -245,35 +223,15 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">New to CalloutRacing?</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                to="/signup"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-600 bg-white border-primary-600 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-              >
-                Create an account
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-500">
+                Sign up here
               </Link>
-            </div>
+            </p>
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="mt-8 text-center">
-        <p className="text-sm text-gray-600">
-          <Link to="/" className="font-medium text-primary-600 hover:text-primary-500">
-            Back to home
-          </Link>
-        </p>
       </div>
     </div>
   )
