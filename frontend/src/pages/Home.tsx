@@ -571,7 +571,7 @@ export default function Dashboard() {
         )}
 
         {/* Main Layout - Social Feed + Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8">
           {/* Main Social Feed */}
           <div className="lg:col-span-3">
             {/* Featured Banner - Events & Callouts */}
@@ -606,7 +606,7 @@ export default function Dashboard() {
                         </div>
                         <h3 className="font-bold text-lg mb-1">{upcomingEvents[0].title}</h3>
                         <p className="text-sm text-white/90 mb-2 line-clamp-2">{upcomingEvents[0].description}</p>
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs space-y-1 sm:space-y-0">
                           <span>{upcomingEvents[0].track?.name || 'TBD'}</span>
                           <span>{new Date(upcomingEvents[0].start_date).toLocaleDateString()}</span>
                         </div>
@@ -620,13 +620,13 @@ export default function Dashboard() {
                           <TrophyIcon className="w-5 h-5" />
                           <span className="font-semibold">Featured Callout</span>
                         </div>
-                        <div className="flex items-center space-x-1 mb-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-1 mb-1">
                           <span className="font-bold">{recentCallouts[0].challenger.username}</span>
                           <span>vs</span>
                           <span className="font-bold">{recentCallouts[0].challenged.username}</span>
                         </div>
                         <p className="text-sm text-white/90 mb-2 line-clamp-2">{recentCallouts[0].message}</p>
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs space-y-1 sm:space-y-0">
                           <span>{recentCallouts[0].race_type}</span>
                           <span>{recentCallouts[0].time_ago}</span>
                         </div>
@@ -634,11 +634,11 @@ export default function Dashboard() {
                     )}
                   </div>
                   
-                  <div className="flex items-center justify-center mt-4 space-x-4">
-                    <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white font-medium transition-colors">
+                  <div className="flex flex-col sm:flex-row items-center justify-center mt-4 space-y-2 sm:space-y-0 sm:space-x-4">
+                    <button className="w-full sm:w-auto px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white font-medium transition-colors">
                       View All Events
                     </button>
-                    <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white font-medium transition-colors">
+                    <button className="w-full sm:w-auto px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white font-medium transition-colors">
                       View All Callouts
                     </button>
                   </div>
@@ -647,14 +647,14 @@ export default function Dashboard() {
             )}
 
             {/* Feed Header */}
-            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <h2 className="text-2xl font-bold text-gray-900">Racing Community Feed</h2>
-                  <div className="flex items-center space-x-2">
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 lg:p-6 mb-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 space-y-4 lg:space-y-0">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                  <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Racing Community Feed</h2>
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => setActiveTab('feed')}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
                         activeTab === 'feed'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -665,7 +665,7 @@ export default function Dashboard() {
                     </button>
                     <button
                       onClick={() => setActiveTab('trending')}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
                         activeTab === 'trending'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -676,7 +676,7 @@ export default function Dashboard() {
                     </button>
                     <button
                       onClick={() => setActiveTab('live')}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
                         activeTab === 'live'
                           ? 'bg-red-500 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -687,7 +687,7 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-between lg:justify-end space-x-2 lg:space-x-3">
                   <button
                     onClick={handleRefresh}
                     disabled={refreshing}
@@ -708,41 +708,44 @@ export default function Dashboard() {
                   </button>
                   <button
                     onClick={() => setShowCreatePost(true)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="flex items-center space-x-2 px-3 lg:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm lg:text-base"
                   >
-                    <PlusIcon className="w-5 h-5" />
-                    <span>Create Post</span>
+                    <PlusIcon className="w-4 h-4 lg:w-5 lg:h-5" />
+                    <span className="hidden sm:inline">Create Post</span>
+                    <span className="sm:hidden">Post</span>
                   </button>
                 </div>
               </div>
 
               {/* Filters */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                   <span className="text-sm font-medium text-gray-700">Filters:</span>
-                  <select
-                    value={postTypeFilter}
-                    onChange={(e) => setPostTypeFilter(e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">All Types</option>
-                    <option value="text">Text</option>
-                    <option value="image">Photo</option>
-                    <option value="video">Video</option>
-                    <option value="race_result">Race Result</option>
-                    <option value="car_update">Car Update</option>
-                    <option value="live">Live Stream</option>
-                  </select>
-                  <select
-                    value={timeFilter}
-                    onChange={(e) => setTimeFilter(e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                  </select>
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                    <select
+                      value={postTypeFilter}
+                      onChange={(e) => setPostTypeFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Types</option>
+                      <option value="text">Text</option>
+                      <option value="image">Photo</option>
+                      <option value="video">Video</option>
+                      <option value="race_result">Race Result</option>
+                      <option value="car_update">Car Update</option>
+                      <option value="live">Live Stream</option>
+                    </select>
+                    <select
+                      value={timeFilter}
+                      onChange={(e) => setTimeFilter(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Time</option>
+                      <option value="today">Today</option>
+                      <option value="week">This Week</option>
+                      <option value="month">This Month</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -934,33 +937,35 @@ export default function Dashboard() {
                   <div key={post.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                     {/* Post Header */}
                     <div className="p-4 border-b border-gray-100">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
                             <span className="text-white font-medium">
                               {post.author.first_name?.[0] || post.author.username[0]}
                             </span>
                           </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h3 className="font-semibold text-gray-900">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                              <h3 className="font-semibold text-gray-900 truncate">
                                 {post.author.first_name} {post.author.last_name}
                               </h3>
-                              {post.is_live && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  <FireIcon className="w-3 h-3 mr-1" />
-                                  LIVE
+                              <div className="flex flex-wrap items-center gap-1">
+                                {post.is_live && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <FireIcon className="w-3 h-3 mr-1" />
+                                    LIVE
+                                  </span>
+                                )}
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                  {post.post_type === 'race_result' ? 'Race Result' :
+                                   post.post_type === 'car_update' ? 'Car Update' :
+                                   post.post_type === 'image' ? 'Photo' :
+                                   post.post_type === 'video' ? 'Video' :
+                                   post.post_type === 'live' ? 'Live Stream' :
+                                   post.post_type === 'race_callout' ? 'Race Callout' :
+                                   post.post_type === 'announcement' ? 'Announcement' : 'Post'}
                                 </span>
-                              )}
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                                {post.post_type === 'race_result' ? 'Race Result' :
-                                 post.post_type === 'car_update' ? 'Car Update' :
-                                 post.post_type === 'image' ? 'Photo' :
-                                 post.post_type === 'video' ? 'Video' :
-                                 post.post_type === 'live' ? 'Live Stream' :
-                                 post.post_type === 'race_callout' ? 'Race Callout' :
-                                 post.post_type === 'announcement' ? 'Announcement' : 'Post'}
-                              </span>
+                              </div>
                             </div>
                             <p className="text-sm text-gray-500">{post.time_ago}</p>
                           </div>
@@ -997,37 +1002,37 @@ export default function Dashboard() {
                     {/* Post Actions */}
                     <div className="px-4 py-3 border-t border-gray-100">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-4 sm:space-x-6">
                           <button
                             onClick={() => handleLike(post.id)}
-                            className={`flex items-center space-x-2 transition-colors ${
+                            className={`flex items-center space-x-1 sm:space-x-2 transition-colors ${
                               post.is_liked 
                                 ? 'text-red-500 hover:text-red-600' 
                                 : 'text-gray-500 hover:text-red-500'
                             }`}
                           >
                             {post.is_liked ? (
-                              <HeartSolidIcon className="w-5 h-5" />
+                              <HeartSolidIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                             ) : (
-                              <HeartIcon className="w-5 h-5" />
+                              <HeartIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                             )}
-                            <span className="text-sm font-medium">{post.likes_count}</span>
+                            <span className="text-xs sm:text-sm font-medium">{post.likes_count}</span>
                           </button>
                           
                           <button
                             onClick={() => setShowComments(showComments === post.id ? null : post.id)}
-                            className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
+                            className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-blue-500 transition-colors"
                           >
-                            <ChatBubbleLeftIcon className="w-5 h-5" />
-                            <span className="text-sm font-medium">{post.comments_count}</span>
+                            <ChatBubbleLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span className="text-xs sm:text-sm font-medium">{post.comments_count}</span>
                           </button>
                           
                           <button
                             onClick={() => handleShare(post.id)}
-                            className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors"
+                            className="flex items-center space-x-1 sm:space-x-2 text-gray-500 hover:text-green-500 transition-colors"
                           >
-                            <ShareIcon className="w-5 h-5" />
-                            <span className="text-sm font-medium">Share</span>
+                            <ShareIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span className="text-xs sm:text-sm font-medium hidden sm:inline">Share</span>
                           </button>
                         </div>
                       </div>
@@ -1095,12 +1100,12 @@ export default function Dashboard() {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 lg:space-y-6">
             {/* User Profile Summary */}
             {user && profile && (
-              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 lg:p-6">
                 <div className="text-center mb-4">
-                  <div className="w-20 h-20 mx-auto rounded-full overflow-hidden bg-gray-200 mb-3">
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 mx-auto rounded-full overflow-hidden bg-gray-200 mb-3">
                     {profile.profile_picture ? (
                       <img
                         src={profile.profile_picture}
@@ -1109,26 +1114,26 @@ export default function Dashboard() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <CameraIcon className="h-8 w-8" />
+                        <CameraIcon className="h-6 w-6 lg:h-8 lg:w-8" />
                       </div>
                     )}
                   </div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-gray-900 text-sm lg:text-base">
                     {profile.user.first_name} {profile.user.last_name}
                   </h3>
-                  <p className="text-sm text-gray-600">@{profile.user.username}</p>
+                  <p className="text-xs lg:text-sm text-gray-600">@{profile.user.username}</p>
                 </div>
                 
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
+                <div className="space-y-2 lg:space-y-3">
+                  <div className="flex justify-between text-xs lg:text-sm">
                     <span className="text-gray-600">Races</span>
                     <span className="font-medium">{profile.total_races}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs lg:text-sm">
                     <span className="text-gray-600">Wins</span>
                     <span className="font-medium">{profile.wins}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs lg:text-sm">
                     <span className="text-gray-600">Win Rate</span>
                     <span className="font-medium">{profile.win_rate || 0}%</span>
                   </div>
@@ -1137,16 +1142,16 @@ export default function Dashboard() {
             )}
 
             {/* Quick Stats */}
-            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">Community Stats</h3>
-              <div className="space-y-3">
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 lg:p-6">
+              <h3 className="font-semibold text-gray-900 mb-4 text-sm lg:text-base">Community Stats</h3>
+              <div className="space-y-2 lg:space-y-3">
                 {(globalStats || []).map((stat) => (
                   <div key={stat.name} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <stat.icon className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">{stat.name}</span>
+                      <span className="text-xs lg:text-sm text-gray-600">{stat.name}</span>
                     </div>
-                    <span className="text-sm font-medium">{stat.value}</span>
+                    <span className="text-xs lg:text-sm font-medium">{stat.value}</span>
                   </div>
                 ))}
               </div>
@@ -1154,18 +1159,18 @@ export default function Dashboard() {
 
             {/* Sponsored Content */}
             {sponsoredContent.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Featured</h3>
+              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 lg:p-6">
+                <h3 className="font-semibold text-gray-900 mb-4 text-sm lg:text-base">Featured</h3>
                 {(sponsoredContent || []).map((item) => (
                   <div key={item.id} className="mb-4 last:mb-0">
                     {item.image_url && (
                       <img 
                         src={item.image_url} 
                         alt={item.title} 
-                        className="w-full h-32 object-cover rounded-lg mb-2"
+                        className="w-full h-24 lg:h-32 object-cover rounded-lg mb-2"
                       />
                     )}
-                    <h4 className="font-medium text-gray-900 text-sm mb-1">{item.title}</h4>
+                    <h4 className="font-medium text-gray-900 text-xs lg:text-sm mb-1">{item.title}</h4>
                     <p className="text-xs text-gray-600 mb-2">{item.content}</p>
                     <a 
                       href={item.link_url} 

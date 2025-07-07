@@ -187,7 +187,7 @@ export default function Marketplace() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       {/* Error/Success Messages */}
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -220,14 +220,14 @@ export default function Marketplace() {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Marketplace</h1>
-          <p className="text-gray-600">Buy, sell, and trade cars, parts, and racing equipment</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Marketplace</h1>
+          <p className="text-sm lg:text-base text-gray-600">Buy, sell, and trade cars, parts, and racing equipment</p>
         </div>
         <Link
           to="/app/marketplace/create"
-          className="btn-primary inline-flex items-center"
+          className="btn-primary inline-flex items-center w-full sm:w-auto justify-center"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
           List Item
@@ -235,12 +235,12 @@ export default function Marketplace() {
       </div>
 
       {/* Filter */}
-      <div className="flex space-x-2">
+      <div className="flex flex-wrap gap-2">
         {['all', 'car', 'parts', 'wheels', 'electronics', 'tools', 'other'].map((category) => (
           <button
             key={category}
             onClick={() => setCategoryFilter(category)}
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
+            className={`px-3 py-2 rounded-full text-xs sm:text-sm font-medium ${
               categoryFilter === category
                 ? 'bg-primary-100 text-primary-800'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -255,11 +255,11 @@ export default function Marketplace() {
       <AdDisplay adSlot="YOUR_MARKETPLACE_AD_SLOT_ID" />
 
       {/* Marketplace Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {items.map((item: MarketplaceItem) => (
           <div key={item.id} className="card hover:shadow-md transition-shadow">
             {/* Item Image */}
-            <div className="mb-4 h-48 bg-gray-100 rounded-lg overflow-hidden">
+            <div className="mb-4 h-40 sm:h-48 bg-gray-100 rounded-lg overflow-hidden">
               {item.images && item.images.length > 0 ? (
                 <img
                   src={item.images.find(img => img.is_primary)?.image || item.images[0].image}
@@ -268,24 +268,24 @@ export default function Marketplace() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <ShoppingBagIcon className="h-16 w-16 text-gray-400" />
+                  <ShoppingBagIcon className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
                 </div>
               )}
             </div>
             
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center">
-                <ShoppingBagIcon className="h-6 w-6 text-primary-600 mr-2" />
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div className="flex items-center flex-1 min-w-0">
+                <ShoppingBagIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-600 mr-2 flex-shrink-0" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                   {item.title}
                 </h3>
               </div>
-              <span className={`px-2 py-1 text-xs rounded-full font-medium ${getCategoryColor(item.category)}`}>
+              <span className={`px-2 py-1 text-xs rounded-full font-medium flex-shrink-0 ml-2 ${getCategoryColor(item.category)}`}>
                 {getCategoryDisplay(item.category)}
               </span>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-2 lg:space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-sm text-gray-600">
                   <CurrencyDollarIcon className="h-4 w-4 mr-2" />
@@ -296,14 +296,14 @@ export default function Marketplace() {
                 </span>
               </div>
               
-              <div className="flex items-center text-sm text-gray-600">
+              <div className="flex items-center text-xs sm:text-sm text-gray-600">
                 <MapPinIcon className="h-4 w-4 mr-2" />
-                {item.location}
+                <span className="truncate">{item.location}</span>
               </div>
               
-              <p className="text-sm text-gray-700 line-clamp-2">{item.description}</p>
+              <p className="text-xs sm:text-sm text-gray-700 line-clamp-2">{item.description}</p>
               
-              <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 space-y-1 sm:space-y-0">
                 <span>Seller: {item.seller.first_name} {item.seller.last_name}</span>
                 <span>{item.views} views</span>
               </div>
@@ -315,19 +315,19 @@ export default function Marketplace() {
             
             {/* Action Buttons */}
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <Link
                   to={`/app/marketplace/${item.id}`}
-                  className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+                  className="text-primary-600 hover:text-primary-700 font-medium text-sm text-center sm:text-left"
                 >
                   View Details
                 </Link>
                 
-                <div className="flex space-x-2">
+                <div className="flex justify-center sm:justify-end space-x-2">
                   {!isItemOwner(item) && (item.contact_phone || item.contact_email) && (
                     <button
                       onClick={() => handleContactSeller(item)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm"
+                      className="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm"
                     >
                       {item.contact_phone ? (
                         <PhoneIcon className="h-4 w-4" />
