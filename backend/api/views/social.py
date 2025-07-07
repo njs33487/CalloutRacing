@@ -12,6 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
+from typing import cast
 from django.db.models import Q, Count, Prefetch
 from django.utils import timezone
 from datetime import timedelta
@@ -49,17 +50,18 @@ class GlobalFeedView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
+        request = cast(Request, self.request)
         # Get all public posts from all users
         all_posts = UserPost.objects.filter(
             is_public=True
         ).select_related('author').prefetch_related('comments', 'likes')
         
         # Apply filters
-        post_type = self.request.query_params.get('post_type')
+        post_type = request.query_params.get('post_type')
         if post_type:
             all_posts = all_posts.filter(post_type=post_type)
         
-        time_filter = self.request.query_params.get('time_filter')
+        time_filter = request.query_params.get('time_filter')
         if time_filter:
             if time_filter == 'today':
                 all_posts = all_posts.filter(
@@ -92,7 +94,8 @@ class LiveFeedView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        user = self.request.user
+        request = cast(Request, self.request)
+        user = request.user
         
         # Get users that the current user follows
         following_users = Follow.objects.filter(follower=user).values_list('following', flat=True)
@@ -119,11 +122,11 @@ class LiveFeedView(generics.ListAPIView):
         )
         
         # Apply filters
-        post_type = self.request.query_params.get('post_type')
+        post_type = request.query_params.get('post_type')
         if post_type:
             combined_posts = combined_posts.filter(post_type=post_type)
         
-        time_filter = self.request.query_params.get('time_filter')
+        time_filter = request.query_params.get('time_filter')
         if time_filter:
             if time_filter == 'today':
                 combined_posts = combined_posts.filter(
@@ -153,23 +156,25 @@ class CreatePostView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def perform_create(self, serializer):
-        post = serializer.save(author=self.request.user)
+        request = cast(Request, self.request)
+        data = cast(dict, request.data)
+        post = serializer.save(author=request.user)
         
         # Handle live streaming posts
         if post.post_type == 'live':
             post.is_live = True
-            post.live_stream_title = self.request.data.get('live_stream_title', '')
-            post.live_stream_url = self.request.data.get('live_stream_url', '')
+            post.live_stream_title = data.get('live_stream_title', '')
+            post.live_stream_url = data.get('live_stream_url', '')
             post.save()
         
         # Handle race callout posts
         elif post.post_type == 'race_callout':
-            post.callout_challenged_user = self.request.data.get('callout_challenged_user', '')
-            post.callout_location = self.request.data.get('callout_location', '')
-            post.callout_location_type = self.request.data.get('callout_location_type', 'street')
-            post.callout_race_type = self.request.data.get('callout_race_type', '')
-            post.callout_wager_amount = self.request.data.get('callout_wager_amount', 0)
-            post.callout_scheduled_date = self.request.data.get('callout_scheduled_date', '')
+            post.callout_challenged_user = data.get('callout_challenged_user', '')
+            post.callout_location = data.get('callout_location', '')
+            post.callout_location_type = data.get('callout_location_type', 'street')
+            post.callout_race_type = data.get('callout_race_type', '')
+            post.callout_wager_amount = data.get('callout_wager_amount', 0)
+            post.callout_scheduled_date = data.get('callout_scheduled_date', '')
             post.save()
             
             # Create notification for challenged user
@@ -178,54 +183,54 @@ class CreatePostView(generics.CreateAPIView):
                     challenged_user = User.objects.get(username=post.callout_challenged_user)
                     Notification.objects.create(
                         recipient=challenged_user,
-                        sender=self.request.user,
+                        sender=request.user,
                         notification_type='callout',
-                        title=f'Race callout from {self.request.user.username}',
-                        message=f'{self.request.user.username} has called you out for a race!'
+                        title=f'Race callout from {request.user.username}',
+                        message=f'{request.user.username} has called you out for a race!'
                     )
                 except User.DoesNotExist:
                     pass
         
         # Handle announcement posts
         elif post.post_type == 'announcement':
-            post.is_pinned = self.request.data.get('is_pinned', False)
-            post.announcement_type = self.request.data.get('announcement_type', 'general')
-            post.announcement_priority = self.request.data.get('announcement_priority', 'medium')
+            post.is_pinned = data.get('is_pinned', False)
+            post.announcement_type = data.get('announcement_type', 'general')
+            post.announcement_priority = data.get('announcement_priority', 'medium')
             post.save()
             
             # Create notifications for all users if high priority
             if post.announcement_priority in ['high', 'critical']:
-                all_users = User.objects.exclude(id=self.request.user.id)
+                all_users = User.objects.exclude(id=request.user.id)
                 for user in all_users:
                     Notification.objects.create(
                         recipient=user,
-                        sender=self.request.user,
+                        sender=request.user,
                         notification_type='announcement',
-                        title=f'Important announcement from {self.request.user.username}',
-                        message=f'{self.request.user.username} posted an important announcement!'
+                        title=f'Important announcement from {request.user.username}',
+                        message=f'{request.user.username} posted an important announcement!'
                     )
         
         # Create notifications for followers
-        followers = Follow.objects.filter(following=self.request.user)
+        followers = Follow.objects.filter(following=request.user)
         for follow in followers:
             notification_type = 'live' if post.post_type == 'live' else 'callout' if post.post_type == 'race_callout' else 'announcement' if post.post_type == 'announcement' else 'post'
             
             if post.post_type == 'live':
-                title = f'Live stream from {self.request.user.username}'
-                message = f'{self.request.user.username} is going live!'
+                title = f'Live stream from {request.user.username}'
+                message = f'{request.user.username} is going live!'
             elif post.post_type == 'race_callout':
-                title = f'Race callout from {self.request.user.username}'
-                message = f'{self.request.user.username} issued a race callout!'
+                title = f'Race callout from {request.user.username}'
+                message = f'{request.user.username} issued a race callout!'
             elif post.post_type == 'announcement':
-                title = f'Announcement from {self.request.user.username}'
-                message = f'{self.request.user.username} posted an announcement!'
+                title = f'Announcement from {request.user.username}'
+                message = f'{request.user.username} posted an announcement!'
             else:
-                title = f'New post from {self.request.user.username}'
-                message = f'{self.request.user.username} just posted something new!'
+                title = f'New post from {request.user.username}'
+                message = f'{request.user.username} just posted something new!'
             
             Notification.objects.create(
                 recipient=follow.follower,
-                sender=self.request.user,
+                sender=request.user,
                 notification_type=notification_type,
                 title=title,
                 message=message
