@@ -58,7 +58,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     if (storedUser) {
       try {
-        const userData = JSON.parse(storedUser)
+        // Verify the stored data is valid JSON
+        JSON.parse(storedUser)
         // Verify the stored session is still valid
         authAPI.profile()
           .then(response => {
