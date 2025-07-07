@@ -1013,9 +1013,10 @@ def reset_password(request):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def send_otp(request):
-    """Send OTP to phone number or email."""
+    """Send OTP to phone number or email with enhanced security."""
     identifier = request.data.get('identifier')  # phone or email
     otp_type = request.data.get('type')  # 'phone' or 'email'
+    purpose = request.data.get('purpose', 'login')  # 'login', 'signup', etc.
     
     if not identifier or not otp_type:
         return Response({
@@ -1032,7 +1033,7 @@ def send_otp(request):
         phone_pattern = re.compile(r'^\+?1?\d{9,15}$')
         if not phone_pattern.match(identifier):
             return Response({
-                'error': 'Invalid phone number format'
+                'error': 'Invalid phone number format. Please enter a valid phone number.'
             }, status=status.HTTP_400_BAD_REQUEST)
     
     # Validate email format
@@ -1040,7 +1041,7 @@ def send_otp(request):
         email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
         if not email_pattern.match(identifier):
             return Response({
-                'error': 'Invalid email format'
+                'error': 'Invalid email format. Please enter a valid email address.'
             }, status=status.HTTP_400_BAD_REQUEST)
     
     # Check if user exists with this identifier
@@ -1049,38 +1050,49 @@ def send_otp(request):
             user = User.objects.get(phone_number=identifier)
         except User.DoesNotExist:
             return Response({
-                'error': 'No user found with this phone number'
+                'error': 'No account found with this phone number. Please check the number or sign up.'
             }, status=status.HTTP_404_NOT_FOUND)
     else:  # email
         try:
             user = User.objects.get(email=identifier)
         except User.DoesNotExist:
             return Response({
-                'error': 'No user found with this email'
+                'error': 'No account found with this email address. Please check the email or sign up.'
             }, status=status.HTTP_404_NOT_FOUND)
     
-    # Send OTP
-    success, otp = OTPService.send_otp(user, identifier, otp_type)
+    # Send OTP with enhanced security
+    success, result = OTPService.send_otp(user, identifier, otp_type, purpose)
     
-    if success:
+    if not success:
         return Response({
-            'message': f'OTP sent to {identifier}',
-            'type': otp_type
-        }, status=status.HTTP_200_OK)
-    else:
-        return Response({
-            'error': 'Failed to send OTP'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'error': result  # result contains the error message
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS if 'rate limit' in result.lower() else status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # Get rate limiting info for user feedback
+    remaining_attempts = OTPService.get_remaining_attempts(identifier)
+    resend_cooldown = OTPService.get_resend_cooldown_remaining(identifier)
+    
+    masked_identifier = OTPService._mask_identifier(identifier)
+    
+    return Response({
+        'message': f'Verification code sent to {masked_identifier}',
+        'type': otp_type,
+        'purpose': purpose,
+        'remaining_attempts': remaining_attempts,
+        'resend_cooldown_seconds': resend_cooldown,
+        'expires_in_minutes': 10
+    }, status=status.HTTP_200_OK)
 
 
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def verify_otp(request):
-    """Verify OTP and authenticate user."""
+    """Verify OTP and authenticate user with enhanced security."""
     identifier = request.data.get('identifier')
     otp_code = request.data.get('otp_code')
     otp_type = request.data.get('type')
+    purpose = request.data.get('purpose', 'login')
     
     if not identifier or not otp_code or not otp_type:
         return Response({
@@ -1092,24 +1104,30 @@ def verify_otp(request):
             'error': 'Type must be either "phone" or "email"'
         }, status=status.HTTP_400_BAD_REQUEST)
     
+    # Validate OTP code format
+    if not otp_code.isdigit() or len(otp_code) != 6:
+        return Response({
+            'error': 'Invalid OTP code format. Please enter the 6-digit code.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
     # Find user by identifier
     if otp_type == 'phone':
         try:
             user = User.objects.get(phone_number=identifier)
         except User.DoesNotExist:
             return Response({
-                'error': 'No user found with this phone number'
+                'error': 'No account found with this phone number.'
             }, status=status.HTTP_404_NOT_FOUND)
     else:  # email
         try:
             user = User.objects.get(email=identifier)
         except User.DoesNotExist:
             return Response({
-                'error': 'No user found with this email'
+                'error': 'No account found with this email address.'
             }, status=status.HTTP_404_NOT_FOUND)
     
-    # Verify OTP
-    success, message = OTPService.verify_otp(user, identifier, otp_code, otp_type)
+    # Verify OTP with enhanced security
+    success, message = OTPService.verify_otp(user, identifier, otp_code, otp_type, purpose)
     
     if not success:
         return Response({
@@ -1132,8 +1150,10 @@ def verify_otp(request):
     except UserProfile.DoesNotExist:
         profile_data = None
     
+    masked_identifier = OTPService._mask_identifier(identifier)
+    
     return Response({
-        'message': 'OTP verified successfully',
+        'message': f'Successfully verified {otp_type} OTP',
         'user': {
             'id': user.id,
             'username': user.username,
@@ -1144,7 +1164,8 @@ def verify_otp(request):
             'last_name': user.last_name,
             'is_authenticated': True
         },
-        'profile': profile_data
+        'profile': profile_data,
+        'verified_identifier': masked_identifier
     }, status=status.HTTP_200_OK)
 
 
@@ -1152,7 +1173,7 @@ def verify_otp(request):
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def phone_login(request):
-    """Login with phone number and OTP."""
+    """Login with phone number and OTP with enhanced security."""
     phone_number = request.data.get('phone_number')
     
     if not phone_number:
@@ -1164,7 +1185,7 @@ def phone_login(request):
     phone_pattern = re.compile(r'^\+?1?\d{9,15}$')
     if not phone_pattern.match(phone_number):
         return Response({
-            'error': 'Invalid phone number format'
+            'error': 'Invalid phone number format. Please enter a valid phone number.'
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Check if user exists
@@ -1172,28 +1193,37 @@ def phone_login(request):
         user = User.objects.get(phone_number=phone_number)
     except User.DoesNotExist:
         return Response({
-            'error': 'No user found with this phone number'
+            'error': 'No account found with this phone number. Please check the number or sign up.'
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Send OTP
-    success, otp = OTPService.send_otp(user, phone_number, 'phone')
+    # Send OTP with enhanced security
+    success, result = OTPService.send_otp(user, phone_number, 'phone', 'login')
     
-    if success:
+    if not success:
         return Response({
-            'message': f'OTP sent to {phone_number}',
-            'phone_number': phone_number
-        }, status=status.HTTP_200_OK)
-    else:
-        return Response({
-            'error': 'Failed to send OTP'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'error': result
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS if 'rate limit' in result.lower() else status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # Get rate limiting info
+    remaining_attempts = OTPService.get_remaining_attempts(phone_number)
+    resend_cooldown = OTPService.get_resend_cooldown_remaining(phone_number)
+    
+    masked_phone = OTPService._mask_identifier(phone_number)
+    
+    return Response({
+        'message': f'Verification code sent to {masked_phone}',
+        'phone_number': phone_number,
+        'remaining_attempts': remaining_attempts,
+        'resend_cooldown_seconds': resend_cooldown,
+        'expires_in_minutes': 10
+    }, status=status.HTTP_200_OK)
 
 
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def email_login(request):
-    """Login with email and OTP."""
+    """Login with email and OTP with enhanced security."""
     email = request.data.get('email')
     
     if not email:
@@ -1205,7 +1235,7 @@ def email_login(request):
     email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
     if not email_pattern.match(email):
         return Response({
-            'error': 'Invalid email format'
+            'error': 'Invalid email format. Please enter a valid email address.'
         }, status=status.HTTP_400_BAD_REQUEST)
     
     # Check if user exists
@@ -1213,18 +1243,27 @@ def email_login(request):
         user = User.objects.get(email=email)
     except User.DoesNotExist:
         return Response({
-            'error': 'No user found with this email'
+            'error': 'No account found with this email address. Please check the email or sign up.'
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Send OTP
-    success, otp = OTPService.send_otp(user, email, 'email')
+    # Send OTP with enhanced security
+    success, result = OTPService.send_otp(user, email, 'email', 'login')
     
-    if success:
+    if not success:
         return Response({
-            'message': f'OTP sent to {email}',
-            'email': email
-        }, status=status.HTTP_200_OK)
-    else:
-        return Response({
-            'error': 'Failed to send OTP'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            'error': result
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS if 'rate limit' in result.lower() else status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    # Get rate limiting info
+    remaining_attempts = OTPService.get_remaining_attempts(email)
+    resend_cooldown = OTPService.get_resend_cooldown_remaining(email)
+    
+    masked_email = OTPService._mask_identifier(email)
+    
+    return Response({
+        'message': f'Verification code sent to {masked_email}',
+        'email': email,
+        'remaining_attempts': remaining_attempts,
+        'resend_cooldown_seconds': resend_cooldown,
+        'expires_in_minutes': 10
+    }, status=status.HTTP_200_OK) 

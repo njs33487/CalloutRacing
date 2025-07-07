@@ -85,10 +85,19 @@ class OTP(models.Model):
         ('email', 'Email'),
     ]
     
+    PURPOSE_CHOICES = [
+        ('login', 'Login'),
+        ('signup', 'Signup'),
+        ('password_reset', 'Password Reset'),
+        ('email_verification', 'Email Verification'),
+        ('phone_verification', 'Phone Verification'),
+    ]
+    
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='otps')
     otp_type = models.CharField(max_length=10, choices=OTP_TYPE_CHOICES, help_text='Type of OTP (phone or email)')
     identifier = models.CharField(max_length=255, help_text='Phone number or email address')
     code = models.CharField(max_length=6, help_text='6-digit OTP code')
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, default='login', help_text='Purpose of the OTP')
     is_used = models.BooleanField(default=False, help_text='Whether OTP has been used')
     expires_at = models.DateTimeField(help_text='When OTP expires')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -98,6 +107,7 @@ class OTP(models.Model):
         indexes = [
             models.Index(fields=['identifier', 'code', 'is_used']),
             models.Index(fields=['expires_at']),
+            models.Index(fields=['purpose']),
         ]
     
     def __str__(self):
