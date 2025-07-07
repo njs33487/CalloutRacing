@@ -100,15 +100,11 @@ elif 'Postgres.DATABASE_URL' in os.environ:
         'default': dj_database_url.parse(os.environ['Postgres.DATABASE_URL'])
     }
 else:
-    # Default to Railway PostgreSQL for local development
+    # Use SQLite for local development when Railway database is not available
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='railway'),
-            'USER': config('DB_USER', default='postgres'),
-            'PASSWORD': config('DB_PASSWORD', default='QfGzdLFMYTfqmSAiohnrWGJGMMrQEMnK'),
-            'HOST': config('DB_HOST', default='caboose.proxy.rlwy.net'),
-            'PORT': config('DB_PORT', default='33954'),
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 

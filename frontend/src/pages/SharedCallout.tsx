@@ -5,9 +5,7 @@ import {
   BoltIcon, 
   CalendarIcon, 
   MapPinIcon, 
-  CurrencyDollarIcon,
   ArrowLeftIcon,
-  TrophyIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { calloutAPI } from '../services/api'
@@ -264,30 +262,6 @@ export default function SharedCallout() {
                   <p className="text-sm text-gray-500">{location.location}</p>
                 </div>
               </div>
-
-              {/* Wager */}
-              <div className="flex items-start space-x-3">
-                <CurrencyDollarIcon className="h-6 w-6 text-gray-400 mt-1" />
-                <div>
-                  <h3 className="font-medium text-gray-900">Wager Amount</h3>
-                  <p className="text-gray-600">
-                    {callout.wager_amount > 0 ? `$${callout.wager_amount}` : 'No wager'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Winner */}
-              {callout.winner && (
-                <div className="flex items-start space-x-3">
-                  <TrophyIcon className="h-6 w-6 text-gray-400 mt-1" />
-                  <div>
-                    <h3 className="font-medium text-gray-900">Winner</h3>
-                    <p className="text-gray-600">
-                      {callout.winner.first_name} {callout.winner.last_name}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Additional Details */}

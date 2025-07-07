@@ -14,7 +14,7 @@ interface Post {
     email: string;
   };
   content: string;
-  post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
+  post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live' | 'race_callout' | 'announcement';
   image?: string;
   video?: string;
   likes_count: number;
@@ -117,9 +117,17 @@ const SocialFeed: React.FC = () => {
 
   const handleCreatePost = async (postData: {
     content: string;
-    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
+    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live' | 'race_callout' | 'announcement';
     image?: File;
     video?: File;
+    callout_challenged_user?: string;
+    callout_location?: string;
+    callout_location_type?: 'street' | 'dragstrip';
+    callout_race_type?: string;
+    callout_scheduled_date?: string;
+    is_pinned?: boolean;
+    announcement_type?: 'general' | 'feature' | 'maintenance' | 'promotion' | 'event';
+    announcement_priority?: 'low' | 'medium' | 'high' | 'critical';
   }) => {
     try {
       const formData = new FormData();
@@ -130,6 +138,30 @@ const SocialFeed: React.FC = () => {
       }
       if (postData.video) {
         formData.append('video', postData.video);
+      }
+      if (postData.callout_challenged_user) {
+        formData.append('callout_challenged_user', postData.callout_challenged_user);
+      }
+      if (postData.callout_location) {
+        formData.append('callout_location', postData.callout_location);
+      }
+      if (postData.callout_location_type) {
+        formData.append('callout_location_type', postData.callout_location_type);
+      }
+      if (postData.callout_race_type) {
+        formData.append('callout_race_type', postData.callout_race_type);
+      }
+      if (postData.callout_scheduled_date) {
+        formData.append('callout_scheduled_date', postData.callout_scheduled_date);
+      }
+      if (postData.is_pinned) {
+        formData.append('is_pinned', postData.is_pinned.toString());
+      }
+      if (postData.announcement_type) {
+        formData.append('announcement_type', postData.announcement_type);
+      }
+      if (postData.announcement_priority) {
+        formData.append('announcement_priority', postData.announcement_priority);
       }
 
       await api.post('/api/social/posts/', formData, {

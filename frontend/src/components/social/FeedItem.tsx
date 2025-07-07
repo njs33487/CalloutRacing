@@ -10,7 +10,7 @@ interface FeedItemProps {
       email: string;
     };
     content: string;
-    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
+    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live' | 'race_callout' | 'announcement';
     image?: string;
     video?: string;
     likes_count: number;
@@ -60,6 +60,10 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onLike, onComment, onShare })
         return <Car className="w-4 h-4 text-blue-500" />;
       case 'live':
         return <Wifi className="w-4 h-4 text-red-500" />;
+      case 'race_callout':
+        return <span className="w-4 h-4 text-yellow-500">🏁</span>;
+      case 'announcement':
+        return <span className="w-4 h-4 text-orange-500">📢</span>;
       default:
         return null;
     }
@@ -77,6 +81,10 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onLike, onComment, onShare })
         return 'Video';
       case 'live':
         return 'Live Stream';
+      case 'race_callout':
+        return 'Race Callout';
+      case 'announcement':
+        return 'Announcement';
       default:
         return 'Post';
     }

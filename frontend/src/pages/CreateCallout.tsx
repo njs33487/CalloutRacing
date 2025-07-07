@@ -6,7 +6,6 @@ import {
   UserIcon, 
   BoltIcon, 
   ShieldCheckIcon,
-  CurrencyDollarIcon,
   ExclamationTriangleIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
@@ -40,7 +39,6 @@ export default function CreateCallout() {
     track: '',
     track_id: null as number | null,
     street_location: '',
-    wager_amount: '',
     scheduled_date: '',
     message: '',
     is_private: false,
@@ -193,11 +191,6 @@ export default function CreateCallout() {
         throw new Error('Maximum horsepower cannot be less than minimum horsepower');
       }
     }
-
-    // Security validation
-    if (formData.wager_amount && parseFloat(formData.wager_amount) > 10000) {
-      throw new Error('Wager amount cannot exceed $10,000 for security reasons');
-    }
   };
 
   const prepareCalloutData = () => {
@@ -207,7 +200,6 @@ export default function CreateCallout() {
       location_type: formData.location_type,
       track: formData.track_id,
       street_location: formData.street_location,
-      wager_amount: formData.wager_amount ? parseFloat(formData.wager_amount) : 0,
       scheduled_date: formData.scheduled_date || null,
       message: formData.message,
       is_private: formData.is_private,
@@ -240,7 +232,6 @@ export default function CreateCallout() {
           : formData.street_location || 'Not specified',
         'Privacy': formData.is_private ? 'Private' : (formData.is_invite_only ? 'Invite Only' : 'Public'),
         'Experience Level': formData.experience_level.charAt(0).toUpperCase() + formData.experience_level.slice(1),
-        'Wager Amount': formData.wager_amount ? `$${formData.wager_amount}` : 'No wager',
         'Scheduled Date': formData.scheduled_date ? new Date(formData.scheduled_date).toLocaleDateString() : 'Not scheduled',
         'Message': formData.message || 'No message'
       };
@@ -309,7 +300,6 @@ export default function CreateCallout() {
         track: '',
         track_id: null,
         street_location: '',
-        wager_amount: '',
         scheduled_date: '',
         message: '',
         is_private: false,
@@ -673,29 +663,6 @@ export default function CreateCallout() {
                     className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="e.g., Drag radials only, Street tires allowed"
                   />
-                </div>
-
-                {/* Wager Amount */}
-                <div>
-                  <label htmlFor="wager_amount" className="block mb-2 font-medium text-gray-700">
-                    Wager Amount (Optional)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      id="wager_amount"
-                      name="wager_amount"
-                      value={formData.wager_amount}
-                      onChange={handleChange}
-                      className="w-full border border-gray-300 px-4 py-3 pl-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Enter wager amount..."
-                      min="0"
-                      max="10000"
-                      step="0.01"
-                    />
-                    <CurrencyDollarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Maximum wager: $10,000</p>
                 </div>
               </div>
 

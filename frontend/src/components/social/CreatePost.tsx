@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Image, Video, Car, Clock, X, Send, VideoIcon, Wifi, Users, Megaphone, MapPin, DollarSign } from 'lucide-react';
+import { Image, Video, Car, Clock, X, Send, VideoIcon, Wifi, Users, Megaphone } from 'lucide-react';
 
 interface CreatePostProps {
   onSubmit: (postData: {
@@ -12,7 +12,6 @@ interface CreatePostProps {
     callout_location?: string;
     callout_location_type?: 'street' | 'dragstrip';
     callout_race_type?: string;
-    callout_wager_amount?: number;
     callout_scheduled_date?: string;
     // Announcement-specific fields
     is_pinned?: boolean;
@@ -38,7 +37,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
   const [calloutLocation, setCalloutLocation] = useState('');
   const [calloutLocationType, setCalloutLocationType] = useState<'street' | 'dragstrip'>('street');
   const [calloutRaceType, setCalloutRaceType] = useState('');
-  const [calloutWagerAmount, setCalloutWagerAmount] = useState<number>(0);
   const [calloutScheduledDate, setCalloutScheduledDate] = useState('');
 
   // Announcement-specific state
@@ -92,7 +90,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
       callout_location: calloutLocation,
       callout_location_type: calloutLocationType,
       callout_race_type: calloutRaceType,
-      callout_wager_amount: calloutWagerAmount,
       callout_scheduled_date: calloutScheduledDate,
       is_pinned: isPinned,
       announcement_type: announcementType,
@@ -381,13 +378,6 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
                 value={calloutRaceType}
                 onChange={(e) => setCalloutRaceType(e.target.value)}
                 placeholder="Race Type"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <input
-                type="number"
-                value={calloutWagerAmount}
-                onChange={(e) => setCalloutWagerAmount(Number(e.target.value))}
-                placeholder="Wager Amount"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <input

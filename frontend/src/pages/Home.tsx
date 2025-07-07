@@ -73,7 +73,7 @@ interface SocialPost {
     profile_picture?: string;
   };
   content: string;
-  post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
+  post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live' | 'race_callout' | 'announcement';
   image?: string;
   video?: string;
   is_live?: boolean;
@@ -90,6 +90,16 @@ interface SocialPost {
     time_ago: string;
   }>;
   created_at: string;
+  // Callout fields
+  callout_challenged_user?: string;
+  callout_location?: string;
+  callout_location_type?: 'street' | 'dragstrip';
+  callout_race_type?: string;
+  callout_scheduled_date?: string;
+  // Announcement fields
+  is_pinned?: boolean;
+  announcement_type?: 'general' | 'feature' | 'maintenance' | 'promotion' | 'event';
+  announcement_priority?: 'low' | 'medium' | 'high' | 'critical';
 }
 
 interface Notification {
@@ -145,7 +155,6 @@ interface Callout {
   };
   message: string;
   race_type: string;
-  wager_amount: number;
   scheduled_date: string;
   street_location: string;
   status: string;
@@ -182,8 +191,6 @@ export default function Dashboard() {
   // Events and Callouts states
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([])
   const [recentCallouts, setRecentCallouts] = useState<Callout[]>([])
-  const [showEventsSection, setShowEventsSection] = useState(true)
-  const [showCalloutsSection, setShowCalloutsSection] = useState(true)
 
   // User-specific data
   const { data: userCallouts } = useQuery({
@@ -318,9 +325,17 @@ export default function Dashboard() {
 
   const handleCreatePost = async (postData: {
     content: string;
-    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
+    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live' | 'race_callout' | 'announcement';
     image?: File;
     video?: File;
+    callout_challenged_user?: string;
+    callout_location?: string;
+    callout_location_type?: 'street' | 'dragstrip';
+    callout_race_type?: string;
+    callout_scheduled_date?: string;
+    is_pinned?: boolean;
+    announcement_type?: 'general' | 'feature' | 'maintenance' | 'promotion' | 'event';
+    announcement_priority?: 'low' | 'medium' | 'high' | 'critical';
   }) => {
     try {
       const formData = new FormData();
@@ -331,6 +346,30 @@ export default function Dashboard() {
       }
       if (postData.video) {
         formData.append('video', postData.video);
+      }
+      if (postData.callout_challenged_user) {
+        formData.append('callout_challenged_user', postData.callout_challenged_user);
+      }
+      if (postData.callout_location) {
+        formData.append('callout_location', postData.callout_location);
+      }
+      if (postData.callout_location_type) {
+        formData.append('callout_location_type', postData.callout_location_type);
+      }
+      if (postData.callout_race_type) {
+        formData.append('callout_race_type', postData.callout_race_type);
+      }
+      if (postData.callout_scheduled_date) {
+        formData.append('callout_scheduled_date', postData.callout_scheduled_date);
+      }
+      if (postData.is_pinned) {
+        formData.append('is_pinned', postData.is_pinned.toString());
+      }
+      if (postData.announcement_type) {
+        formData.append('announcement_type', postData.announcement_type);
+      }
+      if (postData.announcement_priority) {
+        formData.append('announcement_priority', postData.announcement_priority);
       }
 
       await api.post('/api/social/posts/', formData, {
@@ -857,11 +896,6 @@ export default function Dashboard() {
                               </span>
                             </div>
                           </div>
-                          {callout.wager_amount > 0 && (
-                            <div className="mt-3 text-xs text-gray-600">
-                              Wager: ${callout.wager_amount}
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -923,7 +957,9 @@ export default function Dashboard() {
                                  post.post_type === 'car_update' ? 'Car Update' :
                                  post.post_type === 'image' ? 'Photo' :
                                  post.post_type === 'video' ? 'Video' :
-                                 post.post_type === 'live' ? 'Live Stream' : 'Post'}
+                                 post.post_type === 'live' ? 'Live Stream' :
+                                 post.post_type === 'race_callout' ? 'Race Callout' :
+                                 post.post_type === 'announcement' ? 'Announcement' : 'Post'}
                               </span>
                             </div>
                             <p className="text-sm text-gray-500">{post.time_ago}</p>

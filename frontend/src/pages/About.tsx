@@ -94,7 +94,7 @@ export default function About() {
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Racing Callouts</h3>
               <p className="text-sm sm:text-base text-gray-600 mb-4">
-                Challenge other racers to head-to-head competitions. Set wagers, choose locations, and prove your dominance with confirmation dialogs for safety.
+                Challenge other racers to head-to-head competitions. Set locations, and prove your dominance with confirmation dialogs for safety.
               </p>
               <div className="text-primary-600 font-medium text-sm sm:text-base">Challenge & Conquer</div>
             </div>

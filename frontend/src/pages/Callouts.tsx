@@ -11,7 +11,6 @@ import {
   PencilIcon,
   EyeSlashIcon,
   ShieldCheckIcon,
-  CurrencyDollarIcon,
   UserIcon,
   ClockIcon,
   TrophyIcon
@@ -396,34 +395,10 @@ export default function Callouts() {
 
               {/* Callout Details */}
               <div className="p-6 space-y-3">
-                {/* Horsepower Range */}
-                {(callout.min_horsepower || callout.max_horsepower) && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <BoltIcon className="h-4 w-4 mr-2 text-gray-400" />
-                    <span>
-                      {callout.min_horsepower && callout.max_horsepower 
-                        ? `${callout.min_horsepower}-${callout.max_horsepower} HP`
-                        : callout.min_horsepower 
-                          ? `Min ${callout.min_horsepower} HP`
-                          : `Max ${callout.max_horsepower} HP`
-                      }
-                    </span>
-                  </div>
-                )}
-                
                 {/* Tire Requirement */}
                 {callout.tire_requirement && (
                   <div className="text-sm text-gray-600">
                     <span className="font-medium">Tires:</span> {callout.tire_requirement}
-                  </div>
-                )}
-                
-                {/* Wager Amount */}
-                {callout.wager_amount > 0 && (
-                  <div className="flex items-center text-sm">
-                    <CurrencyDollarIcon className="h-4 w-4 mr-2 text-green-600" />
-                    <span className="font-semibold text-green-600">${callout.wager_amount}</span>
-                    <span className="text-gray-600 ml-1">wager</span>
                   </div>
                 )}
                 
