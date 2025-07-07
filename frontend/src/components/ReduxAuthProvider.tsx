@@ -11,6 +11,9 @@ export const ReduxAuthProvider: React.FC<ReduxAuthProviderProps> = ({ children }
   const { isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
+    // Temporarily disable auth check to test if this is causing the hanging
+    console.log('ReduxAuthProvider: Skipping auth check for testing');
+    /*
     // Check if there's stored user data before making API calls
     const storedUser = localStorage.getItem('user');
     
@@ -30,6 +33,7 @@ export const ReduxAuthProvider: React.FC<ReduxAuthProviderProps> = ({ children }
       }
     }
     // If no stored user data, don't make any API calls - user is not authenticated
+    */
   }, [dispatch]);
 
   // Show loading state while checking authentication
