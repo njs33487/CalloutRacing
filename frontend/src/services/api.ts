@@ -48,6 +48,10 @@ api.interceptors.response.use(
       // Clear any stored user data and redirect to login
       localStorage.removeItem('user')
       window.location.href = '/login'
+    } else if (error.response?.status === 403) {
+      // Forbidden - user is not authenticated, but don't redirect
+      // This is expected for unauthenticated users accessing protected endpoints
+      console.log('Access forbidden - user not authenticated')
     }
     return Promise.reject(error)
   }

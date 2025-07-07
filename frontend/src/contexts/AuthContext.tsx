@@ -53,19 +53,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check for existing authentication on app startup
   useEffect(() => {
-    // Check if user is authenticated by calling profile endpoint
-    authAPI.profile()
-      .then(response => {
-        setUser(response.data)
-      })
-      .catch(() => {
-        // User is not authenticated, clear any stored data
+    // Check if there's stored user data first
+    const storedUser = localStorage.getItem('user')
+    
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser)
+        // Verify the stored session is still valid
+        authAPI.profile()
+          .then(response => {
+            setUser(response.data)
+          })
+          .catch(() => {
+            // Session expired or invalid, clear stored data
+            localStorage.removeItem('user')
+            setUser(null)
+          })
+          .finally(() => {
+            setIsLoading(false)
+          })
+      } catch (error) {
+        // Invalid stored data, clear it
         localStorage.removeItem('user')
         setUser(null)
-      })
-      .finally(() => {
         setIsLoading(false)
-      })
+      }
+    } else {
+      // No stored user data, user is not authenticated
+      setUser(null)
+      setIsLoading(false)
+    }
   }, [])
 
   // Login function - authenticates user and stores user data
