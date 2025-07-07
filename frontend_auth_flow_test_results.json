@@ -1,0 +1,134 @@
+{
+  "timestamp": "2025-07-07T12:13:01.810531",
+  "frontend_url": "https://calloutracing-frontend-production.up.railway.app",
+  "backend_url": "https://calloutracing-backend-production.up.railway.app/api",
+  "results": [
+    {
+      "test": "Frontend Health Check",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:57"
+    },
+    {
+      "test": "Landing Page",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:57"
+    },
+    {
+      "test": "Registration Page",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:57"
+    },
+    {
+      "test": "Login Page",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:57"
+    },
+    {
+      "test": "OTP Login Page",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:57"
+    },
+    {
+      "test": "Backend API Connectivity",
+      "success": true,
+      "message": "CSRF Status: 200",
+      "timestamp": "12:12:57"
+    },
+    {
+      "test": "Registration Flow - Create User",
+      "success": true,
+      "message": "Status: 201",
+      "timestamp": "12:12:59"
+    },
+    {
+      "test": "Registration Flow - Email OTP",
+      "success": true,
+      "message": "Status: 200",
+      "timestamp": "12:12:59"
+    },
+    {
+      "test": "Registration Flow - Phone OTP",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:13:00"
+    },
+    {
+      "test": "Login Flow - Password Login",
+      "success": false,
+      "message": "Status: 401",
+      "timestamp": "12:13:00"
+    },
+    {
+      "test": "Session Management",
+      "success": false,
+      "message": "No user session available",
+      "timestamp": "12:13:00"
+    },
+    {
+      "test": "Error Handling - Invalid Registration",
+      "success": false,
+      "message": "Status: 201",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Error Handling - Invalid Login",
+      "success": false,
+      "message": "Status: 401",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Logout Flow",
+      "success": false,
+      "message": "Status: 403",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Logout Flow - Session Invalidation",
+      "success": true,
+      "message": "Status: 403",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Frontend Routing - /login",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Frontend Routing - /signup",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Frontend Routing - /otp-login",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Frontend Routing - /forgot-password",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Frontend Routing - /reset-password",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:13:01"
+    },
+    {
+      "test": "Frontend Routing Overall",
+      "success": false,
+      "message": "0/5 pages accessible",
+      "timestamp": "12:13:01"
+    }
+  ],
+  "success": false
+}

@@ -1,0 +1,103 @@
+{
+  "timestamp": "2025-07-07T12:12:56.780002",
+  "base_url": "https://calloutracing-backend-production.up.railway.app/api",
+  "results": [
+    {
+      "test": "CSRF Token Retrieval",
+      "success": true,
+      "message": "Status: 200",
+      "timestamp": "12:12:52"
+    },
+    {
+      "test": "User Registration",
+      "success": true,
+      "message": "Status: 201",
+      "timestamp": "12:12:53"
+    },
+    {
+      "test": "Email OTP Send",
+      "success": true,
+      "message": "Status: 200",
+      "timestamp": "12:12:54"
+    },
+    {
+      "test": "Phone OTP Send",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:54"
+    },
+    {
+      "test": "Email OTP Verification Endpoint",
+      "success": true,
+      "message": "Status: 400",
+      "timestamp": "12:12:54"
+    },
+    {
+      "test": "Phone OTP Verification Endpoint",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:54"
+    },
+    {
+      "test": "Password Login",
+      "success": false,
+      "message": "Status: 401",
+      "timestamp": "12:12:55"
+    },
+    {
+      "test": "Email OTP Login - Send OTP",
+      "success": false,
+      "message": "Status: 500",
+      "timestamp": "12:12:55"
+    },
+    {
+      "test": "Phone OTP Login - Send OTP",
+      "success": false,
+      "message": "Status: 404",
+      "timestamp": "12:12:55"
+    },
+    {
+      "test": "Rate Limiting",
+      "success": true,
+      "message": "Responses: [500, 500, 500, 500, 500, 500]",
+      "timestamp": "12:12:56"
+    },
+    {
+      "test": "Invalid Email Format",
+      "success": true,
+      "message": "Status: 400",
+      "timestamp": "12:12:56"
+    },
+    {
+      "test": "Invalid Phone Format",
+      "success": true,
+      "message": "Status: 400",
+      "timestamp": "12:12:56"
+    },
+    {
+      "test": "Non-existent User",
+      "success": true,
+      "message": "Status: 404",
+      "timestamp": "12:12:56"
+    },
+    {
+      "test": "Session Management",
+      "success": false,
+      "message": "No user session available",
+      "timestamp": "12:12:56"
+    },
+    {
+      "test": "Logout",
+      "success": false,
+      "message": "Status: 403",
+      "timestamp": "12:12:56"
+    },
+    {
+      "test": "Session Invalidation",
+      "success": true,
+      "message": "Status: 403",
+      "timestamp": "12:12:56"
+    }
+  ],
+  "success": false
+}

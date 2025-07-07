@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-07-07T12:15:13.428061",
+  "base_url": "https://calloutracing-backend-production.up.railway.app/api",
+  "results": [
+    {
+      "test": "Backend Health Check",
+      "success": true,
+      "message": "Status: 200",
+      "timestamp": "12:15:11"
+    },
+    {
+      "test": "User Registration",
+      "success": true,
+      "message": "Status: 201",
+      "timestamp": "12:15:12"
+    },
+    {
+      "test": "Password Login",
+      "success": false,
+      "message": "Status: 401",
+      "timestamp": "12:15:13"
+    },
+    {
+      "test": "Session Management",
+      "success": false,
+      "message": "No user session available",
+      "timestamp": "12:15:13"
+    },
+    {
+      "test": "Logout",
+      "success": false,
+      "message": "Status: 403",
+      "timestamp": "12:15:13"
+    },
+    {
+      "test": "Session Invalidation",
+      "success": true,
+      "message": "Status: 403",
+      "timestamp": "12:15:13"
+    }
+  ],
+  "success": false
+}

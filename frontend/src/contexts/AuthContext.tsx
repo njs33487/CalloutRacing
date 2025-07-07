@@ -59,20 +59,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (storedUser) {
       try {
         // Verify the stored data is valid JSON
-        JSON.parse(storedUser)
-        // Verify the stored session is still valid
-        authAPI.profile()
-          .then(response => {
-            setUser(response.data)
-          })
-          .catch(() => {
-            // Session expired or invalid, clear stored data
-            localStorage.removeItem('user')
-            setUser(null)
-          })
-          .finally(() => {
-            setIsLoading(false)
-          })
+        const parsedUser = JSON.parse(storedUser)
+        
+        // Only call profile API if we have valid user data
+        if (parsedUser && parsedUser.id) {
+          // Verify the stored session is still valid
+          authAPI.profile()
+            .then(response => {
+              setUser(response.data)
+            })
+            .catch(() => {
+              // Session expired or invalid, clear stored data
+              localStorage.removeItem('user')
+              setUser(null)
+            })
+            .finally(() => {
+              setIsLoading(false)
+            })
+        } else {
+          // Invalid user data, clear it
+          localStorage.removeItem('user')
+          setUser(null)
+          setIsLoading(false)
+        }
       } catch (error) {
         // Invalid stored data, clear it
         localStorage.removeItem('user')

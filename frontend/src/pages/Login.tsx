@@ -4,11 +4,13 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { login } from '../store/slices/authSlice'
 import { SSOButtons } from '../components/SSOButtons'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const { isLoading, error: authError, user } = useAppSelector((state) => state.auth)
+  const { user: authUser, isLoading: authLoading } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -20,14 +22,18 @@ export default function Login() {
   useEffect(() => {
     console.log('Login page - user state:', user)
     console.log('Login page - isLoading:', isLoading)
-    if (user) {
+    console.log('AuthContext - user state:', authUser)
+    console.log('AuthContext - isLoading:', authLoading)
+    
+    // Check both Redux and AuthContext for authentication
+    if (user || authUser) {
       console.log('User is authenticated, redirecting to /app')
       navigate('/app')
     }
-  }, [user, navigate])
+  }, [user, authUser, navigate, isLoading, authLoading])
 
   // Show loading while checking authentication
-  if (isLoading) {
+  if (isLoading || authLoading) {
     console.log('Login page - showing loading state')
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-secondary-50 flex items-center justify-center">
@@ -37,7 +43,7 @@ export default function Login() {
   }
 
   // Don't render login form if user is already authenticated
-  if (user) {
+  if (user || authUser) {
     console.log('Login page - user is authenticated, not rendering form')
     return null
   }
