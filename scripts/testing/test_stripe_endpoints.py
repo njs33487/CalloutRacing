@@ -130,9 +130,9 @@ class StripeEndpointTester:
         
         try:
             data = {
-                'price_id': 'price_1OqX8X2eZvKYlo2C9Q9Q9Q9Q',  # Test price ID
-                'success_url': 'http://localhost:3000/subscription/success',
-                'cancel_url': 'http://localhost:3000/subscription/cancel'
+                'price_id': 'price_test_123',
+                'success_url': 'http://localhost:3000/success',
+                'cancel_url': 'http://localhost:3000/cancel'
             }
             
             # Include CSRF token in headers and cookies
@@ -151,13 +151,13 @@ class StripeEndpointTester:
             if response.status_code == 200:
                 data = response.json()
                 print(f"✅ Checkout session created")
-                print(f"  - Session ID: {data.get('sessionId', 'N/A')}")
-                print(f"  - URL: {data.get('url', 'N/A')}")
+                print(f"  - Session ID: {data.get('sessionId', 'N/A')[:20]}...")
+                print(f"  - URL: {data.get('url', 'N/A')[:50]}...")
             else:
-                print(f"❌ Error: {response.text}")
+                print(f"❌ Error: {response.text[:200]}...")
                 
         except Exception as e:
-            print(f"❌ Error testing checkout session: {e}")
+            print(f"❌ Error testing checkout session: {str(e)}")
     
     def test_webhook_endpoint(self):
         """Test webhook endpoint"""
@@ -186,12 +186,12 @@ class StripeEndpointTester:
             print(f"Status: {response.status_code}")
             if response.status_code in [200, 400, 422]:  # Acceptable responses
                 print(f"✅ Webhook endpoint responding")
-                print(f"  - Response: {response.text[:200]}")
+                print(f"  - Response: {response.text[:100]}...")
             else:
-                print(f"❌ Unexpected status: {response.text}")
+                print(f"❌ Unexpected status: {response.text[:200]}...")
                 
         except Exception as e:
-            print(f"❌ Error testing webhook: {e}")
+            print(f"❌ Error testing webhook: {str(e)}")
     
     def test_marketplace_listings(self):
         """Test marketplace listings endpoint"""
@@ -206,10 +206,10 @@ class StripeEndpointTester:
                 data = response.json()
                 print(f"✅ Marketplace listings returned: {len(data.get('results', []))} listings")
             else:
-                print(f"❌ Error: {response.text}")
+                print(f"❌ Error: {response.text[:200]}...")
                 
         except Exception as e:
-            print(f"❌ Error testing marketplace listings: {e}")
+            print(f"❌ Error testing marketplace listings: {str(e)}")
     
     def test_create_payment_intent(self):
         """Test creating a payment intent for marketplace"""
@@ -233,13 +233,14 @@ class StripeEndpointTester:
             if response.status_code == 200:
                 data = response.json()
                 print(f"✅ Payment intent created")
-                print(f"  - Client Secret: {data.get('clientSecret', 'N/A')[:20]}...")
+                client_secret = data.get('clientSecret', 'N/A')
+                print(f"  - Client Secret: {client_secret[:10]}...{client_secret[-4:] if len(client_secret) > 14 else 'N/A'}")
                 print(f"  - Amount: ${data.get('amount', 0)}")
             else:
-                print(f"❌ Error: {response.text}")
+                print(f"❌ Error: {response.text[:200]}...")
                 
         except Exception as e:
-            print(f"❌ Error testing payment intent: {e}")
+            print(f"❌ Error testing payment intent: {str(e)}")
     
     def test_customer_portal(self):
         """Test customer portal session creation"""
@@ -267,12 +268,13 @@ class StripeEndpointTester:
             if response.status_code == 200:
                 data = response.json()
                 print(f"✅ Customer portal session created")
-                print(f"  - URL: {data.get('url', 'N/A')}")
+                url = data.get('url', 'N/A')
+                print(f"  - URL: {url[:50]}...")
             else:
-                print(f"❌ Error: {response.text}")
+                print(f"❌ Error: {response.text[:200]}...")
                 
         except Exception as e:
-            print(f"❌ Error testing customer portal: {e}")
+            print(f"❌ Error testing customer portal: {str(e)}")
     
     def test_subscription_status(self):
         """Test subscription status endpoint"""
@@ -290,10 +292,10 @@ class StripeEndpointTester:
                 if data.get('subscription'):
                     print(f"  - Status: {data['subscription'].get('status', 'N/A')}")
             else:
-                print(f"❌ Error: {response.text}")
+                print(f"❌ Error: {response.text[:200]}...")
                 
         except Exception as e:
-            print(f"❌ Error testing subscription status: {e}")
+            print(f"❌ Error testing subscription status: {str(e)}")
     
     def test_connect_account_creation(self):
         """Test Stripe Connect account creation"""
@@ -316,12 +318,13 @@ class StripeEndpointTester:
             if response.status_code == 200:
                 data = response.json()
                 print(f"✅ Connect account created")
-                print(f"  - Account ID: {data.get('account_id', 'N/A')}")
+                account_id = data.get('account_id', 'N/A')
+                print(f"  - Account ID: {account_id[:10]}...{account_id[-4:] if len(account_id) > 14 else 'N/A'}")
             else:
-                print(f"❌ Error: {response.text}")
+                print(f"❌ Error: {response.text[:200]}...")
                 
         except Exception as e:
-            print(f"❌ Error testing connect account creation: {e}")
+            print(f"❌ Error testing connect account creation: {str(e)}")
     
     def run_all_tests(self):
         """Run all Stripe endpoint tests"""

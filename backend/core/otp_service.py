@@ -56,7 +56,8 @@ class OTPService:
         """Send OTP via SMS using Twilio."""
         if not TWILIO_AVAILABLE:
             logger.warning("Twilio not available, logging OTP instead")
-            print(f"📱 SMS OTP for {phone_number}: {otp_code}")
+            masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
+            print(f"📱 SMS OTP for {masked_phone}: {otp_code}")
             return True
         
         try:
@@ -67,7 +68,8 @@ class OTPService:
             
             if not all([account_sid, auth_token, from_number]):
                 logger.warning("Twilio credentials not configured, logging OTP instead")
-                print(f"📱 SMS OTP for {phone_number}: {otp_code}")
+                masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
+                print(f"📱 SMS OTP for {masked_phone}: {otp_code}")
                 return True
             
             # Send SMS via Twilio
@@ -78,13 +80,15 @@ class OTPService:
                 to=phone_number
             )
             
-            logger.info(f"SMS OTP sent to {phone_number} via Twilio: {message.sid}")
+            masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
+            logger.info(f"SMS OTP sent to {masked_phone} via Twilio: {message.sid}")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to send SMS OTP to {phone_number}: {e}")
+            logger.error(f"Failed to send SMS OTP: {str(e)}")
             # Fallback to logging in development
-            print(f"📱 SMS OTP for {phone_number}: {otp_code}")
+            masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
+            print(f"📱 SMS OTP for {masked_phone}: {otp_code}")
             return True
     
     @staticmethod
@@ -110,10 +114,11 @@ class OTPService:
                 recipient_list=[email],
                 fail_silently=False,
             )
-            logger.info(f"Email OTP sent to {email}")
+            masked_email = f"{email[:3]}***@{email.split('@')[1]}" if '@' in email else "***@***"
+            logger.info(f"Email OTP sent to {masked_email}")
             return True
         except Exception as e:
-            logger.error(f"Failed to send email OTP to {email}: {e}")
+            logger.error(f"Failed to send email OTP: {str(e)}")
             return False
     
     @staticmethod

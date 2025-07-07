@@ -174,6 +174,7 @@ class UserPost(models.Model):
         ('video', 'Video Post'),
         ('race_result', 'Race Result'),
         ('car_update', 'Car Update'),
+        ('live', 'Live Stream'),
     ]
     
     author = models.ForeignKey(
@@ -203,6 +204,11 @@ class UserPost(models.Model):
         null=True,
         help_text='Post video'
     )
+    # Live streaming fields
+    is_live = models.BooleanField(default=False, help_text='Whether this is a live stream')
+    live_stream_url = models.URLField(blank=True, null=True, help_text='Live stream URL')
+    live_stream_title = models.CharField(max_length=200, blank=True, help_text='Live stream title')
+    live_viewers_count = models.IntegerField(default=0, help_text='Number of live viewers')
     likes_count = models.IntegerField(default=0, help_text='Number of likes')
     comments_count = models.IntegerField(default=0, help_text='Number of comments')
     is_public = models.BooleanField(default=True, help_text='Whether post is public')

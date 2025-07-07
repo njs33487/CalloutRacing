@@ -103,23 +103,34 @@ class CreatePostView(generics.CreateAPIView):
     
     POST /api/social/posts/
     - Creates a new post
-    - Supports text, image, video, race_result, and car_update post types
+    - Supports text, image, video, race_result, car_update, and live post types
     """
     serializer_class = UserPostSerializer
     permission_classes = [permissions.IsAuthenticated]
     
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        
+        # Handle live streaming posts
+        if post.post_type == 'live':
+            post.is_live = True
+            post.live_stream_title = self.request.data.get('live_stream_title', '')
+            post.live_stream_url = self.request.data.get('live_stream_url', '')
+            post.save()
         
         # Create notifications for followers
         followers = Follow.objects.filter(following=self.request.user)
         for follow in followers:
+            notification_type = 'live' if post.post_type == 'live' else 'post'
+            title = f'Live stream from {self.request.user.username}' if post.post_type == 'live' else f'New post from {self.request.user.username}'
+            message = f'{self.request.user.username} is going live!' if post.post_type == 'live' else f'{self.request.user.username} just posted something new!'
+            
             Notification.objects.create(
                 recipient=follow.follower,
                 sender=self.request.user,
-                notification_type='post',
-                title=f'New post from {self.request.user.username}',
-                message=f'{self.request.user.username} just posted something new!'
+                notification_type=notification_type,
+                title=title,
+                message=message
             )
 
 
@@ -342,4 +353,44 @@ def mark_notification_read(request, notification_id):
         return Response(
             {'error': 'Notification not found'}, 
             status=status.HTTP_404_NOT_FOUND
-        ) 
+        )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def live_streams(request):
+    """
+    Get active live streams.
+    
+    GET /api/social/live-streams/
+    - Returns currently active live streams
+    """
+    live_posts = UserPost.objects.filter(
+        is_live=True,
+        is_public=True
+    ).select_related('author').prefetch_related('comments', 'likes').order_by('-created_at')
+    
+    serializer = FeedItemSerializer(live_posts, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def update_live_viewers(request, post_id):
+    """
+    Update live stream viewer count.
+    
+    POST /api/social/posts/{id}/update-viewers/
+    - Updates the viewer count for a live stream
+    """
+    try:
+        post = UserPost.objects.get(pk=post_id, author=request.user, is_live=True)
+        viewers_count = request.data.get('viewers_count', 0)
+        post.live_viewers_count = viewers_count
+        post.save()
+        return Response({'status': 'success', 'viewers_count': viewers_count})
+    except UserPost.DoesNotExist:
+        return Response(
+            {'error': 'Live stream not found'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )

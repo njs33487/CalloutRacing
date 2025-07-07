@@ -9,9 +9,12 @@ from rest_framework import viewsets
 from core.models.marketplace import MarketplaceListing, Order, OrderItem
 from api.serializers import MarketplaceListingSerializer
 from core.secret_store import get_stripe_webhook_secret
+import logging
 
 # Configure Stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
 def marketplace_webhook(request):
@@ -58,12 +61,12 @@ def handle_checkout_session_completed(session):
         # Find the order by PaymentIntent ID
         payment_intent_id = session.get('payment_intent')
         if not payment_intent_id:
-            print(f"No payment_intent found in session {session['id']}")
+            logger.warning(f"No payment_intent found in session {session['id']}")
             return
 
         order = Order.objects.filter(stripe_payment_intent_id=payment_intent_id).first()
         if not order:
-            print(f"No order found for payment_intent {payment_intent_id}")
+            logger.warning(f"No order found for payment_intent {payment_intent_id}")
             return
 
         # Update order status
@@ -78,10 +81,10 @@ def handle_checkout_session_completed(session):
             # listing.is_sold = True
             # listing.save()
 
-        print(f"Order {order.id} marked as paid successfully")
+        logger.info(f"Order {order.id} marked as paid successfully")
 
     except Exception as e:
-        print(f"Error handling checkout session completed: {str(e)}")
+        logger.error(f"Error handling checkout session completed: {str(e)}")
 
 def handle_checkout_session_failed(session):
     """Handle failed checkout session."""
@@ -94,10 +97,10 @@ def handle_checkout_session_failed(session):
         if order:
             order.status = 'cancelled'
             order.save()
-            print(f"Order {order.id} marked as cancelled due to payment failure")
+            logger.info(f"Order {order.id} marked as cancelled due to payment failure")
 
     except Exception as e:
-        print(f"Error handling checkout session failed: {str(e)}")
+        logger.error(f"Error handling checkout session failed: {str(e)}")
 
 def handle_payment_intent_succeeded(payment_intent):
     """Handle successful payment intent."""
@@ -106,10 +109,10 @@ def handle_payment_intent_succeeded(payment_intent):
         if order and order.status == 'pending':
             order.status = 'paid'
             order.save()
-            print(f"Order {order.id} payment confirmed")
+            logger.info(f"Order {order.id} payment confirmed")
 
     except Exception as e:
-        print(f"Error handling payment intent succeeded: {str(e)}")
+        logger.error(f"Error handling payment intent succeeded: {str(e)}")
 
 def handle_payment_intent_failed(payment_intent):
     """Handle failed payment intent."""
@@ -118,10 +121,10 @@ def handle_payment_intent_failed(payment_intent):
         if order:
             order.status = 'cancelled'
             order.save()
-            print(f"Order {order.id} payment failed")
+            logger.info(f"Order {order.id} payment failed")
 
     except Exception as e:
-        print(f"Error handling payment intent failed: {str(e)}")
+        logger.error(f"Error handling payment intent failed: {str(e)}")
 
 class MarketplaceListingViewSet(viewsets.ModelViewSet):
     queryset = MarketplaceListing.objects.all()
@@ -204,8 +207,10 @@ class MarketplaceListingViewSet(viewsets.ModelViewSet):
             })
 
         except stripe.error.StripeError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Stripe error in create_direct_charge_session: {str(e)}")
+            return Response({'error': 'Payment processing error'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.error(f"Error in create_direct_charge_session: {str(e)}")
             return Response(
                 {'error': 'An unexpected error occurred.'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -286,8 +291,10 @@ class MarketplaceListingViewSet(viewsets.ModelViewSet):
             })
 
         except stripe.error.StripeError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Stripe error in create_embedded_direct_charge: {str(e)}")
+            return Response({'error': 'Payment processing error'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            logger.error(f"Error in create_embedded_direct_charge: {str(e)}")
             return Response(
                 {'error': 'An unexpected error occurred.'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -307,7 +314,8 @@ class MarketplaceListingViewSet(viewsets.ModelViewSet):
                 'payment_status': session.payment_status,
             })
         except stripe.error.StripeError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            logger.error(f"Stripe error in session_status: {str(e)}")
+            return Response({'error': 'Payment processing error'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Keep the old purchase method for backward compatibility
     @action(detail=True, methods=['post'], permission_classes=['IsAuthenticated'])

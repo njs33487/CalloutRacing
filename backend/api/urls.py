@@ -40,7 +40,8 @@ from .views.racing import (
 # Import social views directly
 from .views.social import (
     LiveFeedView, CreatePostView, PostDetailView, PostInteractionView,
-    trending_posts, user_feed, notifications, mark_notification_read
+    trending_posts, user_feed, notifications, mark_notification_read,
+    live_streams, update_live_viewers
 )
 
 from api.views.sponsored_views import SponsoredContentViewSet
@@ -114,9 +115,11 @@ racing_patterns = [
 social_patterns = [
     path('feed/', LiveFeedView.as_view(), name='live-feed'),
     path('trending/', trending_posts, name='trending-posts'),
+    path('live-streams/', live_streams, name='live-streams'),
     path('posts/', CreatePostView.as_view(), name='create-post'),
     path('posts/<int:pk>/', PostDetailView.as_view(), name='post-detail'),
     path('posts/<int:pk>/<str:action>/', PostInteractionView.as_view(), name='post-interaction'),
+    path('posts/<int:post_id>/update-viewers/', update_live_viewers, name='update-live-viewers'),
     path('user/<str:username>/feed/', user_feed, name='user-feed'),
     path('notifications/', notifications, name='notifications'),
     path('notifications/<int:notification_id>/read/', mark_notification_read, name='mark-notification-read'),

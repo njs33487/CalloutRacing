@@ -77,10 +77,10 @@ def create_subscription_checkout_session(request):
         }, status=status.HTTP_200_OK)
 
     except stripe.error.StripeError as e:
-        logger.error(f"Stripe error in create_subscription_checkout_session: {e}")
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(f"Stripe error in create_subscription_checkout_session: {str(e)}")
+        return Response({'error': 'Payment processing error'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-        logger.error(f"Error in create_subscription_checkout_session: {e}")
+        logger.error(f"Error in create_subscription_checkout_session: {str(e)}")
         return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -100,10 +100,10 @@ def create_customer_portal_session(request):
         return Response({'url': session.url}, status=status.HTTP_200_OK)
 
     except stripe.error.StripeError as e:
-        logger.error(f"Stripe error in create_customer_portal_session: {e}")
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(f"Stripe error in create_customer_portal_session: {str(e)}")
+        return Response({'error': 'Payment processing error'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-        logger.error(f"Error in create_customer_portal_session: {e}")
+        logger.error(f"Error in create_customer_portal_session: {str(e)}")
         return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -133,7 +133,7 @@ def get_subscription_status(request):
             }, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"Error in get_subscription_status: {e}")
+        logger.error(f"Error in get_subscription_status: {str(e)}")
         return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
