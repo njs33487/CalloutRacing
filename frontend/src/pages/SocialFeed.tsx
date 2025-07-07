@@ -67,7 +67,7 @@ const SocialFeed: React.FC = () => {
         ...(timeFilter && { time_filter: timeFilter }),
       });
 
-      const endpoint = activeTab === 'trending' ? '/api/social/trending/' : '/api/social/feed/';
+      const endpoint = activeTab === 'trending' ? '/social/trending/' : '/social/feed/';
       const response = await api.get(`${endpoint}?${params}`);
       
       const newPosts = response.data.results || response.data;
@@ -87,7 +87,7 @@ const SocialFeed: React.FC = () => {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await api.get('/api/social/notifications/');
+      const response = await api.get('/social/notifications/');
       setNotifications(response.data.results || response.data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -164,7 +164,7 @@ const SocialFeed: React.FC = () => {
         formData.append('announcement_priority', postData.announcement_priority);
       }
 
-      await api.post('/api/social/posts/', formData, {
+      await api.post('/social/posts/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -183,7 +183,7 @@ const SocialFeed: React.FC = () => {
       if (!post) return;
 
       const action = post.is_liked ? 'unlike' : 'like';
-      await api.post(`/api/social/posts/${postId}/${action}/`);
+      await api.post(`/social/posts/${postId}/${action}/`);
 
       setPosts(prev => prev.map(p => 
         p.id === postId 
@@ -201,7 +201,7 @@ const SocialFeed: React.FC = () => {
 
   const handleComment = async (postId: number, content: string) => {
     try {
-      const response = await api.post(`/api/social/posts/${postId}/comment/`, {
+      const response = await api.post(`/social/posts/${postId}/comment/`, {
         content
       });
 
@@ -245,7 +245,7 @@ const SocialFeed: React.FC = () => {
 
   const handleMarkNotificationRead = async (notificationId: number) => {
     try {
-      await api.post(`/api/social/notifications/${notificationId}/read/`);
+      await api.post(`/social/notifications/${notificationId}/read/`);
       setNotifications(prev => prev.map(n => 
         n.id === notificationId ? { ...n, is_read: true } : n
       ));
@@ -306,7 +306,7 @@ const SocialFeed: React.FC = () => {
               <p className="text-gray-500 text-center py-4">No notifications</p>
             ) : (
               <div className="space-y-3">
-                {notifications.map((notification) => (
+                {(notifications || []).map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-3 rounded-lg border ${
@@ -414,7 +414,7 @@ const SocialFeed: React.FC = () => {
               </button>
             </div>
           ) : (
-            posts.map((post) => (
+                            (posts || []).map((post) => (
               <FeedItem
                 key={post.id}
                 post={post}
@@ -426,7 +426,7 @@ const SocialFeed: React.FC = () => {
           )}
 
           {/* Load More */}
-          {hasMore && posts.length > 0 && (
+                        {hasMore && (posts || []).length > 0 && (
             <div className="text-center">
               <button
                 onClick={handleLoadMore}

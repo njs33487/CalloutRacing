@@ -207,14 +207,14 @@ export default function Dashboard() {
   // Fetch upcoming events
   const { data: eventsData } = useQuery({
     queryKey: ['upcoming-events'],
-    queryFn: () => api.get('/api/events/upcoming/').then(res => res.data),
+          queryFn: () => api.get('/events/upcoming/').then(res => res.data),
     enabled: !!user
   })
 
   // Fetch recent callouts
   const { data: calloutsData } = useQuery({
     queryKey: ['recent-callouts'],
-    queryFn: () => api.get('/api/callouts/?status=pending&limit=5').then(res => res.data),
+          queryFn: () => api.get('/callouts/?status=pending&limit=5').then(res => res.data),
     enabled: !!user
   })
 
@@ -284,7 +284,7 @@ export default function Dashboard() {
         ...(timeFilter && { time_filter: timeFilter }),
       });
 
-      const endpoint = activeTab === 'trending' ? '/api/social/trending/' : '/api/social/feed/';
+      const endpoint = activeTab === 'trending' ? '/social/trending/' : '/social/feed/';
       const response = await api.get(`${endpoint}?${params}`);
       
       const newPosts = response.data.results || response.data;
@@ -304,7 +304,7 @@ export default function Dashboard() {
 
   const loadNotifications = async () => {
     try {
-      const response = await api.get('/api/social/notifications/');
+      const response = await api.get('/social/notifications/');
       setNotifications(response.data.results || response.data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -372,7 +372,7 @@ export default function Dashboard() {
         formData.append('announcement_priority', postData.announcement_priority);
       }
 
-      await api.post('/api/social/posts/', formData, {
+      await api.post('/social/posts/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -391,7 +391,7 @@ export default function Dashboard() {
       if (!post) return;
 
       const action = post.is_liked ? 'unlike' : 'like';
-      await api.post(`/api/social/posts/${postId}/${action}/`);
+      await api.post(`/social/posts/${postId}/${action}/`);
 
       setSocialPosts(prev => prev.map(p => 
         p.id === postId 
@@ -409,7 +409,7 @@ export default function Dashboard() {
 
   const handleComment = async (postId: number, content: string) => {
     try {
-      const response = await api.post(`/api/social/posts/${postId}/comment/`, {
+      const response = await api.post(`/social/posts/${postId}/comment/`, {
         content
       });
 
@@ -453,7 +453,7 @@ export default function Dashboard() {
 
   const handleMarkNotificationRead = async (notificationId: number) => {
     try {
-      await api.post(`/api/social/notifications/${notificationId}/read/`);
+      await api.post(`/social/notifications/${notificationId}/read/`);
       setNotifications(prev => prev.map(n => 
         n.id === notificationId ? { ...n, is_read: true } : n
       ));
@@ -755,7 +755,7 @@ export default function Dashboard() {
                   <p className="text-gray-500 text-center py-4">No notifications</p>
                 ) : (
                   <div className="space-y-3">
-                    {notifications.map((notification) => (
+                    {(notifications || []).map((notification) => (
                       <div
                         key={notification.id}
                         className={`p-3 rounded-lg border ${
@@ -800,7 +800,7 @@ export default function Dashboard() {
                   </div>
                   <div className="p-4">
                     <div className="space-y-4">
-                      {upcomingEvents.slice(0, 2).map((event) => (
+                      {(upcomingEvents || []).slice(0, 2).map((event) => (
                         <div key={event.id} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -863,7 +863,7 @@ export default function Dashboard() {
                   </div>
                   <div className="p-4">
                     <div className="space-y-4">
-                      {recentCallouts.slice(0, 2).map((callout) => (
+                      {(recentCallouts || []).slice(0, 2).map((callout) => (
                         <div key={callout.id} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -930,7 +930,7 @@ export default function Dashboard() {
                   </button>
                 </div>
               ) : (
-                socialPosts.map((post) => (
+                (socialPosts || []).map((post) => (
                   <div key={post.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
                     {/* Post Header */}
                     <div className="p-4 border-b border-gray-100">
@@ -1037,7 +1037,7 @@ export default function Dashboard() {
                     {showComments === post.id && (
                       <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
                         <div className="space-y-3 mb-3">
-                          {post.comments.map((comment) => (
+                          {(post.comments || []).map((comment) => (
                             <div key={comment.id} className="flex items-start space-x-2">
                               <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
                                 <span className="text-xs font-medium text-gray-600">
@@ -1080,7 +1080,7 @@ export default function Dashboard() {
               )}
 
               {/* Load More */}
-              {hasMore && socialPosts.length > 0 && (
+              {hasMore && (socialPosts || []).length > 0 && (
                 <div className="text-center">
                   <button
                     onClick={handleLoadMore}
@@ -1140,7 +1140,7 @@ export default function Dashboard() {
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
               <h3 className="font-semibold text-gray-900 mb-4">Community Stats</h3>
               <div className="space-y-3">
-                {globalStats.map((stat) => (
+                {(globalStats || []).map((stat) => (
                   <div key={stat.name} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <stat.icon className="w-4 h-4 text-gray-500" />
@@ -1156,7 +1156,7 @@ export default function Dashboard() {
             {sponsoredContent.length > 0 && (
               <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
                 <h3 className="font-semibold text-gray-900 mb-4">Featured</h3>
-                {sponsoredContent.map((item) => (
+                {(sponsoredContent || []).map((item) => (
                   <div key={item.id} className="mb-4 last:mb-0">
                     {item.image_url && (
                       <img 

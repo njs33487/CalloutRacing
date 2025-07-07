@@ -92,7 +92,7 @@ export const fetchPosts = createAsyncThunk(
         ...(filters.author && { author: filters.author }),
       });
 
-      const endpoint = activeTab === 'trending' ? '/api/social/trending/' : '/api/social/feed/';
+      const endpoint = activeTab === 'trending' ? '/social/trending/' : '/social/feed/';
       const response = await api.get(`${endpoint}?${params}`);
       
       return {
@@ -111,7 +111,7 @@ export const fetchNotifications = createAsyncThunk(
   'social/fetchNotifications',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/social/notifications/');
+      const response = await api.get('/social/notifications/');
       return response.data.results || response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch notifications');
@@ -138,7 +138,7 @@ export const createPost = createAsyncThunk(
         formData.append('video', postData.video);
       }
 
-      const response = await api.post('/api/social/posts/', formData, {
+      const response = await api.post('/social/posts/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -163,7 +163,7 @@ export const likePost = createAsyncThunk(
       }
 
       const action = post.is_liked ? 'unlike' : 'like';
-      await api.post(`/api/social/posts/${postId}/${action}/`);
+      await api.post(`/social/posts/${postId}/${action}/`);
 
       return { postId, isLiked: !post.is_liked };
     } catch (error: any) {
@@ -176,7 +176,7 @@ export const commentOnPost = createAsyncThunk(
   'social/commentOnPost',
   async ({ postId, content }: { postId: number; content: string }, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/api/social/posts/${postId}/comment/`, {
+      const response = await api.post(`/social/posts/${postId}/comment/`, {
         content
       });
 
