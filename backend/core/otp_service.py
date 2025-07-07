@@ -52,7 +52,7 @@ class OTPService:
         return otp
     
     @staticmethod
-    def send_phone_otp(phone_number, otp_code):
+    def send_phone_otp(phone_number):
         """Send OTP via SMS using Twilio."""
         if not TWILIO_AVAILABLE:
             logger.warning("Twilio not available, logging OTP instead")
@@ -92,7 +92,7 @@ class OTPService:
             return True
     
     @staticmethod
-    def send_email_otp(email, otp_code):
+    def send_email_otp(email):
         """Send OTP via email."""
         subject = "Your CalloutRacing Verification Code"
         message = f"""
@@ -151,8 +151,8 @@ class OTPService:
         otp = OTPService.create_otp(user, identifier, otp_type)
         
         if otp_type == 'phone':
-            success = OTPService.send_phone_otp(identifier, otp.code)
+            success = OTPService.send_phone_otp(identifier)
         else:  # email
-            success = OTPService.send_email_otp(identifier, otp.code)
+            success = OTPService.send_email_otp(identifier)
         
         return success, otp 
