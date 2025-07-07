@@ -75,7 +75,7 @@ class OTPService:
             # Send SMS via Twilio
             client = Client(account_sid, auth_token)
             message = client.messages.create(
-                body=f"Your CalloutRacing verification code is: {otp_code}. Valid for 10 minutes.",
+                body="Your CalloutRacing verification code has been sent. Valid for 10 minutes.",
                 from_=from_number,
                 to=phone_number
             )
