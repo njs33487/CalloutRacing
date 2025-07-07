@@ -39,7 +39,7 @@ from .views.racing import (
 
 # Import social views directly
 from .views.social import (
-    LiveFeedView, CreatePostView, PostDetailView, PostInteractionView,
+    LiveFeedView, GlobalFeedView, CreatePostView, PostDetailView, PostInteractionView,
     trending_posts, user_feed, notifications, mark_notification_read,
     live_streams, update_live_viewers
 )
@@ -114,6 +114,7 @@ racing_patterns = [
 # Social Feed URLs
 social_patterns = [
     path('feed/', LiveFeedView.as_view(), name='live-feed'),
+    path('global/', GlobalFeedView.as_view(), name='global-feed'),
     path('trending/', trending_posts, name='trending-posts'),
     path('live-streams/', live_streams, name='live-streams'),
     path('posts/', CreatePostView.as_view(), name='create-post'),

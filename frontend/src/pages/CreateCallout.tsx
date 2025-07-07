@@ -9,12 +9,13 @@ import {
   ExclamationTriangleIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
-import { calloutAPI, userAPI, trackAPI } from '../services/api';
+import { calloutAPI, trackAPI } from '../services/api';
 import { User, Track } from '../types';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { PageLoadingFallback } from '../components/LoadingFallback';
 import SecurityWrapper from '../components/SecurityWrapper';
+import UserSearch from '../components/UserSearch';
 
 export default function CreateCallout() {
   const navigate = useNavigate();
@@ -22,10 +23,7 @@ export default function CreateCallout() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showUserResults, setShowUserResults] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationData, setConfirmationData] = useState<any>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -106,40 +104,12 @@ export default function CreateCallout() {
     }
   };
 
-  const searchUsers = async (query: string) => {
-    if (query.length < 2) {
-      setUsers([]);
-      setShowUserResults(false);
-      return;
-    }
-
-    try {
-      const response = await userAPI.searchUsers(query);
-      setUsers(response.data || []);
-      setShowUserResults(true);
-    } catch (err: any) {
-      console.error('Error searching users:', err);
-      setError('Failed to search users. Please try again.');
-      setUsers([]);
-      setShowUserResults(false);
-    }
-  };
-
-  const handleUserSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    setFormData(prev => ({ ...prev, challenged: query, challenged_id: null }));
-    searchUsers(query);
-  };
-
   const selectUser = (user: User) => {
     setFormData(prev => ({ 
       ...prev, 
       challenged: user.username, 
       challenged_id: user.id 
     }));
-    setSearchQuery(user.username);
-    setShowUserResults(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -220,11 +190,10 @@ export default function CreateCallout() {
       validateForm();
       
       // Prepare data for confirmation dialog
-      const selectedUser = users.find(u => u.id === formData.challenged_id);
       const selectedTrack = tracks.find(t => t.id === formData.track_id);
       
       const confirmationData = {
-        'Challenged User': selectedUser ? `${selectedUser.first_name} ${selectedUser.last_name} (@${selectedUser.username})` : 'Not selected',
+        'Challenged User': formData.challenged || 'Not selected',
         'Race Type': formData.race_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
         'Location Type': formData.location_type.charAt(0).toUpperCase() + formData.location_type.slice(1),
         'Location': formData.location_type === 'track' 
@@ -410,41 +379,11 @@ export default function CreateCallout() {
                     Challenge User *
                   </label>
                   <div className="relative">
-                    <input
-                      type="text"
-                      id="challenged"
-                      name="challenged"
-                      value={searchQuery}
-                      onChange={handleUserSearch}
-                      className="w-full border border-gray-300 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    <UserSearch
                       placeholder="Search for a user to challenge..."
-                      required
+                      onUserSelect={selectUser}
                     />
-                    <UserIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
-                  {showUserResults && users.length > 0 && (
-                    <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto mt-1">
-                      {users.map(user => (
-                        <div
-                          key={user.id}
-                          onClick={() => selectUser(user)}
-                          className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 flex items-center"
-                        >
-                          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-primary-600 font-medium text-sm">
-                              {user.first_name?.[0] || user.username[0].toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">{user.username}</div>
-                            <div className="text-sm text-gray-600">
-                              {user.first_name} {user.last_name}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Race Type */}

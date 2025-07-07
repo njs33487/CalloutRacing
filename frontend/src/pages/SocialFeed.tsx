@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // import { useAuth } from '../contexts/AuthContext'; // Removed unused import
-import { Plus, RefreshCw, Filter, TrendingUp, Users, Bell } from 'lucide-react';
+import { Plus, RefreshCw, Filter, TrendingUp, Users, Bell, Search } from 'lucide-react';
 import { api } from '../services/api';
 import FeedItem from '../components/social/FeedItem';
 import CreatePost from '../components/social/CreatePost';
 import LoadingFallback from '../components/LoadingFallback';
+import UserSearch from '../components/UserSearch';
 
 interface Post {
   id: number;
@@ -53,7 +54,7 @@ const SocialFeed: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [activeTab, setActiveTab] = useState<'feed' | 'trending'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'global' | 'trending'>('feed');
   const [postTypeFilter, setPostTypeFilter] = useState<string>('');
   const [timeFilter, setTimeFilter] = useState<string>('');
   const [hasMore, setHasMore] = useState(true);
@@ -67,7 +68,15 @@ const SocialFeed: React.FC = () => {
         ...(timeFilter && { time_filter: timeFilter }),
       });
 
-      const endpoint = activeTab === 'trending' ? '/social/trending/' : '/social/feed/';
+      let endpoint;
+      if (activeTab === 'trending') {
+        endpoint = '/social/trending/';
+      } else if (activeTab === 'global') {
+        endpoint = '/social/global/';
+      } else {
+        endpoint = '/social/feed/';
+      }
+      
       const response = await api.get(`${endpoint}?${params}`);
       
       const newPosts = response.data.results || response.data;
@@ -349,6 +358,17 @@ const SocialFeed: React.FC = () => {
             <span>My Feed</span>
           </button>
           <button
+            onClick={() => setActiveTab('global')}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+              activeTab === 'global'
+                ? 'bg-blue-500 text-white'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+            <span>Global</span>
+          </button>
+          <button
             onClick={() => setActiveTab('trending')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'trending'
@@ -392,6 +412,21 @@ const SocialFeed: React.FC = () => {
             <option value="week">This Week</option>
             <option value="month">This Month</option>
           </select>
+        </div>
+
+        {/* User Search Section */}
+        <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200 p-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <Search className="w-5 h-5 text-gray-500" />
+            <h3 className="text-lg font-semibold text-gray-900">Discover Users</h3>
+          </div>
+          <UserSearch 
+            placeholder="Search for users to follow..."
+            onUserSelect={(user) => {
+              console.log('Selected user:', user);
+              // You can add follow functionality here
+            }}
+          />
         </div>
 
         {/* Posts */}

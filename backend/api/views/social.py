@@ -34,6 +34,49 @@ class FeedPagination(PageNumberPagination):
     max_page_size = 100
 
 
+class GlobalFeedView(generics.ListAPIView):
+    """
+    Global social feed showing posts from all users.
+    
+    GET /api/social/global/
+    - Returns posts from all users (public posts only)
+    - Supports pagination
+    - Filters by post type and time range
+    - Enables user discovery
+    """
+    serializer_class = FeedItemSerializer
+    pagination_class = FeedPagination
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Get all public posts from all users
+        all_posts = UserPost.objects.filter(
+            is_public=True
+        ).select_related('author').prefetch_related('comments', 'likes')
+        
+        # Apply filters
+        post_type = self.request.query_params.get('post_type')
+        if post_type:
+            all_posts = all_posts.filter(post_type=post_type)
+        
+        time_filter = self.request.query_params.get('time_filter')
+        if time_filter:
+            if time_filter == 'today':
+                all_posts = all_posts.filter(
+                    created_at__gte=timezone.now().date()
+                )
+            elif time_filter == 'week':
+                all_posts = all_posts.filter(
+                    created_at__gte=timezone.now() - timedelta(days=7)
+                )
+            elif time_filter == 'month':
+                all_posts = all_posts.filter(
+                    created_at__gte=timezone.now() - timedelta(days=30)
+                )
+        
+        return all_posts.order_by('-created_at')
+
+
 class LiveFeedView(generics.ListAPIView):
     """
     Live social feed showing posts from followed users and trending content.
