@@ -55,6 +55,7 @@ from api.views.subscription_views import (
 )
 from api.views.marketplace import create_connect_account, create_account_link, get_connect_account_status
 from api.views.marketplace_views import MarketplaceListingViewSet, marketplace_webhook
+from api.views.contact import contact_form
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -157,6 +158,8 @@ urlpatterns = [
     path('subscriptions/', include(subscription_patterns)),
     path('connect/', include(connect_patterns)),
     path('marketplace/', include(marketplace_patterns)),
+    # Contact form endpoint
+    path('contact/', contact_form, name='contact-form'),
     # Aliases for convenience
     path('tracks/', TrackListView.as_view(), name='track-list-alias'),
     path('callouts/', CalloutListView.as_view(), name='callout-list-alias'),
