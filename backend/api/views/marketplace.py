@@ -16,17 +16,18 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q, Avg
 from django.utils import timezone
 from datetime import datetime, timedelta
-
-from core.models.marketplace import Marketplace, MarketplaceOrder, MarketplaceReview
+import logging
+import stripe
 from django.conf import settings
 
-# Import stripe only if available
-try:
-    import stripe
-    STRIPE_AVAILABLE = True
-except ImportError:
-    STRIPE_AVAILABLE = False
+from core.models.marketplace import Marketplace, MarketplaceOrder, MarketplaceReview
+from api.serializers import MarketplaceListingSerializer
+from core.secret_store import get_stripe_webhook_secret
 
+# Configure Stripe
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+logger = logging.getLogger(__name__)
 
 # Basic serializers for now
 class ListingSerializer(serializers.ModelSerializer):
@@ -299,10 +300,16 @@ def create_connect_account(request):
             'account_id': account.id,
             'message': 'Connect account created successfully'
         })
-    except Exception as e:
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error in create_connect_account: {str(e)}")
         return Response({
-            'error': str(e)
+            'error': 'Payment processing error'
         }, status=400)
+    except Exception as e:
+        logger.error(f"Error in create_connect_account: {str(e)}")
+        return Response({
+            'error': 'Internal server error'
+        }, status=500)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -327,10 +334,16 @@ def create_account_link(request):
         return Response({
             'url': account_link.url,
         })
-    except Exception as e:
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error in create_account_link: {str(e)}")
         return Response({
-            'error': str(e)
+            'error': 'Payment processing error'
         }, status=400)
+    except Exception as e:
+        logger.error(f"Error in create_account_link: {str(e)}")
+        return Response({
+            'error': 'Internal server error'
+        }, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -353,7 +366,13 @@ def get_connect_account_status(request):
             'details_submitted': account.details_submitted,
             'requirements': account.requirements
         })
-    except Exception as e:
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error in get_connect_account_status: {str(e)}")
         return Response({
-            'error': str(e)
-        }, status=400) 
+            'error': 'Payment processing error'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error in get_connect_account_status: {str(e)}")
+        return Response({
+            'error': 'Internal server error'
+        }, status=500) 

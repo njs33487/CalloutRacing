@@ -18,10 +18,13 @@ from django.utils import timezone
 from datetime import datetime
 import json
 from typing import Dict, Any, List
+import logging
 
 from core.models.racing import Track, Event, Callout
 from core.models.marketplace import MarketplaceListing
 from core.models.locations import HotSpot
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
@@ -388,4 +391,5 @@ def get_seo_analytics(request):
         })
         
     except Exception as e:
-        return Response({'error': str(e)}, status=500) 
+        logger.error(f"Error in get_seo_analytics: {str(e)}")
+        return Response({'error': 'Internal server error'}, status=500) 

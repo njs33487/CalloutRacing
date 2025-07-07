@@ -21,11 +21,12 @@ def generate_secret_key():
 
 def create_railway_env_template():
     """Create a template for Railway environment variables."""
-    template = f"""# Railway Environment Variables Template
+    template = """# Railway Environment Variables Template
 # Copy these to your Railway project environment variables
+# IMPORTANT: Generate your own keys for production - these are examples only
 
 # Django Settings
-SECRET_KEY={generate_secret_key()}
+SECRET_KEY=your_django_secret_key_here
 DEBUG=False
 ALLOWED_HOSTS=*.railway.app,*.up.railway.app,your-domain.com
 
@@ -33,7 +34,7 @@ ALLOWED_HOSTS=*.railway.app,*.up.railway.app,your-domain.com
 DATABASE_URL=postgresql://user:password@host:port/database
 
 # Encryption
-ENCRYPTION_KEY={generate_encryption_key()}
+ENCRYPTION_KEY=your_encryption_key_here
 
 # Stripe (Replace with your actual keys)
 STRIPE_SECRET_KEY=sk_test_your_test_key_here
@@ -64,6 +65,10 @@ CORS_ALLOWED_ORIGINS=https://*.railway.app,https://*.up.railway.app
     print("✅ Created railway_env_template.txt")
     print("📝 Copy the variables from this file to your Railway project environment variables")
     print("🔗 Go to: https://railway.app/dashboard -> Your Project -> Variables")
+    print("\n🔐 SECURITY NOTE: Generate your own keys for production:")
+    print("   - Django Secret Key: Use Django's get_random_secret_key()")
+    print("   - Encryption Key: Use Fernet.generate_key()")
+    print("   - Never commit actual keys to version control")
 
 def validate_railway_deployment():
     """Validate Railway deployment configuration."""
