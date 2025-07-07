@@ -175,6 +175,8 @@ class UserPost(models.Model):
         ('race_result', 'Race Result'),
         ('car_update', 'Car Update'),
         ('live', 'Live Stream'),
+        ('race_callout', 'Race Callout'),
+        ('announcement', 'Announcement'),
     ]
     
     author = models.ForeignKey(
@@ -209,6 +211,79 @@ class UserPost(models.Model):
     live_stream_url = models.URLField(blank=True, null=True, help_text='Live stream URL')
     live_stream_title = models.CharField(max_length=200, blank=True, help_text='Live stream title')
     live_viewers_count = models.IntegerField(default=0, help_text='Number of live viewers')
+    
+    # Callout-specific fields
+    is_race_callout = models.BooleanField(default=False, help_text='Whether this is a race callout')
+    callout_challenged_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_post_callouts',
+        blank=True,
+        null=True,
+        help_text='User being challenged in the callout'
+    )
+    callout_location = models.CharField(max_length=500, blank=True, help_text='Race location (street or dragstrip)')
+    callout_location_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('street', 'Street Race'),
+            ('dragstrip', 'Dragstrip Race'),
+        ],
+        blank=True,
+        help_text='Type of race location'
+    )
+    callout_race_type = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Type of race (sprint, circuit, etc.)'
+    )
+    callout_wager_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text='Wager amount for the race'
+    )
+    callout_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('accepted', 'Accepted'),
+            ('declined', 'Declined'),
+            ('completed', 'Completed'),
+            ('cancelled', 'Cancelled'),
+        ],
+        default='pending',
+        help_text='Status of the callout'
+    )
+    callout_scheduled_date = models.DateTimeField(blank=True, null=True, help_text='Scheduled date for the race')
+    
+    # Announcement-specific fields
+    is_announcement = models.BooleanField(default=False, help_text='Whether this is a system announcement')
+    is_pinned = models.BooleanField(default=False, help_text='Whether this announcement is pinned')
+    announcement_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('general', 'General'),
+            ('feature', 'New Feature'),
+            ('maintenance', 'Maintenance'),
+            ('promotion', 'Promotion'),
+            ('event', 'Event'),
+        ],
+        blank=True,
+        help_text='Type of announcement'
+    )
+    announcement_priority = models.CharField(
+        max_length=20,
+        choices=[
+            ('low', 'Low'),
+            ('medium', 'Medium'),
+            ('high', 'High'),
+            ('critical', 'Critical'),
+        ],
+        default='medium',
+        help_text='Priority level of the announcement'
+    )
+    
     likes_count = models.IntegerField(default=0, help_text='Number of likes')
     comments_count = models.IntegerField(default=0, help_text='Number of comments')
     is_public = models.BooleanField(default=True, help_text='Whether post is public')
