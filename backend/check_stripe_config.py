@@ -21,14 +21,12 @@ def check_stripe_config():
     print(f"Environment STRIPE_SECRET_KEY: {'✅ Set' if stripe_key_env else '❌ Not set'}")
     if stripe_key_env:
         print(f"  - Length: {len(stripe_key_env)} characters")
-        print(f"  - Format: {stripe_key_env[:7]}...{stripe_key_env[-4:] if len(stripe_key_env) > 11 else 'N/A'}")
     
     # Check Django settings
     stripe_key_settings = getattr(settings, 'STRIPE_SECRET_KEY', None)
     print(f"Django settings STRIPE_SECRET_KEY: {'✅ Set' if stripe_key_settings else '❌ Not set'}")
     if stripe_key_settings:
         print(f"  - Length: {len(stripe_key_settings)} characters")
-        print(f"  - Format: {stripe_key_settings[:7]}...{stripe_key_settings[-4:] if len(stripe_key_settings) > 11 else 'N/A'}")
     
     # Check if it's the dummy key
     if stripe_key_settings and 'sk_test_' in stripe_key_settings:

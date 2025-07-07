@@ -391,5 +391,5 @@ def get_seo_analytics(request):
         })
         
     except Exception as e:
-        logger.error(f"Error in get_seo_analytics: {str(e)}")
+        logger.error("Error in get_seo_analytics")
         return Response({'error': 'Internal server error'}, status=500) 

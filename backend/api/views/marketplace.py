@@ -301,12 +301,12 @@ def create_connect_account(request):
             'message': 'Connect account created successfully'
         })
     except stripe.error.StripeError as e:
-        logger.error(f"Stripe error in create_connect_account: {str(e)}")
+        logger.error("Stripe error in create_connect_account")
         return Response({
             'error': 'Payment processing error'
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in create_connect_account: {str(e)}")
+        logger.error("Error in create_connect_account")
         return Response({
             'error': 'Internal server error'
         }, status=500)
@@ -335,12 +335,12 @@ def create_account_link(request):
             'url': account_link.url,
         })
     except stripe.error.StripeError as e:
-        logger.error(f"Stripe error in create_account_link: {str(e)}")
+        logger.error("Stripe error in create_account_link")
         return Response({
             'error': 'Payment processing error'
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in create_account_link: {str(e)}")
+        logger.error("Error in create_account_link")
         return Response({
             'error': 'Internal server error'
         }, status=500)
@@ -367,12 +367,12 @@ def get_connect_account_status(request):
             'requirements': account.requirements
         })
     except stripe.error.StripeError as e:
-        logger.error(f"Stripe error in get_connect_account_status: {str(e)}")
+        logger.error("Stripe error in get_connect_account_status")
         return Response({
             'error': 'Payment processing error'
         }, status=400)
     except Exception as e:
-        logger.error(f"Error in get_connect_account_status: {str(e)}")
+        logger.error("Error in get_connect_account_status")
         return Response({
             'error': 'Internal server error'
         }, status=500) 

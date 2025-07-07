@@ -57,7 +57,7 @@ class OTPService:
         if not TWILIO_AVAILABLE:
             logger.warning("Twilio not available, logging OTP instead")
             masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
-            print(f"📱 SMS OTP for {masked_phone}: {otp_code}")
+            print(f"📱 SMS OTP sent to {masked_phone}")
             return True
         
         try:
@@ -69,7 +69,7 @@ class OTPService:
             if not all([account_sid, auth_token, from_number]):
                 logger.warning("Twilio credentials not configured, logging OTP instead")
                 masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
-                print(f"📱 SMS OTP for {masked_phone}: {otp_code}")
+                print(f"📱 SMS OTP sent to {masked_phone}")
                 return True
             
             # Send SMS via Twilio
@@ -88,7 +88,7 @@ class OTPService:
             logger.error(f"Failed to send SMS OTP: {str(e)}")
             # Fallback to logging in development
             masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
-            print(f"📱 SMS OTP for {masked_phone}: {otp_code}")
+            print(f"📱 SMS OTP sent to {masked_phone}")
             return True
     
     @staticmethod

@@ -185,7 +185,7 @@ def create_marketplace_payment_intent(request, item_id):
         return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
     except stripe.error.StripeError as e:
         logger.error(f"Stripe error in create_marketplace_payment_intent: {e}")
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Payment processing error'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         logger.error(f"Error in create_marketplace_payment_intent: {e}")
         return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

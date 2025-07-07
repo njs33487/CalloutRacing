@@ -233,8 +233,6 @@ class StripeEndpointTester:
             if response.status_code == 200:
                 data = response.json()
                 print(f"✅ Payment intent created")
-                client_secret = data.get('clientSecret', 'N/A')
-                print(f"  - Client Secret: {client_secret[:10]}...{client_secret[-4:] if len(client_secret) > 14 else 'N/A'}")
                 print(f"  - Amount: ${data.get('amount', 0)}")
             else:
                 print(f"❌ Error: {response.text[:200]}...")
