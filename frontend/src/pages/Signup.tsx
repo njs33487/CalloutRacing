@@ -5,13 +5,11 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { register } from '../store/slices/authSlice'
 import { SSOButtons } from '../components/SSOButtons'
 import { authAPI } from '../services/api'
-import { useAuth } from '../contexts/AuthContext'
 
 export default function Signup() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const { isLoading } = useAppSelector((state) => state.auth)
-  const { user: authUser, isLoading: authLoading } = useAuth()
+  const { user, isLoading } = useAppSelector((state) => state.auth)
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -30,14 +28,14 @@ export default function Signup() {
 
   // Redirect if user is already authenticated
   useEffect(() => {
-    if (authUser) {
+    if (user) {
       console.log('User is authenticated, redirecting to /app')
       navigate('/app')
     }
-  }, [authUser, navigate])
+  }, [user, navigate])
 
   // Show loading while checking authentication
-  if (authLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-secondary-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -46,7 +44,7 @@ export default function Signup() {
   }
 
   // Don't render signup form if user is already authenticated
-  if (authUser) {
+  if (user) {
     return null
   }
 

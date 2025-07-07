@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { sendOtpAsync, verifyOtpAsync, setIdentifier, setType, resetOtp } from '../store/slices/otpSlice';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppSelector } from '../store/hooks'
 
 const OtpLogin: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error, step, identifier, type, user } = useSelector((state: RootState) => state.otp);
-  const { user: authUser, isLoading: authLoading } = useAuth();
+  const { user, loading, error, step, identifier, type } = useAppSelector((state: RootState) => state.otp);
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [remainingAttempts, setRemainingAttempts] = useState<number | null>(null);
@@ -89,28 +88,6 @@ const OtpLogin: React.FC = () => {
         : '***';
     }
   };
-
-  // Redirect if user is already authenticated
-  useEffect(() => {
-    if (authUser) {
-      console.log('User is authenticated, redirecting to /app');
-      navigate('/app');
-    }
-  }, [authUser, navigate]);
-
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  // Don't render OTP form if user is already authenticated
-  if (authUser) {
-    return null;
-  }
 
   useEffect(() => {
     if (step === 'success' && user) {
