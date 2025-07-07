@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Share2, MoreHorizontal, User, Clock, Car } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, User, Clock, Car, Wifi } from 'lucide-react';
 
 interface FeedItemProps {
   post: {
@@ -10,7 +10,7 @@ interface FeedItemProps {
       email: string;
     };
     content: string;
-    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update';
+    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
     image?: string;
     video?: string;
     likes_count: number;
@@ -58,6 +58,8 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onLike, onComment, onShare })
         return <Clock className="w-4 h-4 text-green-500" />;
       case 'car_update':
         return <Car className="w-4 h-4 text-blue-500" />;
+      case 'live':
+        return <Wifi className="w-4 h-4 text-red-500" />;
       default:
         return null;
     }
@@ -73,6 +75,8 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onLike, onComment, onShare })
         return 'Photo';
       case 'video':
         return 'Video';
+      case 'live':
+        return 'Live Stream';
       default:
         return 'Post';
     }

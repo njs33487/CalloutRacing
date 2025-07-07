@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Image, Video, Car, Clock, X, Send } from 'lucide-react';
+import { Image, Video, Car, Clock, X, Send, VideoIcon, Wifi } from 'lucide-react';
 
 interface CreatePostProps {
   onSubmit: (postData: {
     content: string;
-    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update';
+    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
     image?: File;
     video?: File;
   }) => void;
@@ -14,12 +14,14 @@ interface CreatePostProps {
 
 const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading = false }) => {
   const [content, setContent] = useState('');
-  const [postType, setPostType] = useState<'text' | 'image' | 'video' | 'race_result' | 'car_update'>('text');
+  const [postType, setPostType] = useState<'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live'>('text');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  
+  const [isLiveStreaming, setIsLiveStreaming] = useState(false);
+  const [liveStreamTitle, setLiveStreamTitle] = useState('');
+
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,7 +76,27 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
     if (videoInputRef.current) videoInputRef.current.value = '';
   };
 
-  // Removed unused function
+  const startLiveStream = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true
+      });
+      // Here you would typically connect to your streaming service
+      // For now, we'll just simulate the live stream
+      setIsLiveStreaming(true);
+      console.log('Live stream started');
+    } catch (error) {
+      console.error('Error starting live stream:', error);
+    }
+  };
+
+  const stopLiveStream = () => {
+    setIsLiveStreaming(false);
+    setLiveStreamTitle('');
+    // Here you would stop the actual stream
+    console.log('Live stream stopped');
+  };
 
   const getPostTypeLabel = () => {
     switch (postType) {
@@ -86,6 +108,8 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
         return 'Photo';
       case 'video':
         return 'Video';
+      case 'live':
+        return 'Live Stream';
       default:
         return 'Text Post';
     }
@@ -109,13 +133,14 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Post Type
           </label>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-6 gap-2">
             {[
               { type: 'text', label: 'Text', icon: null },
               { type: 'image', label: 'Photo', icon: <Image className="w-4 h-4" /> },
               { type: 'video', label: 'Video', icon: <Video className="w-4 h-4" /> },
               { type: 'race_result', label: 'Race', icon: <Clock className="w-4 h-4" /> },
               { type: 'car_update', label: 'Car', icon: <Car className="w-4 h-4" /> },
+              { type: 'live', label: 'Live', icon: <VideoIcon className="w-4 h-4" /> },
             ].map(({ type, label, icon }) => (
               <button
                 key={type}
@@ -136,6 +161,51 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
           </div>
         </div>
 
+        {/* Live Stream Controls */}
+        {postType === 'live' && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2 mb-3">
+              <Wifi className="w-5 h-5 text-red-600" />
+              <h4 className="font-medium text-red-900">Live Stream</h4>
+            </div>
+            
+            {!isLiveStreaming ? (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={liveStreamTitle}
+                  onChange={(e) => setLiveStreamTitle(e.target.value)}
+                  placeholder="Enter stream title..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                <button
+                  type="button"
+                  onClick={startLiveStream}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  <VideoIcon className="w-4 h-4" />
+                  <span>Start Live Stream</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-red-600">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium">LIVE</span>
+                </div>
+                <p className="text-sm text-red-700">{liveStreamTitle}</p>
+                <button
+                  type="button"
+                  onClick={stopLiveStream}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Stop Stream
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Content Input */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -144,7 +214,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={`What's on your mind? ${postType === 'race_result' ? 'Share your race results...' : postType === 'car_update' ? 'Share your car updates...' : ''}`}
+            placeholder={`What's on your mind? ${postType === 'race_result' ? 'Share your race results...' : postType === 'car_update' ? 'Share your car updates...' : postType === 'live' ? 'Describe your live stream...' : ''}`}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             rows={4}
             disabled={isLoading}
@@ -220,7 +290,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
                 )}
               </div>
             )}
-
+            
             <input
               ref={imageInputRef}
               type="file"
@@ -238,20 +308,19 @@ const CreatePost: React.FC<CreatePostProps> = ({ onSubmit, onCancel, isLoading =
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end space-x-3">
+        {/* Submit Button */}
+        <div className="flex justify-end space-x-3">
           <button
             type="button"
             onClick={onCancel}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-            disabled={isLoading}
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={!content.trim() || isLoading}
-            className="flex items-center space-x-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={!content.trim() || isLoading || (postType === 'live' && !isLiveStreaming)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
             <span>{isLoading ? 'Posting...' : 'Post'}</span>

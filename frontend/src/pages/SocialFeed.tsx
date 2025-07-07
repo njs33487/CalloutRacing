@@ -14,7 +14,7 @@ interface Post {
     email: string;
   };
   content: string;
-  post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update';
+  post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
   image?: string;
   video?: string;
   likes_count: number;
@@ -117,7 +117,7 @@ const SocialFeed: React.FC = () => {
 
   const handleCreatePost = async (postData: {
     content: string;
-    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update';
+    post_type: 'text' | 'image' | 'video' | 'race_result' | 'car_update' | 'live';
     image?: File;
     video?: File;
   }) => {
@@ -347,6 +347,7 @@ const SocialFeed: React.FC = () => {
             <option value="video">Video</option>
             <option value="race_result">Race Result</option>
             <option value="car_update">Car Update</option>
+            <option value="live">Live Stream</option>
           </select>
 
           <select
