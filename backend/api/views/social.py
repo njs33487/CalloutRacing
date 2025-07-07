@@ -11,6 +11,7 @@ from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.request import Request
 from django.db.models import Q, Count, Prefetch
 from django.utils import timezone
 from datetime import timedelta
@@ -118,12 +119,66 @@ class CreatePostView(generics.CreateAPIView):
             post.live_stream_url = self.request.data.get('live_stream_url', '')
             post.save()
         
+        # Handle race callout posts
+        elif post.post_type == 'race_callout':
+            post.callout_challenged_user = self.request.data.get('callout_challenged_user', '')
+            post.callout_location = self.request.data.get('callout_location', '')
+            post.callout_location_type = self.request.data.get('callout_location_type', 'street')
+            post.callout_race_type = self.request.data.get('callout_race_type', '')
+            post.callout_wager_amount = self.request.data.get('callout_wager_amount', 0)
+            post.callout_scheduled_date = self.request.data.get('callout_scheduled_date', '')
+            post.save()
+            
+            # Create notification for challenged user
+            if post.callout_challenged_user:
+                try:
+                    challenged_user = User.objects.get(username=post.callout_challenged_user)
+                    Notification.objects.create(
+                        recipient=challenged_user,
+                        sender=self.request.user,
+                        notification_type='callout',
+                        title=f'Race callout from {self.request.user.username}',
+                        message=f'{self.request.user.username} has called you out for a race!'
+                    )
+                except User.DoesNotExist:
+                    pass
+        
+        # Handle announcement posts
+        elif post.post_type == 'announcement':
+            post.is_pinned = self.request.data.get('is_pinned', False)
+            post.announcement_type = self.request.data.get('announcement_type', 'general')
+            post.announcement_priority = self.request.data.get('announcement_priority', 'medium')
+            post.save()
+            
+            # Create notifications for all users if high priority
+            if post.announcement_priority in ['high', 'critical']:
+                all_users = User.objects.exclude(id=self.request.user.id)
+                for user in all_users:
+                    Notification.objects.create(
+                        recipient=user,
+                        sender=self.request.user,
+                        notification_type='announcement',
+                        title=f'Important announcement from {self.request.user.username}',
+                        message=f'{self.request.user.username} posted an important announcement!'
+                    )
+        
         # Create notifications for followers
         followers = Follow.objects.filter(following=self.request.user)
         for follow in followers:
-            notification_type = 'live' if post.post_type == 'live' else 'post'
-            title = f'Live stream from {self.request.user.username}' if post.post_type == 'live' else f'New post from {self.request.user.username}'
-            message = f'{self.request.user.username} is going live!' if post.post_type == 'live' else f'{self.request.user.username} just posted something new!'
+            notification_type = 'live' if post.post_type == 'live' else 'callout' if post.post_type == 'race_callout' else 'announcement' if post.post_type == 'announcement' else 'post'
+            
+            if post.post_type == 'live':
+                title = f'Live stream from {self.request.user.username}'
+                message = f'{self.request.user.username} is going live!'
+            elif post.post_type == 'race_callout':
+                title = f'Race callout from {self.request.user.username}'
+                message = f'{self.request.user.username} issued a race callout!'
+            elif post.post_type == 'announcement':
+                title = f'Announcement from {self.request.user.username}'
+                message = f'{self.request.user.username} posted an announcement!'
+            else:
+                title = f'New post from {self.request.user.username}'
+                message = f'{self.request.user.username} just posted something new!'
             
             Notification.objects.create(
                 recipient=follow.follower,
