@@ -85,7 +85,7 @@ class OTPService:
             return True
             
         except Exception as e:
-            logger.error(f"Failed to send SMS OTP: {str(e)}")
+            logger.error("Failed to send SMS OTP")
             # Fallback to logging in development
             masked_phone = f"{phone_number[:3]}***{phone_number[-2:]}" if len(phone_number) > 5 else "***"
             print(f"📱 SMS OTP sent to {masked_phone}")
@@ -96,7 +96,7 @@ class OTPService:
         """Send OTP via email."""
         subject = "Your CalloutRacing Verification Code"
         message = f"""
-        Your verification code is: {otp_code}
+        Your verification code has been sent.
         
         This code will expire in 10 minutes.
         
@@ -118,7 +118,7 @@ class OTPService:
             logger.info(f"Email OTP sent to {masked_email}")
             return True
         except Exception as e:
-            logger.error(f"Failed to send email OTP: {str(e)}")
+            logger.error("Failed to send email OTP")
             return False
     
     @staticmethod
