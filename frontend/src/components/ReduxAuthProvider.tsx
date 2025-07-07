@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { checkAuth } from '../store/slices/authSlice';
+// import { checkAuth } from '../store/slices/authSlice';
 
 interface ReduxAuthProviderProps {
   children: React.ReactNode;
