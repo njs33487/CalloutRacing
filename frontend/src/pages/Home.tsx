@@ -13,7 +13,11 @@ import {
   FireIcon,
   ArrowTrendingUpIcon,
   BellIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  MapPinIcon,
+  ClockIcon,
+  UsersIcon,
+  TrophyIcon
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { useAppSelector } from '../store/hooks'
@@ -101,6 +105,54 @@ interface Notification {
   created_at: string;
 }
 
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  event_type: string;
+  start_date: string;
+  end_date: string;
+  max_participants: number;
+  entry_fee: number;
+  is_public: boolean;
+  track: {
+    id: number;
+    name: string;
+    location: string;
+  };
+  organizer: {
+    id: number;
+    username: string;
+  };
+  participants_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface Callout {
+  id: number;
+  challenger: {
+    id: number;
+    username: string;
+    first_name: string;
+    last_name: string;
+  };
+  challenged: {
+    id: number;
+    username: string;
+    first_name: string;
+    last_name: string;
+  };
+  message: string;
+  race_type: string;
+  wager_amount: number;
+  scheduled_date: string;
+  street_location: string;
+  status: string;
+  created_at: string;
+  time_ago: string;
+}
+
 export default function Dashboard() {
   const { user } = useAppSelector((state) => state.auth)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -127,6 +179,12 @@ export default function Dashboard() {
   const [commentText, setCommentText] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
 
+  // Events and Callouts states
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([])
+  const [recentCallouts, setRecentCallouts] = useState<Callout[]>([])
+  const [showEventsSection, setShowEventsSection] = useState(true)
+  const [showCalloutsSection, setShowCalloutsSection] = useState(true)
+
   // User-specific data
   const { data: userCallouts } = useQuery({
     queryKey: ['user-callouts'],
@@ -139,6 +197,20 @@ export default function Dashboard() {
     queryFn: () => api.get('/stats/').then(res => res.data)
   })
 
+  // Fetch upcoming events
+  const { data: eventsData } = useQuery({
+    queryKey: ['upcoming-events'],
+    queryFn: () => api.get('/api/events/upcoming/').then(res => res.data),
+    enabled: !!user
+  })
+
+  // Fetch recent callouts
+  const { data: calloutsData } = useQuery({
+    queryKey: ['recent-callouts'],
+    queryFn: () => api.get('/api/callouts/?status=pending&limit=5').then(res => res.data),
+    enabled: !!user
+  })
+
   useEffect(() => {
     if (user) {
       loadProfile()
@@ -146,6 +218,19 @@ export default function Dashboard() {
       loadNotifications()
     }
   }, [user])
+
+  // Update events and callouts data
+  useEffect(() => {
+    if (eventsData) {
+      setUpcomingEvents(eventsData)
+    }
+  }, [eventsData])
+
+  useEffect(() => {
+    if (calloutsData) {
+      setRecentCallouts(calloutsData.results || calloutsData)
+    }
+  }, [calloutsData])
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -450,6 +535,78 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Social Feed */}
           <div className="lg:col-span-3">
+            {/* Featured Banner - Events & Callouts */}
+            {(upcomingEvents.length > 0 || recentCallouts.length > 0) && (
+              <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-orange-600 rounded-lg shadow-lg mb-6 overflow-hidden">
+                <div className="p-6 text-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold">Featured Racing Activity</h2>
+                    <div className="flex items-center space-x-4 text-sm">
+                      {upcomingEvents.length > 0 && (
+                        <span className="flex items-center space-x-1">
+                          <CalendarIcon className="w-4 h-4" />
+                          <span>{upcomingEvents.length} Events</span>
+                        </span>
+                      )}
+                      {recentCallouts.length > 0 && (
+                        <span className="flex items-center space-x-1">
+                          <TrophyIcon className="w-4 h-4" />
+                          <span>{recentCallouts.length} Callouts</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Featured Event */}
+                    {upcomingEvents.length > 0 && (
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <CalendarIcon className="w-5 h-5" />
+                          <span className="font-semibold">Featured Event</span>
+                        </div>
+                        <h3 className="font-bold text-lg mb-1">{upcomingEvents[0].title}</h3>
+                        <p className="text-sm text-white/90 mb-2 line-clamp-2">{upcomingEvents[0].description}</p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span>{upcomingEvents[0].track?.name || 'TBD'}</span>
+                          <span>{new Date(upcomingEvents[0].start_date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Featured Callout */}
+                    {recentCallouts.length > 0 && (
+                      <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <TrophyIcon className="w-5 h-5" />
+                          <span className="font-semibold">Featured Callout</span>
+                        </div>
+                        <div className="flex items-center space-x-1 mb-1">
+                          <span className="font-bold">{recentCallouts[0].challenger.username}</span>
+                          <span>vs</span>
+                          <span className="font-bold">{recentCallouts[0].challenged.username}</span>
+                        </div>
+                        <p className="text-sm text-white/90 mb-2 line-clamp-2">{recentCallouts[0].message}</p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span>{recentCallouts[0].race_type}</span>
+                          <span>{recentCallouts[0].time_ago}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-center mt-4 space-x-4">
+                    <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white font-medium transition-colors">
+                      View All Events
+                    </button>
+                    <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white font-medium transition-colors">
+                      View All Callouts
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Feed Header */}
             <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
@@ -590,6 +747,135 @@ export default function Dashboard() {
 
             {/* Social Posts Feed */}
             <div className="space-y-6">
+              {/* Events Feed Posts */}
+              {upcomingEvents.length > 0 && (
+                <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-500 to-purple-600">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <CalendarIcon className="w-6 h-6 text-white" />
+                        <h3 className="text-lg font-semibold text-white">Upcoming Events</h3>
+                      </div>
+                      <span className="text-white text-sm font-medium">{upcomingEvents.length} events</span>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="space-y-4">
+                      {upcomingEvents.slice(0, 2).map((event) => (
+                        <div key={event.id} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900 mb-2">{event.title}</h4>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{event.description}</p>
+                              <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+                                <div className="flex items-center space-x-1">
+                                  <MapPinIcon className="w-3 h-3" />
+                                  <span>{event.track?.name || 'TBD'}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <ClockIcon className="w-3 h-3" />
+                                  <span>{new Date(event.start_date).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <UsersIcon className="w-3 h-3" />
+                                  <span>{event.participants_count}/{event.max_participants || '∞'} participants</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="font-medium">{event.event_type}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {event.event_type}
+                              </span>
+                            </div>
+                          </div>
+                          {event.entry_fee > 0 && (
+                            <div className="mt-3 text-xs text-gray-600">
+                              Entry Fee: ${event.entry_fee}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {upcomingEvents.length > 2 && (
+                      <div className="text-center mt-4">
+                        <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                          View All Events ({upcomingEvents.length})
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Callouts Feed Posts */}
+              {recentCallouts.length > 0 && (
+                <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-orange-500 to-red-600">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <TrophyIcon className="w-6 h-6 text-white" />
+                        <h3 className="text-lg font-semibold text-white">Recent Callouts</h3>
+                      </div>
+                      <span className="text-white text-sm font-medium">{recentCallouts.length} callouts</span>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="space-y-4">
+                      {recentCallouts.slice(0, 2).map((callout) => (
+                        <div key={callout.id} className="border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <span className="font-semibold text-gray-900">{callout.challenger.username}</span>
+                                <span className="text-gray-500">vs</span>
+                                <span className="font-semibold text-gray-900">{callout.challenged.username}</span>
+                              </div>
+                              <p className="text-sm text-gray-700 mb-3">{callout.message}</p>
+                              <div className="grid grid-cols-2 gap-4 text-xs text-gray-500">
+                                <div className="flex items-center space-x-1">
+                                  <MapPinIcon className="w-3 h-3" />
+                                  <span>{callout.street_location}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <ClockIcon className="w-3 h-3" />
+                                  <span>{callout.time_ago}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="font-medium">{callout.race_type}</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="font-medium">{callout.status}</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                {callout.race_type}
+                              </span>
+                            </div>
+                          </div>
+                          {callout.wager_amount > 0 && (
+                            <div className="mt-3 text-xs text-gray-600">
+                              Wager: ${callout.wager_amount}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {recentCallouts.length > 2 && (
+                      <div className="text-center mt-4">
+                        <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                          View All Callouts ({recentCallouts.length})
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {socialPosts.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-lg shadow-md border border-gray-200">
                   <UserGroupIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -829,25 +1115,6 @@ export default function Dashboard() {
                 ))}
               </div>
             </div>
-
-            {/* Active Callouts */}
-            {user && activeCallouts.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-                <h3 className="font-semibold text-gray-900 mb-4">Active Callouts</h3>
-                <div className="space-y-3">
-                  {activeCallouts.slice(0, 3).map((callout: any) => (
-                    <div key={callout.id} className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-900">
-                        {callout.challenger.username} vs {callout.challenged.username}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {callout.race_type} • {callout.location_type}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Sponsored Content */}
             {sponsoredContent.length > 0 && (
