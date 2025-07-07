@@ -53,46 +53,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check for existing authentication on app startup
   useEffect(() => {
-    // Check if there's stored user data first
-    const storedUser = localStorage.getItem('user')
-    
-    if (storedUser) {
+    const initializeAuth = async () => {
       try {
-        // Verify the stored data is valid JSON
-        const parsedUser = JSON.parse(storedUser)
+        // Check if there's stored user data first
+        const storedUser = localStorage.getItem('user')
         
-        // Only call profile API if we have valid user data
-        if (parsedUser && parsedUser.id) {
-          // Verify the stored session is still valid
-          authAPI.profile()
-            .then(response => {
-              setUser(response.data)
-            })
-            .catch(() => {
-              // Session expired or invalid, clear stored data
+        if (storedUser) {
+          try {
+            // Verify the stored data is valid JSON
+            const parsedUser = JSON.parse(storedUser)
+            
+            // Only call profile API if we have valid user data with an ID
+            if (parsedUser && parsedUser.id) {
+              // Set user immediately from stored data for faster UI
+              setUser(parsedUser)
+              
+              // Then verify the session is still valid in the background
+              try {
+                const response = await authAPI.profile()
+                // Update with fresh data from server
+                setUser(response.data)
+                localStorage.setItem('user', JSON.stringify(response.data))
+              } catch (error: any) {
+                // Session expired or invalid, clear stored data
+                console.log('Session expired, clearing stored user data')
+                localStorage.removeItem('user')
+                setUser(null)
+              }
+            } else {
+              // Invalid user data, clear it
               localStorage.removeItem('user')
               setUser(null)
-            })
-            .finally(() => {
-              setIsLoading(false)
-            })
+            }
+          } catch (error) {
+            // Invalid stored data, clear it
+            localStorage.removeItem('user')
+            setUser(null)
+          }
         } else {
-          // Invalid user data, clear it
-          localStorage.removeItem('user')
+          // No stored user data, user is not authenticated
           setUser(null)
-          setIsLoading(false)
         }
       } catch (error) {
-        // Invalid stored data, clear it
-        localStorage.removeItem('user')
+        console.error('Error initializing auth:', error)
         setUser(null)
+      } finally {
         setIsLoading(false)
       }
-    } else {
-      // No stored user data, user is not authenticated
-      setUser(null)
-      setIsLoading(false)
     }
+
+    initializeAuth()
   }, [])
 
   // Login function - authenticates user and stores user data

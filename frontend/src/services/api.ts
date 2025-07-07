@@ -1,4 +1,4 @@
-// API Service - centralizes all backend API calls and handles authentication
+ // API Service - centralizes all backend API calls and handles authentication
 import axios from 'axios'
 import { HotSpot, RacingCrew, CrewMembership, LocationBroadcast, ReputationRating, OpenChallenge, ChallengeResponse, Callout } from '../types';
 import Cookies from 'js-cookie';

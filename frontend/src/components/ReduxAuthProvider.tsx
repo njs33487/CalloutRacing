@@ -11,8 +11,25 @@ export const ReduxAuthProvider: React.FC<ReduxAuthProviderProps> = ({ children }
   const { isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Check authentication status on app startup
-    dispatch(checkAuth());
+    // Check if there's stored user data before making API calls
+    const storedUser = localStorage.getItem('user');
+    
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        // Only check auth if we have valid user data
+        if (parsedUser && parsedUser.id) {
+          dispatch(checkAuth());
+        } else {
+          // Invalid stored data, clear it and don't make API call
+          localStorage.removeItem('user');
+        }
+      } catch (error) {
+        // Invalid stored data, clear it and don't make API call
+        localStorage.removeItem('user');
+      }
+    }
+    // If no stored user data, don't make any API calls - user is not authenticated
   }, [dispatch]);
 
   // Show loading state while checking authentication

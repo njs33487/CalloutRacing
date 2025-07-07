@@ -34,10 +34,35 @@ export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authAPI.profile();
-      return response.data;
+      // Check if there's stored user data first
+      const storedUser = localStorage.getItem('user');
+      
+      if (storedUser) {
+        try {
+          // Verify the stored data is valid JSON
+          const parsedUser = JSON.parse(storedUser);
+          
+          // Only call profile API if we have valid user data with an ID
+          if (parsedUser && parsedUser.id) {
+            // Verify the session is still valid
+            const response = await authAPI.profile();
+            return response.data;
+          } else {
+            // Invalid user data, clear it
+            localStorage.removeItem('user');
+            throw new Error('Invalid stored user data');
+          }
+        } catch (error) {
+          // Invalid stored data or API call failed, clear it
+          localStorage.removeItem('user');
+          throw new Error('Session expired or invalid data');
+        }
+      } else {
+        // No stored user data, user is not authenticated
+        throw new Error('No stored authentication data');
+      }
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Authentication failed');
+      return rejectWithValue(error.message || 'Authentication failed');
     }
   }
 );
@@ -49,7 +74,12 @@ export const login = createAsyncThunk(
       await ensureCSRFToken();
       const response = await authAPI.login({ username, password });
       // The backend returns { user: { ... } }, so we need to extract the user data
-      return response.data.user || response.data;
+      const userData = response.data.user || response.data;
+      
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return userData;
     } catch (error: any) {
       console.error('Login thunk error:', error);
       // Pass through the full error response for better error handling
@@ -76,7 +106,12 @@ export const googleLogin = createAsyncThunk(
   async (idToken: string, { rejectWithValue }) => {
     try {
       const response = await authAPI.googleSSO(idToken);
-      return response.data.user;
+      const userData = response.data.user;
+      
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return userData;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Google login failed');
     }
@@ -88,7 +123,12 @@ export const facebookLogin = createAsyncThunk(
   async (accessToken: string, { rejectWithValue }) => {
     try {
       const response = await authAPI.facebookSSO(accessToken);
-      return response.data.user;
+      const userData = response.data.user;
+      
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      return userData;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Facebook login failed');
     }
@@ -100,8 +140,12 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       await authAPI.logout();
+      // Clear localStorage
+      localStorage.removeItem('user');
       return null;
     } catch (error: any) {
+      // Always clear localStorage even if API call fails
+      localStorage.removeItem('user');
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
     }
   }
@@ -124,6 +168,8 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
+      // Also clear localStorage
+      localStorage.removeItem('user');
     },
   },
   extraReducers: (builder) => {
