@@ -281,6 +281,26 @@ if EMAIL_HOST == 'smtp.gmail.com':
 SESSION_COOKIE_SAMESITE = "None"
 CSRF_COOKIE_SAMESITE = "None"
 
+# Session configuration to prevent corruption
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG  # Only secure in production
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# CSRF configuration
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = not DEBUG  # Only secure in production
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://calloutracing.up.railway.app',
+    'https://calloutracing-backend-production.up.railway.app',
+    'https://calloutracing-backend.up.railway.app',
+    'https://calloutracing-frontend.up.railway.app',
+]
+
 # Stripe Configuration
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')

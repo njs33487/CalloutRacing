@@ -96,8 +96,8 @@ export const authAPI = {
   checkUserExists: (data: { username?: string; email?: string }) => api.post('/auth/check-user/', data),
   requestPasswordReset: (email: string) => api.post('/auth/request-password-reset/', { email }),
   // OTP methods
-  sendOtp: (identifier: string, method: 'email' | 'phone') => api.post('/auth/send-otp/', { identifier, method }),
-  verifyOtp: (identifier: string, otp: string) => api.post('/auth/verify-otp/', { identifier, otp }),
+  sendOtp: (identifier: string, method: 'email' | 'phone') => api.post('/auth/otp/send/', { identifier, method }),
+  verifyOtp: (identifier: string, otp: string) => api.post('/auth/otp/verify/', { identifier, otp }),
   otpLogin: (identifier: string, otp: string) => api.post('/auth/otp-login/', { identifier, otp }),
   emailLogin: (email: string) => api.post('/auth/email-login/', { email }),
   // Subscription methods
