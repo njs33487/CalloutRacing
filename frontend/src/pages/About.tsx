@@ -48,8 +48,8 @@ export default function About() {
           <div className="mb-6 sm:mb-8">
             <div className="relative mx-auto mb-4">
               <img 
-                src="/android-chrome-192x192.png" 
-                alt="CalloutRacing Logo" 
+                src="/callourRacingLaunch.jpg" 
+                alt="CalloutRacing Launch" 
                 className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 2xl:w-64 2xl:h-64 mx-auto object-cover rounded-lg shadow-lg transition-all duration-300 ease-in-out"
               />
             </div>
