@@ -15,7 +15,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   title = 'CalloutRacing - Ultimate Racing Community Platform',
   description = 'Join the ultimate racing community! Find drag racing events, challenge other racers, discover tracks and hotspots, buy/sell cars, and connect with car enthusiasts nationwide.',
   keywords = 'racing, drag racing, car community, racing events, car meets, race tracks, car enthusiasts, automotive, motorsports, racing platform, car marketplace, racing hotspots',
-  image = '/callourRacingLaunch.jpg',
+  image = '/android-chrome-192x192.png',
   url,
   type = 'website',
   structuredData

@@ -527,7 +527,7 @@ class CrewMembership(models.Model):
 
 class SponsoredContent(models.Model):
     title = models.CharField(max_length=255)
-    content = models.TextField()
+    content = models.TextField(blank=True, default="")
     image_url = models.URLField(max_length=500, blank=True, null=True)
     link_url = models.URLField(max_length=500)
     sponsor_name = models.CharField(max_length=255)

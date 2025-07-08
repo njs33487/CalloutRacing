@@ -91,7 +91,7 @@ def get_event_seo(event_id: int, base_url: str) -> Response:
             'title': title,
             'description': description,
             'keywords': f"racing event, {event.title}, drag racing, motorsports, racing competition",
-            'image': event.image.url if hasattr(event, 'image') and event.image else f"{base_url}/callourRacingLaunch.jpg",
+            'image': event.image.url if hasattr(event, 'image') and event.image else f"{base_url}/android-chrome-192x192.png",
             'url': f"{base_url}/events/{event.id}",
             'type': 'event',
             'structured_data': structured_data
@@ -128,7 +128,7 @@ def get_track_seo(track_id: int, base_url: str) -> Response:
             'title': title,
             'description': description,
             'keywords': f"race track, {track.name}, {track.location}, drag racing, motorsports",
-            'image': track.image.url if hasattr(track, 'image') and track.image else f"{base_url}/callourRacingLaunch.jpg",
+            'image': track.image.url if hasattr(track, 'image') and track.image else f"{base_url}/android-chrome-192x192.png",
             'url': f"{base_url}/tracks/{track.id}",
             'type': 'website',
             'structured_data': structured_data
@@ -159,7 +159,7 @@ def get_callout_seo(callout_id: int, base_url: str) -> Response:
             'title': title,
             'description': description,
             'keywords': f"racing callout, drag racing challenge, racing competition, motorsports",
-            'image': f"{base_url}/callourRacingLaunch.jpg",
+            'image': f"{base_url}/android-chrome-192x192.png",
             'url': f"{base_url}/callouts/{callout.id}",
             'type': 'website',
             'structured_data': structured_data
@@ -196,7 +196,7 @@ def get_listing_seo(listing_id: int, base_url: str) -> Response:
             'title': title,
             'description': description,
             'keywords': f"racing marketplace, {listing.title}, racing equipment, automotive parts",
-            'image': listing.image.url if hasattr(listing, 'image') and listing.image else f"{base_url}/callourRacingLaunch.jpg",
+            'image': listing.image.url if hasattr(listing, 'image') and listing.image else f"{base_url}/android-chrome-192x192.png",
             'url': f"{base_url}/marketplace/{listing.id}",
             'type': 'website',
             'structured_data': structured_data
@@ -233,7 +233,7 @@ def get_hotspot_seo(hotspot_id: int, base_url: str) -> Response:
             'title': title,
             'description': description,
             'keywords': f"racing hotspot, {hotspot.name}, {hotspot.city}, car meets, racing location",
-            'image': f"{base_url}/callourRacingLaunch.jpg",
+            'image': f"{base_url}/android-chrome-192x192.png",
             'url': f"{base_url}/hotspots/{hotspot.id}",
             'type': 'website',
             'structured_data': structured_data
@@ -249,7 +249,7 @@ def get_general_seo(base_url: str) -> Response:
         'title': 'CalloutRacing - Ultimate Racing Community Platform | Find Events, Challenge Racers',
         'description': 'Join the ultimate racing community! Find drag racing events, challenge other racers, discover tracks and hotspots, buy/sell cars, and connect with car enthusiasts nationwide.',
         'keywords': 'racing, drag racing, car community, racing events, car meets, race tracks, car enthusiasts, automotive, motorsports, racing platform, car marketplace, racing hotspots',
-        'image': f"{base_url}/callourRacingLaunch.jpg",
+        'image': f"{base_url}/android-chrome-192x192.png",
         'url': base_url,
         'type': 'website',
         'structured_data': {

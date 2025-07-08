@@ -6,7 +6,7 @@ export default function TermsOfService() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex items-center mb-8">
-            <img src="/android-chrome-192x192.png" alt="CalloutRacing Logo" className="h-12 w-12 mr-4" />
+            <img src="/android-chrome-192x192.png" alt="CalloutRacing Logo" className="h-10 w-10 mr-4" />
             <h1 className="text-3xl font-bold text-gray-900">Terms of Service</h1>
           </div>
           

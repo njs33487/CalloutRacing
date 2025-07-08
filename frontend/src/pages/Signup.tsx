@@ -406,7 +406,7 @@ export default function Signup() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img src="/android-chrome-192x192.png" alt="CalloutRacing Logo" className="h-12 w-12" />
+            <img src="/android-chrome-192x192.png" alt="CalloutRacing Logo" className="h-10 w-10" />
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Join CalloutRacing

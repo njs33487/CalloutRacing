@@ -47,7 +47,7 @@ export const generateEventShareData = (event: any): ShareData => {
     title: event.title,
     description: `${event.description.substring(0, 100)}... - Join us at ${event.track?.name || 'TBD'} on ${new Date(event.start_date).toLocaleDateString()}`,
     url: shareUrl,
-    image: event.images?.[0]?.image || '/callourRacingLaunch.jpg',
+            image: event.images?.[0]?.image || '/android-chrome-192x192.png',
     type: 'event'
   };
 };
@@ -62,7 +62,7 @@ export const generateCalloutShareData = (callout: any): ShareData => {
     title: `Race Challenge: ${challengerName} vs ${challengedName}`,
     description: `${callout.race_type.replace('_', ' ').toUpperCase()} race at ${callout.track?.name || callout.street_location || 'TBD'} - ${callout.message.substring(0, 100)}...`,
     url: shareUrl,
-    image: callout.images?.[0]?.image || '/callourRacingLaunch.jpg',
+            image: callout.images?.[0]?.image || '/android-chrome-192x192.png',
     type: 'callout'
   };
 };

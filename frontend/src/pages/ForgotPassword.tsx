@@ -28,7 +28,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-red-50 via-white to-secondary-50">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <img src="/android-chrome-192x192.png" alt="CalloutRacing Logo" className="h-12 w-12" />
+                      <img src="/android-chrome-192x192.png" alt="CalloutRacing Logo" className="h-10 w-10" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
           Forgot your password?

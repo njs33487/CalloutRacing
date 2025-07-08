@@ -48,9 +48,9 @@ export default function About() {
           <div className="mb-6 sm:mb-8">
             <div className="relative mx-auto mb-4">
               <img 
-                src="/callourRacingLaunch.jpg" 
-                alt="CalloutRacing Launch" 
-                className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 xl:w-[400px] xl:h-[400px] 2xl:w-[500px] 2xl:h-[500px] mx-auto object-cover rounded-lg shadow-lg transition-all duration-300 ease-in-out"
+                src="/android-chrome-192x192.png" 
+                alt="CalloutRacing Logo" 
+                className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 2xl:w-64 2xl:h-64 mx-auto object-cover rounded-lg shadow-lg transition-all duration-300 ease-in-out"
               />
             </div>
           </div>
