@@ -11,7 +11,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { register } from '../store/slices/authSlice'
 import { SSOButtons } from '../components/SSOButtons'
-import { authAPI } from '../services/api'
+import { authAPI, ensureCSRFToken } from '../services/api'
 
 interface ProfileData {
   bio: string
@@ -61,6 +61,25 @@ export default function Signup() {
   const [checkingAvailability, setCheckingAvailability] = useState<{[key: string]: boolean}>({})
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [csrfInitialized, setCsrfInitialized] = useState(false)
+
+  // Initialize CSRF token on component mount
+  useEffect(() => {
+    const initializeCSRF = async () => {
+      try {
+        console.log('Signup: Initializing CSRF token...')
+        await ensureCSRFToken()
+        setCsrfInitialized(true)
+        console.log('Signup: CSRF token initialized')
+      } catch (error) {
+        console.error('Signup: Failed to initialize CSRF token:', error)
+        // Still set as initialized to avoid blocking the form
+        setCsrfInitialized(true)
+      }
+    }
+    
+    initializeCSRF()
+  }, [])
 
   // Redirect if user is already authenticated
   useEffect(() => {
@@ -70,11 +89,14 @@ export default function Signup() {
     }
   }, [user, navigate])
 
-  // Show loading while checking authentication
-  if (isLoading) {
+  // Show loading while checking authentication or initializing CSRF
+  if (isLoading || !csrfInitialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-secondary-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
       </div>
     )
   }
@@ -91,17 +113,26 @@ export default function Signup() {
       return
     }
 
+    // Don't make API calls until CSRF is initialized
+    if (!csrfInitialized) {
+      console.log('Signup: Skipping availability check - CSRF not initialized')
+      return
+    }
+
     setCheckingAvailability(prev => ({ ...prev, [field]: true }))
     
     try {
+      console.log(`Signup: Checking ${field} availability for:`, value)
       const response = await authAPI.checkUserExists({ [field]: value })
       setAvailability(prev => ({ ...prev, [field]: !response.data.exists }))
+      console.log(`Signup: ${field} availability result:`, response.data)
     } catch (error) {
       console.error(`Error checking ${field} availability:`, error)
+      // Don't update availability on error to avoid confusion
     } finally {
       setCheckingAvailability(prev => ({ ...prev, [field]: false }))
     }
-  }, [])
+  }, [csrfInitialized])
 
   // Debounced effect for username checking
   useEffect(() => {

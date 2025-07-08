@@ -491,7 +491,6 @@ def login_view(request):
     return Response(response_data)
 
 
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([permissions.AllowAny])
 def check_user_exists(request):
@@ -503,6 +502,12 @@ def check_user_exists(request):
     print(f"CSRF Token in header: {request.headers.get('X-CSRFToken', 'NOT_FOUND')}")
     print(f"CSRF Token in cookies: {request.COOKIES.get('csrftoken', 'NOT_FOUND')}")
     print(f"Session ID in cookies: {request.COOKIES.get('sessionid', 'NOT_FOUND')}")
+    print(f"Request user: {request.user}")
+    print(f"Request user is authenticated: {request.user.is_authenticated}")
+    
+    # Explicitly allow unauthenticated access
+    if not request.user.is_authenticated:
+        print("User is not authenticated, but this is allowed for this endpoint")
     
     username = request.data.get('username', '').strip()
     email = request.data.get('email', '').strip()

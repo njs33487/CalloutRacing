@@ -78,78 +78,83 @@ class CalloutListView(generics.ListAPIView):
     ordering = ['-created_at']
     
     def get_queryset(self):
-        user = self.request.user
-        queryset = Callout.objects.select_related(
-            'challenger', 'challenged', 'track', 'winner'
-        ).prefetch_related('race_result')
-        
-        # Filter by status
-        status_filter = self.request.query_params.get('status', None)
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-        
-        # Filter by race type
-        race_type = self.request.query_params.get('race_type', None)
-        if race_type:
-            queryset = queryset.filter(race_type=race_type)
-        
-        # Filter by location type
-        location_type = self.request.query_params.get('location_type', None)
-        if location_type:
-            queryset = queryset.filter(location_type=location_type)
-        
-        # Filter by experience level
-        experience_level = self.request.query_params.get('experience_level', None)
-        if experience_level:
-            queryset = queryset.filter(experience_level=experience_level)
-        
-        # Filter by wager amount range
-        min_wager = self.request.query_params.get('min_wager', None)
-        max_wager = self.request.query_params.get('max_wager', None)
-        if min_wager:
-            queryset = queryset.filter(wager_amount__gte=min_wager)
-        if max_wager:
-            queryset = queryset.filter(wager_amount__lte=max_wager)
-        
-        # Filter by date range
-        date_from = self.request.query_params.get('date_from', None)
-        date_to = self.request.query_params.get('date_to', None)
-        if date_from:
-            queryset = queryset.filter(scheduled_date__gte=date_from)
-        if date_to:
-            queryset = queryset.filter(scheduled_date__lte=date_to)
-        
-        # Filter by user involvement
-        user_filter = self.request.query_params.get('user', None)
-        if user_filter == 'sent':
-            queryset = queryset.filter(challenger=user)
-        elif user_filter == 'received':
-            queryset = queryset.filter(challenged=user)
-        elif user_filter == 'involved':
-            queryset = queryset.filter(
-                Q(challenger=user) | Q(challenged=user)
-            )
-        
-        # Filter out private callouts unless user is involved
-        if not user.is_authenticated:
-            queryset = queryset.filter(is_private=False)
-        else:
-            queryset = queryset.filter(
-                Q(is_private=False) | 
-                Q(challenger=user) | 
-                Q(challenged=user)
-            )
-        
-        # Filter out expired callouts unless completed/cancelled
-        show_expired = self.request.query_params.get('show_expired', 'false').lower() == 'true'
-        if not show_expired:
-            expired_date = timezone.now() - timedelta(days=7)
-            queryset = queryset.filter(
-                Q(created_at__gte=expired_date) |
-                Q(status__in=['completed', 'cancelled'])
-            )
-        
-        return queryset
+        try:
+            user = self.request.user
+            queryset = Callout.objects.select_related(
+                'challenger', 'challenged', 'track', 'winner'
+            ).prefetch_related('race_result')
+            
+            # Filter by status
+            status_filter = self.request.query_params.get('status', None)
+            if status_filter:
+                queryset = queryset.filter(status=status_filter)
+            
+            # Filter by race type
+            race_type = self.request.query_params.get('race_type', None)
+            if race_type:
+                queryset = queryset.filter(race_type=race_type)
+            
+            # Filter by location type
+            location_type = self.request.query_params.get('location_type', None)
+            if location_type:
+                queryset = queryset.filter(location_type=location_type)
+            
+            # Filter by experience level
+            experience_level = self.request.query_params.get('experience_level', None)
+            if experience_level:
+                queryset = queryset.filter(experience_level=experience_level)
+            
+            # Filter by wager amount range
+            min_wager = self.request.query_params.get('min_wager', None)
+            max_wager = self.request.query_params.get('max_wager', None)
+            if min_wager:
+                queryset = queryset.filter(wager_amount__gte=min_wager)
+            if max_wager:
+                queryset = queryset.filter(wager_amount__lte=max_wager)
+            
+            # Filter by date range
+            date_from = self.request.query_params.get('date_from', None)
+            date_to = self.request.query_params.get('date_to', None)
+            if date_from:
+                queryset = queryset.filter(scheduled_date__gte=date_from)
+            if date_to:
+                queryset = queryset.filter(scheduled_date__lte=date_to)
+            
+            # Filter by user involvement
+            user_filter = self.request.query_params.get('user', None)
+            if user_filter == 'sent':
+                queryset = queryset.filter(challenger=user)
+            elif user_filter == 'received':
+                queryset = queryset.filter(challenged=user)
+            elif user_filter == 'involved':
+                queryset = queryset.filter(
+                    Q(challenger=user) | Q(challenged=user)
+                )
+            
+            # Filter out private callouts unless user is involved
+            if not user.is_authenticated:
+                queryset = queryset.filter(is_private=False)
+            else:
+                queryset = queryset.filter(
+                    Q(is_private=False) | 
+                    Q(challenger=user) | 
+                    Q(challenged=user)
+                )
+            
+            # Filter out expired callouts unless completed/cancelled
+            show_expired = self.request.query_params.get('show_expired', 'false').lower() == 'true'
+            if not show_expired:
+                expired_date = timezone.now() - timedelta(days=7)
+                queryset = queryset.filter(
+                    Q(created_at__gte=expired_date) |
+                    Q(status__in=['completed', 'cancelled'])
+                )
+            
+            return queryset
+        except Exception as e:
+            # Log the error for debugging
+            print(f"Error in CalloutListView get_queryset: {e}")
+            return Callout.objects.none()
 
 
 class CalloutCreateView(generics.CreateAPIView):
